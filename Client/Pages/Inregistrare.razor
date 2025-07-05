@@ -1,0 +1,44 @@
+﻿@page "/inregistrare"
+@inject NavigationManager Navigation
+
+<!-- VERSIUNEA 1: Cu MudStack îmbunătățit -->
+<MudPaper Class="signin-container" Elevation="3" Square="false">
+    <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="0" Class="title-row">
+        <img src="images/valyanmed-logo.png" alt="ValyanMed Logo" class="logo-img-inline" />
+        <MudText Typo="Typo.h4" Class="signin-title" GutterBottom="false" Bold="true">
+            Create New Account
+        </MudText>
+    </MudStack>
+
+    <MudForm>
+        <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Class="mb-4" />
+        <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" Class="mb-4" />
+        <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined" InputType="@(_showPassword? InputType.Text: InputType.Password)" Class="mb-4"
+                      Adornment="Adornment.End" AdornmentIcon="@(_showPassword? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                      OnAdornmentClick="TogglePasswordVisibility" />
+        <MudTextField @bind-Value="_confirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="@(_showConfirmPassword? InputType.Text: InputType.Password)" Class="mb-4"
+                      Adornment="Adornment.End" AdornmentIcon="@(_showConfirmPassword? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                      OnAdornmentClick="ToggleConfirmPasswordVisibility" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="signin-btn" Type="Submit" FullWidth="true">SIGN UP</MudButton>
+    </MudForm>
+
+    <MudStack Direction="Row" Justify="Justify.FlexStart" Class="back-btn-container">
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Class="back-btn">
+            ÎNAPOI
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+
+@code {
+    private string _name;
+    private string _email;
+    private string _password;
+    private string _confirmPassword;
+    private bool _showPassword;
+    private bool _showConfirmPassword;
+
+    void TogglePasswordVisibility() => _showPassword = !_showPassword;
+    void ToggleConfirmPasswordVisibility() => _showConfirmPassword = !_showConfirmPassword;
+    void GoBack() => Navigation.NavigateTo("/");
+}
