@@ -1,6 +1,5 @@
 @API_HostAddress = http://localhost:5196
 
-GET {{API_HostAddress}}/weatherforecast/
-Accept: application/json
 
-###
+POST http://localhost:5196/api/utilizator
+Content-Type: application/json

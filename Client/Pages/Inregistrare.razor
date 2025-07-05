@@ -1,7 +1,10 @@
 ﻿@page "/inregistrare"
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
 @inject NavigationManager Navigation
+@inject HttpClient Http
+@inject ISnackbar Snackbar
 
-<!-- VERSIUNEA 1: Cu MudStack îmbunătățit -->
 <MudPaper Class="signin-container" Elevation="3" Square="false">
     <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="0" Class="title-row">
         <img src="images/valyanmed-logo.png" alt="ValyanMed Logo" class="logo-img-inline" />
@@ -10,35 +13,172 @@
         </MudText>
     </MudStack>
 
-    <MudForm>
-        <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Class="mb-4" />
-        <MudTextField @bind-Value="_email" Label="Email" Variant="Variant.Outlined" Class="mb-4" />
-        <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined" InputType="@(_showPassword? InputType.Text: InputType.Password)" Class="mb-4"
-                      Adornment="Adornment.End" AdornmentIcon="@(_showPassword? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="MudBlazor.Severity.Error" Class="mb-4">
+            @_errorMessage
+        </MudAlert>
+    }
+
+    <MudForm Model="@_registerModel" @ref="_form" Validation="@(_registerValidator.ValidateValue)" ValidationDelay="0">
+        <MudValidationSummary />
+
+        <MudTextField @bind-Value="_registerModel.NumeUtilizator"
+                      For="@(() => _registerModel.NumeUtilizator)"
+                      Immediate="true"
+                      Label="Nume utilizator"
+                      Variant="Variant.Outlined"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_registerModel.Email"
+                      For="@(() => _registerModel.Email)"
+                      Immediate="true"
+                      Label="Email"
+                      Variant="Variant.Outlined"
+                      Class="mb-4" />
+
+        <MudTextField @bind-Value="_registerModel.Parola"
+                      For="@(() => _registerModel.Parola)"
+                      Immediate="true"
+                      Label="Parola"
+                      Variant="Variant.Outlined"
+                      InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                      Class="mb-4"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
                       OnAdornmentClick="TogglePasswordVisibility" />
-        <MudTextField @bind-Value="_confirmPassword" Label="Confirm Password" Variant="Variant.Outlined" InputType="@(_showConfirmPassword? InputType.Text: InputType.Password)" Class="mb-4"
-                      Adornment="Adornment.End" AdornmentIcon="@(_showConfirmPassword? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+
+        <MudTextField @bind-Value="_registerModel.ConfirmaParola"
+                      For="@(() => _registerModel.ConfirmaParola)"
+                      Immediate="true"
+                      Label="Confirma Parola"
+                      Variant="Variant.Outlined"
+                      InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)"
+                      Class="mb-4"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
                       OnAdornmentClick="ToggleConfirmPasswordVisibility" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="signin-btn" Type="Submit" FullWidth="true">SIGN UP</MudButton>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="signin-btn"
+                   ButtonType="ButtonType.Submit"
+                   FullWidth="true"
+                   Disabled="_isLoading"
+                   OnClick="@(async () => await Submit())">
+            @if (_isLoading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Se procesează...</MudText>
+            }
+            else
+            {
+                <MudText>Înregistrare</MudText>
+            }
+        </MudButton>
     </MudForm>
 
     <MudStack Direction="Row" Justify="Justify.FlexStart" Class="back-btn-container">
-        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Class="back-btn">
+        <MudButton Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="GoBack"
+                   Class="back-btn">
             ÎNAPOI
         </MudButton>
     </MudStack>
 </MudPaper>
 
-
 @code {
-    private string _name;
-    private string _email;
-    private string _password;
-    private string _confirmPassword;
+    private MudForm _form;
+    private string _errorMessage;
     private bool _showPassword;
     private bool _showConfirmPassword;
+    private bool _isLoading;
+    private RegisterModel _registerModel = new();
+    private RegisterModelFluentValidator _registerValidator = new();
+
+    public class RegisterModel
+    {
+        public string NumeUtilizator { get; set; }
+        public string Email { get; set; }
+        public string Parola { get; set; }
+        public string ConfirmaParola { get; set; }
+    }
+
+    public class RegisterModelFluentValidator : AbstractValidator<RegisterModel>
+    {
+        public RegisterModelFluentValidator()
+        {
+            RuleFor(x => x.NumeUtilizator)
+                .NotEmpty().WithMessage("Numele de utilizator este obligatoriu")
+                .MaximumLength(50).WithMessage("Numele de utilizator nu poate depăși 50 de caractere");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email-ul este obligatoriu")
+                .EmailAddress().WithMessage("Format email invalid");
+
+            RuleFor(x => x.Parola)
+                .NotEmpty().WithMessage("Parola este obligatorie")
+                .MinimumLength(6).WithMessage("Parola trebuie să aibă minim 6 caractere")
+                .MaximumLength(100).WithMessage("Parola nu poate depăși 100 de caractere");
+
+            RuleFor(x => x.ConfirmaParola)
+                .NotEmpty().WithMessage("Confirmarea parolei este obligatorie")
+                .Equal(x => x.Parola).WithMessage("Parolele nu coincid");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<RegisterModel>.CreateWithOptions((RegisterModel)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    private async Task Submit()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        await _form.Validate();
+
+        if (_form.IsValid)
+        {
+            try
+            {
+                var model = new UtilizatorRegisterDto
+                {
+                    NumeUtilizator = _registerModel.NumeUtilizator,
+                    Parola = _registerModel.Parola,
+                    Email = _registerModel.Email,
+                    PersoanaId = 1
+                };
+
+                var response = await Http.PostAsJsonAsync("api/utilizator", model);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Înregistrarea a fost realizată cu succes!", MudBlazor.Severity.Success);
+                    Navigation.NavigateTo("/autentificare");
+                }
+                else
+                {
+                    _errorMessage = await response.Content.ReadAsStringAsync();
+                    Snackbar.Add($"Eroare la înregistrare: {_errorMessage}", MudBlazor.Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"A apărut o eroare: {ex.Message}";
+                Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
+            }
+        }
+        _isLoading = false;
+        StateHasChanged();
+    }
 
     void TogglePasswordVisibility() => _showPassword = !_showPassword;
     void ToggleConfirmPasswordVisibility() => _showConfirmPassword = !_showConfirmPassword;
     void GoBack() => Navigation.NavigateTo("/");
 }
+
