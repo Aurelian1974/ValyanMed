@@ -1,0 +1,142 @@
+﻿@inherits LayoutComponentBase
+@using ValyanMed.Client.Services
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject IAuthService AuthService
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <!-- Header Bar -->
+    <MudAppBar Elevation="1" Color="Color.Primary" Dense="true">
+        <div class="app-logo">
+            <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" />
+            <MudText Typo="Typo.h6">CMS</MudText>
+        </div>
+        <MudSpacer />
+        
+        @if (IsLoggedIn && !IsAuthenticationPage)
+        {
+            <!-- Informații utilizator și delogare - vizibile doar când utilizatorul este autentificat și nu e pe pagina de autentificare -->
+            <div class="user-profile">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                <MudText>@(UserFullName ?? "Utilizator")</MudText>
+            </div>
+            
+            <MudButton 
+                OnClick="Logout" 
+                StartIcon="@Icons.Material.Filled.Logout" 
+                Color="Color.Inherit" 
+                Class="ml-2" 
+                Variant="Variant.Text">
+                Deconectare
+            </MudButton>
+        }
+    </MudAppBar>
+
+    <!-- Left Sidebar -->
+    <MudDrawer Open="@(IsLoggedIn)" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Persistent" Disabled="@(!IsLoggedIn)">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">ValyanMed</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu Disabled="@(!IsLoggedIn)">
+            <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Disabled="@(!IsLoggedIn)">Dashboard</MudNavLink>
+            <MudNavLink Href="/pacienti" Icon="@Icons.Material.Filled.People" Disabled="@(!IsLoggedIn)">Pacienți</MudNavLink>
+            <MudNavLink Href="/rapoarte" Icon="@Icons.Material.Filled.Assessment" Disabled="@(!IsLoggedIn)">Rapoarte</MudNavLink>
+            <MudNavLink Href="/facturare" Icon="@Icons.Material.Filled.Receipt" Disabled="@(!IsLoggedIn)">Facturare</MudNavLink>
+            <MudNavLink Href="/setari" Icon="@Icons.Material.Filled.Settings" Disabled="@(!IsLoggedIn)">Setări</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <!-- Main Content -->
+    <MudMainContent Class="main-content">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+            @Body
+        </MudContainer>
+        
+        <!-- Footer -->
+        <MudAppBar Bottom="true" Dense="true" Elevation="1" Color="Color.Transparent" Class="border-top app-footer">
+            <MudText Typo="Typo.body2">Versiunea 1.0</MudText>
+            <MudSpacer />
+            <MudText Typo="Typo.body2">contact@exemplu.ro</MudText>
+        </MudAppBar>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool IsLoggedIn { get; set; }
+    private string UserName { get; set; }
+    private string UserFullName { get; set; }
+    private bool IsAuthenticationPage => 
+        NavigationManager.Uri.EndsWith("/") || 
+        NavigationManager.Uri.EndsWith("/autentificare");
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Încarcă CSS-ul specific pentru acest layout
+        await JSRuntime.InvokeVoidAsync("loadCSS", "css/mainlayout.css");
+        
+        // Verifică dacă utilizatorul este autentificat
+        await CheckAuthenticationStatus();
+        
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Verifică din nou starea de autentificare după primul render
+            await CheckAuthenticationStatus();
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckAuthenticationStatus()
+    {
+        try
+        {
+            // Obține token-ul din localStorage
+            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            
+            // Setează starea de autentificare pe baza existenței token-ului
+            IsLoggedIn = !string.IsNullOrEmpty(token);
+            
+            if (IsLoggedIn)
+            {
+                // Obține informațiile utilizatorului din localStorage
+                UserName = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userName") ?? "Utilizator";
+                UserFullName = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userFullName") ?? UserName;
+                
+                // Dacă suntem pe pagina de autentificare și utilizatorul e autentificat, redirecționează către dashboard
+                if (IsAuthenticationPage)
+                {
+                    NavigationManager.NavigateTo("/dashboard");
+                }
+            }
+            else 
+            {
+                // Dacă nu este autentificat și încearcă să acceseze o pagină protejată
+                if (!IsAuthenticationPage && !NavigationManager.Uri.EndsWith("/inregistrare"))
+                {
+                    NavigationManager.NavigateTo("/");
+                }
+            }
+            
+            StateHasChanged(); // Asigură-te că UI-ul se actualizează
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Eroare la verificarea autentificării: {ex.Message}");
+        }
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        IsLoggedIn = false;
+        NavigationManager.NavigateTo("/");
+    }
+}

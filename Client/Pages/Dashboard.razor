@@ -1,0 +1,43 @@
+﻿@page "/dashboard"
+@inject IJSRuntime JSRuntime
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4 mud-theme-primary">
+            <MudText Typo="Typo.h3" Class="mb-2">23</MudText>
+            <MudText>Pacienți azi</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4 mud-theme-primary">
+            <MudText Typo="Typo.h3" Class="mb-2">8</MudText>
+            <MudText>Consultații efectuate</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-4 mud-theme-primary">
+            <MudText Typo="Typo.h3" Class="mb-2">32</MudText>
+            <MudText>Programări viitoare</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            await JSRuntime.InvokeVoidAsync("console.log", "Dashboard initialized");
+            
+            // Verifică dacă CSS-ul există înainte de a-l încărca
+            await JSRuntime.InvokeVoidAsync("loadCSS", "css/dashboard.css");
+        }
+        catch (Exception ex) {
+            // Ignoră eroarea dacă CSS-ul nu poate fi încărcat
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading CSS: {ex.Message}");
+        }
+        
+        await base.OnInitializedAsync();
+    }
+}

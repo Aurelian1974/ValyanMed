@@ -1,23 +1,132 @@
-﻿@page "/autentificare"  
+﻿@page "/"
+@using ValyanMed.Client.Models
+@using ValyanMed.Client.Services
+@using FluentValidation
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
 
-<MudPaper Class="signin-container" Elevation="3" Square="false">  
-    <MudText Typo="Typo.h2" Class="signin-title" GutterBottom="true" Bold="true">Autentificare</MudText>  
-    <MudForm>  
-        <MudTextField @bind-Value="_email" Label="Utilizator" Variant="Variant.Outlined" Class="mb-4" />  
-        <MudTextField @bind-Value="_password" Label="Parola" Variant="Variant.Outlined" InputType="InputType.Password" Class="mb-4" />  
+<MudPaper Class="signin-container" Elevation="3" Square="false">
+    <MudText Typo="Typo.h2" Class="signin-title" GutterBottom="true" Bold="true">Autentificare</MudText>
+    <MudForm @ref="_form" Model="@_loginModel" Validation="@(_loginValidator.ValidateValue)" ValidationDelay="0">
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="MudBlazor.Severity.Error" Class="mb-4">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <MudTextField @bind-Value="_loginModel.NumeUtilizatorSauEmail"
+                     For="@(() => _loginModel.NumeUtilizatorSauEmail)"
+                     Label="Utilizator sau Email"
+                     Immediate="true"
+                     Variant="Variant.Outlined"
+                     Class="mb-4" />
+
+        <MudTextField @bind-Value="_loginModel.Parola"
+                     For="@(() => _loginModel.Parola)"
+                     Label="Parola"
+                     Immediate="true"
+                     Variant="Variant.Outlined"
+                     InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                     Class="mb-4"
+                     Adornment="Adornment.End"
+                     AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                     OnAdornmentClick="TogglePasswordVisibility" />
+
         <MudStack Direction="Row" Spacing="2" AlignItems="AlignItems.Center" Class="mb-4">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="signin-btn" Type="Submit">Autentificare</MudButton>
+            <MudButton Variant="Variant.Filled"
+                      Color="Color.Primary"
+                      Class="signin-btn"
+                      ButtonType="ButtonType.Submit"
+                      Disabled="@_isLoading"
+                      OnClick="@(async () => await Login())">
+                @if (_isLoading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Se procesează...</MudText>
+                }
+                else
+                {
+                    <MudText>Autentificare</MudText>
+                }
+            </MudButton>
             <MudLink Href="#" Class="forgot-link">Ai uitat parola?</MudLink>
-        </MudStack>  
-        <MudDivider Class="mb-4" />  
-        <MudText>  
-            Nu ai inca cont de utilizator?  
-            <MudLink Href="/inregistrare">Creaza cont</MudLink>
-        </MudText>  
-    </MudForm>  
-</MudPaper>  
+        </MudStack>
+        <MudDivider Class="mb-4" />
+        <MudText>
+            Nu ai încă cont de utilizator?
+            <MudLink Href="/inregistrare">Creează cont</MudLink>
+        </MudText>
+    </MudForm>
+</MudPaper>
 
-@code {  
-    private string _email;  
-    private string _password;  
+@code {
+    private MudForm _form;
+    private string _errorMessage;
+    private bool _showPassword;
+    private bool _isLoading;
+    private LoginDto _loginModel = new();
+    private LoginValidator _loginValidator = new();
+
+    public class LoginValidator : AbstractValidator<LoginDto>
+    {
+        public LoginValidator()
+        {
+            RuleFor(x => x.NumeUtilizatorSauEmail)
+                .NotEmpty().WithMessage("Utilizatorul sau email-ul este obligatoriu");
+
+            RuleFor(x => x.Parola)
+                .NotEmpty().WithMessage("Parola este obligatorie");
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(ValidationContext<LoginDto>.CreateWithOptions((LoginDto)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    private async Task Login()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        await _form.Validate();
+
+        if (_form.IsValid)
+        {
+            try
+            {
+                var (success, message, token) = await AuthService.Login(_loginModel.NumeUtilizatorSauEmail, _loginModel.Parola);
+
+                if (success)
+                {
+                    // Adaugă aici pentru debugging
+                    Console.WriteLine($"Token received: {token?.Substring(0, 20)}...");
+                    
+                    Snackbar.Add("Autentificare reușită!", MudBlazor.Severity.Success);
+                    
+                    // Forțează un reload pentru a asigura preluarea noii stări
+                    Navigation.NavigateTo("/dashboard", forceLoad: true);
+                }
+                else
+                {
+                    _errorMessage = message;
+                    Snackbar.Add($"Eroare la autentificare: {_errorMessage}", MudBlazor.Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"A apărut o eroare: {ex.Message}";
+                Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
+            }
+        }
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    void TogglePasswordVisibility() => _showPassword = !_showPassword;
 }

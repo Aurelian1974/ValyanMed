@@ -1,0 +1,46 @@
+﻿body {
+}
+
+.border-top {
+    border-top: 1px solid rgba(0,0,0,0.12);
+}
+
+.mud-drawer {
+    background-color: #2d3748;
+}
+
+.mud-nav-link {
+    color: #e2e8f0 !important;
+}
+
+.mud-nav-link.mud-nav-link-active {
+    background-color: rgba(255,255,255,0.1) !important;
+}
+
+.mud-drawer-header {
+    padding: 16px;
+    color: white;
+}
+
+.app-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.main-content {
+    padding: 16px;
+}
+
+.app-footer {
+    padding: 8px 16px;
+    color: rgba(0,0,0,0.6);
+    font-size: 0.875rem;
+}

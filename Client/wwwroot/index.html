@@ -29,6 +29,23 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+    <script>
+        window.loadCSS = function (href) {
+            // Verifică dacă CSS-ul e deja încărcat
+            var links = document.getElementsByTagName('link');
+            for (var i = 0; i < links.length; i++) {
+                if (links[i].href.indexOf(href) !== -1) {
+                    return;
+                }
+            }
+
+            // Încarcă CSS-ul
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+        };
+    </script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
