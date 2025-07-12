@@ -1,9 +1,9 @@
 ﻿body {
 }
 
-.border-top {
+/*.border-top {
     border-top: 1px solid rgba(0,0,0,0.12);
-}
+}*/
 
 .mud-drawer {
     background-color: #2d3748;
@@ -41,6 +41,14 @@
 
 .app-footer {
     padding: 8px 16px;
-    color: rgba(0,0,0,0.6);
+    /*color: rgba(0,0,0,0.6);*/
     font-size: 0.875rem;
+}
+
+.admin-nav-link {
+    text-transform: none !important;
+    font-weight: 400;
+    font-size: 1rem;
+    color: #e2e8f0 !important;
+    /* Elimină padding-left, padding, width, justify-content */
 }

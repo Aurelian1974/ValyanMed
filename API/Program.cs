@@ -1,26 +1,47 @@
 ﻿using System;
 using Microsoft.Data.SqlClient;
+using API.Repositories;
+using API.Services;
+using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
+using Swashbuckle.AspNetCore.SwaggerGen; // Add this line
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Personnel Management API",
+        Version = "v1",
+        Description = "API for managing personnel records"
+    });
+});
+
+// Register repositories and services
+builder.Services.AddScoped<IPersoanaRepository, PersoanaRepository>();
+builder.Services.AddScoped<IPersoanaService, PersoanaService>();
 builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7294/") });
-builder.Services.AddEndpointsApiExplorer();
 
-
-// Adaugă CORS
+// CORS policy
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowAll", builder =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
     });
 });
 
@@ -41,15 +62,20 @@ catch (Exception ex)
     throw; // Oprește aplicația dacă nu se poate conecta
 }
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Personnel Management API v1"));
 }
 
 app.UseHttpsRedirection();
-app.UseCors();
+
+// Use CORS
+app.UseCors("AllowAll");
+
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

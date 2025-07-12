@@ -3,10 +3,12 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
+@inject Client.Services.JsInteropService JsInteropService
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider />
 
 <MudLayout>
     <!-- Header Bar -->
@@ -47,6 +49,20 @@
             <MudNavLink Href="/rapoarte" Icon="@Icons.Material.Filled.Assessment" Disabled="@(!IsLoggedIn)">Rapoarte</MudNavLink>
             <MudNavLink Href="/facturare" Icon="@Icons.Material.Filled.Receipt" Disabled="@(!IsLoggedIn)">Facturare</MudNavLink>
             <MudNavLink Href="/setari" Icon="@Icons.Material.Filled.Settings" Disabled="@(!IsLoggedIn)">Setări</MudNavLink>
+
+            <!-- Buton Administrare cu structură arborescentă -->
+            <MudNavLink Icon="@Icons.Material.Filled.AdminPanelSettings"
+                        @onclick="@ToggleAdminMenu"
+                        Class="admin-nav-link">
+                Administrare
+            </MudNavLink>
+            @if (_adminExpanded)
+            {
+                <div style="margin-left:32px;">
+                    <MudNavLink Href="/administrare/personal" Icon="@Icons.Material.Filled.People">Personal</MudNavLink>
+                    <MudNavLink Href="/administrare/roluri" Icon="@Icons.Material.Filled.GroupWork">Roluri</MudNavLink>
+                </div>
+            }
         </MudNavMenu>
     </MudDrawer>
 
@@ -69,6 +85,7 @@
     private bool IsLoggedIn { get; set; }
     private string UserName { get; set; }
     private string UserFullName { get; set; }
+    private bool _adminExpanded = false;
     private bool IsAuthenticationPage => 
         NavigationManager.Uri.EndsWith("/") || 
         NavigationManager.Uri.EndsWith("/autentificare");
@@ -80,6 +97,10 @@
         
         // Verifică dacă utilizatorul este autentificat
         await CheckAuthenticationStatus();
+        
+        // Test the JS interop is working
+        var result = await JsInteropService.SayHelloAsync("Blazor");
+        Console.WriteLine($"JS Interop test result: {result}");
         
         await base.OnInitializedAsync();
     }
@@ -139,4 +160,6 @@
         IsLoggedIn = false;
         NavigationManager.NavigateTo("/");
     }
+
+    void ToggleAdminMenu() => _adminExpanded = !_adminExpanded;
 }

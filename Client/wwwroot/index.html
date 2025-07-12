@@ -4,12 +4,10 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Client</title>
-    <!--<base href="/" />-->
+    <title>ValyanMed</title>
+    <base href="/" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="css/app.css" />
-    <!-- If you add any scoped CSS files, uncomment the following to load them
-    <link href="Client.styles.css" rel="stylesheet" /> -->
     <link href="manifest.webmanifest" rel="manifest" />
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
@@ -29,9 +27,46 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+
     <script>
+        /**
+         * Auto-logout solution using sessionStorage
+         *
+         * sessionStorage automatically clears when browser/tab closes,
+         * but persists during navigation within the app.
+         */
+        (function () {
+            // Check if the session has ended (browser was closed)
+            function checkSessionStatus() {
+                // If we have auth token but no session marker, browser was closed
+                if (localStorage.getItem('authToken') && !sessionStorage.getItem('sessionActive')) {
+                    console.log("Browser was closed and reopened - clearing auth");
+                    clearAuthData();
+                }
+
+                // Always set the session marker
+                sessionStorage.setItem('sessionActive', 'true');
+            }
+
+            function clearAuthData() {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userFullName');
+                console.log("Authentication data cleared");
+            }
+
+            // Run check when page loads
+            checkSessionStatus();
+
+            // Expose utility functions
+            window.authManager = {
+                clearAuthData: clearAuthData,
+                checkSessionStatus: checkSessionStatus
+            };
+        })();
+
+        // LoadCSS utility function
         window.loadCSS = function (href) {
-            // Verifică dacă CSS-ul e deja încărcat
             var links = document.getElementsByTagName('link');
             for (var i = 0; i < links.length; i++) {
                 if (links[i].href.indexOf(href) !== -1) {
@@ -39,13 +74,31 @@
                 }
             }
 
-            // Încarcă CSS-ul
             var link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = href;
             document.head.appendChild(link);
         };
+
+        // Interop functions
+        window.appInterop = {
+            sayHello: function (name) {
+                return "Hello, " + name;
+            },
+
+            logout: function () {
+                window.authManager.clearAuthData();
+                return true;
+            }
+        };
+
+        window.appFunctions = {
+            test: function () {
+                return "JS interop is working!";
+            }
+        };
     </script>
+
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>

@@ -1,0 +1,180 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer>
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                <MudTabPanel Text="Informații personale">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="@model.Nume" Label="Nume" Required="true" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="@model.Prenume" Label="Prenume" Required="true" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="@model.CNP" Label="CNP" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudDatePicker @bind-Date="@model.DataNasterii" Label="Data nașterii" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="@model.Gen" Label="Gen" ReadOnly="@ReadOnly">
+                                <MudSelectItem Value="@("Masculin")">Masculin</MudSelectItem>
+                                <MudSelectItem Value="@("Feminin")">Feminin</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="@model.StareCivila" Label="Stare civilă" ReadOnly="@ReadOnly">
+                                <MudSelectItem Value="@("Necăsătorit")">Necăsătorit</MudSelectItem>
+                                <MudSelectItem Value="@("Căsătorit")">Căsătorit</MudSelectItem>
+                                <MudSelectItem Value="@("Divorțat")">Divorțat</MudSelectItem>
+                                <MudSelectItem Value="@("Văduv")">Văduv</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+                
+                <MudTabPanel Text="Document identitate">
+                    <MudGrid>
+                        <MudItem xs="12" sm="4">
+                            <MudSelect @bind-Value="@model.TipActIdentitate" Label="Tip act identitate" ReadOnly="@ReadOnly">
+                                <MudSelectItem Value="@("CI")">CI</MudSelectItem>
+                                <MudSelectItem Value="@("BI")">BI</MudSelectItem>
+                                <MudSelectItem Value="@("P")">Pașaport</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudTextField @bind-Value="@model.SerieActIdentitate" Label="Serie" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudTextField @bind-Value="@model.NumarActIdentitate" Label="Număr" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+                
+                <MudTabPanel Text="Adresă">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="@model.Judet" Label="Județ" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="@model.Localitate" Label="Localitate" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="8">
+                            <MudTextField @bind-Value="@model.Strada" Label="Strada" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudTextField @bind-Value="@model.NumarStrada" Label="Număr" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudTextField @bind-Value="@model.CodPostal" Label="Cod poștal" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+                
+                <MudTabPanel Text="Informații angajare">
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField @bind-Value="@model.PozitieOrganizatie" Label="Poziție în organizație" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="@model.Specialitate" Label="Specialitate" ReadOnly="@ReadOnly">
+                                <MudSelectItem Value="@("Medic primar")">Medic primar</MudSelectItem>
+                                <MudSelectItem Value="@("Medic specialist")">Medic specialist</MudSelectItem>
+                                <MudSelectItem Value="@("Medic rezident")">Medic rezident</MudSelectItem>
+                                <MudSelectItem Value="@("Asistentă medicală")">Asistentă medicală</MudSelectItem>
+                                <MudSelectItem Value="@("Asistentă șefă")">Asistentă șefă</MudSelectItem>
+                                <MudSelectItem Value="@("Personal auxiliar")">Personal auxiliar</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="@model.Departament" Label="Departament" ReadOnly="@ReadOnly">
+                                <MudSelectItem Value="@("Medicină Internă")">Medicină Internă</MudSelectItem>
+                                <MudSelectItem Value="@("Cardiologie")">Cardiologie</MudSelectItem>
+                                <MudSelectItem Value="@("Neurologie")">Neurologie</MudSelectItem>
+                                <MudSelectItem Value="@("Pediatrie")">Pediatrie</MudSelectItem>
+                                <MudSelectItem Value="@("Chirurgie")">Chirurgie</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudDatePicker @bind-Date="@model.DataAngajarii" Label="Data angajării" ReadOnly="@ReadOnly" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudSelect @bind-Value="@model.Status" Label="Status" ReadOnly="@ReadOnly">
+                                <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
+                                <MudSelectItem Value="@("Inactiv")">Inactiv</MudSelectItem>
+                                <MudSelectItem Value="@("În concediu")">În concediu</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            </MudTabs>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@(ReadOnly ? "Închide" : "Anulează")</MudButton>
+        @if (!ReadOnly)
+        {
+            <MudButton Color="Color.Primary" OnClick="Submit">Salvează</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    
+    [Parameter] public PersoanaModel Angajat { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    
+    private PersoanaModel model = new PersoanaModel();
+    
+    protected override void OnInitialized()
+    {
+        if (Angajat != null)
+        {
+            model = new PersoanaModel
+            {
+                Id = Angajat.Id,
+                Guid = Angajat.Guid,
+                Nume = Angajat.Nume,
+                Prenume = Angajat.Prenume,
+                Judet = Angajat.Judet,
+                Localitate = Angajat.Localitate,
+                Strada = Angajat.Strada,
+                NumarStrada = Angajat.NumarStrada,
+                CodPostal = Angajat.CodPostal,
+                PozitieOrganizatie = Angajat.PozitieOrganizatie,
+                DataNasterii = Angajat.DataNasterii,
+                DataCreare = Angajat.DataCreare,
+                DataModificare = Angajat.DataModificare,
+                CNP = Angajat.CNP,
+                TipActIdentitate = Angajat.TipActIdentitate,
+                SerieActIdentitate = Angajat.SerieActIdentitate,
+                NumarActIdentitate = Angajat.NumarActIdentitate,
+                StareCivila = Angajat.StareCivila,
+                Gen = Angajat.Gen,
+                Specialitate = Angajat.Specialitate,
+                Departament = Angajat.Departament,
+                DataAngajarii = Angajat.DataAngajarii,
+                Status = Angajat.Status
+            };
+        }
+        else
+        {
+            model = new PersoanaModel
+            {
+                Guid = Guid.NewGuid(),
+                DataCreare = DateTime.Now,
+                Status = "Activ"
+            };
+        }
+    }
+    
+    void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(model));
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

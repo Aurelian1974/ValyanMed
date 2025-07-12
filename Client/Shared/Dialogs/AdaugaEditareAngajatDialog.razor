@@ -1,0 +1,225 @@
+﻿@using Client.Models
+@using MudBlazor
+@* @using MudBlazor.Dialog *@
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(Angajat?.Id > 0 ? "Editare angajat" : "Adaugă angajat nou")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            <MudTabPanel Text="Informații personale">
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.Nume" Label="Nume" Required="true" 
+                                     ReadOnly="@ReadOnly" Error="@(string.IsNullOrEmpty(model.Nume) && submitted)" 
+                                     ErrorText="Numele este obligatoriu" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.Prenume" Label="Prenume" Required="true" 
+                                     ReadOnly="@ReadOnly" Error="@(string.IsNullOrEmpty(model.Prenume) && submitted)" 
+                                     ErrorText="Prenumele este obligatoriu" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.CNP" Label="CNP" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="@model.DataNasterii" Label="Data nașterii" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.Gen" Label="Gen" ReadOnly="@ReadOnly">
+                            <MudSelectItem Value="@("Masculin")">Masculin</MudSelectItem>
+                            <MudSelectItem Value="@("Feminin")">Feminin</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.StareCivila" Label="Stare civilă" ReadOnly="@ReadOnly">
+                            <MudSelectItem Value="@("Necăsătorit")">Necăsătorit</MudSelectItem>
+                            <MudSelectItem Value="@("Căsătorit")">Căsătorit</MudSelectItem>
+                            <MudSelectItem Value="@("Divorțat")">Divorțat</MudSelectItem>
+                            <MudSelectItem Value="@("Văduv")">Văduv</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Document identitate">
+                <MudGrid>
+                    <MudItem xs="12" sm="4">
+                        <MudSelect @bind-Value="@model.TipActIdentitate" Label="Tip act identitate" ReadOnly="@ReadOnly">
+                            <MudSelectItem Value="@("CI")">CI</MudSelectItem>
+                            <MudSelectItem Value="@("BI")">BI</MudSelectItem>
+                            <MudSelectItem Value="@("P")">Pașaport</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="@model.SerieActIdentitate" Label="Serie" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="@model.NumarActIdentitate" Label="Număr" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Adresă">
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.Judet" Label="Județ" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.Localitate" Label="Localitate" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="8">
+                        <MudTextField @bind-Value="@model.Strada" Label="Strada" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="@model.NumarStrada" Label="Număr" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4">
+                        <MudTextField @bind-Value="@model.CodPostal" Label="Cod poștal" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Informații angajare">
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.PozitieOrganizatie" Label="Poziție în organizație" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.Specialitate" Label="Specialitate" ReadOnly="@ReadOnly">
+                            <MudSelectItem Value="@("Medic primar")">Medic primar</MudSelectItem>
+                            <MudSelectItem Value="@("Medic specialist")">Medic specialist</MudSelectItem>
+                            <MudSelectItem Value="@("Medic rezident")">Medic rezident</MudSelectItem>
+                            <MudSelectItem Value="@("Asistentă medicală")">Asistentă medicală</MudSelectItem>
+                            <MudSelectItem Value="@("Asistentă șefă")">Asistentă șefă</MudSelectItem>
+                            <MudSelectItem Value="@("Personal auxiliar")">Personal auxiliar</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.Departament" Label="Departament" ReadOnly="@ReadOnly">
+                            <MudSelectItem Value="@("Medicină Internă")">Medicină Internă</MudSelectItem>
+                            <MudSelectItem Value="@("Cardiologie")">Cardiologie</MudSelectItem>
+                            <MudSelectItem Value="@("Neurologie")">Neurologie</MudSelectItem>
+                            <MudSelectItem Value="@("Pediatrie")">Pediatrie</MudSelectItem>
+                            <MudSelectItem Value="@("Chirurgie")">Chirurgie</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Date="@model.DataAngajarii" DateChanged="@(date => model.DataAngajarii = date.GetValueOrDefault(DateTime.Today))" 
+                                      Label="Data angajării" ReadOnly="@ReadOnly" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.Status" Label="Status" ReadOnly="@ReadOnly">
+                            <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
+                            <MudSelectItem Value="@("Inactiv")">Inactiv</MudSelectItem>
+                            <MudSelectItem Value="@("În concediu")">În concediu</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@(ReadOnly ? "Închide" : "Anulează")</MudButton>
+        @if (!ReadOnly)
+        {
+            <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@isBusy">
+                @if (isBusy)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Se procesează...</MudText>
+                }
+                else
+                {
+                    <MudText>Salvează</MudText>
+                }
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudBlazor.IMudDialogInstance MudDialog { get; set; }
+
+    
+    [Parameter] public PersoanaModel Angajat { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    
+    private PersoanaModel model = new PersoanaModel();
+    private bool submitted = false;
+    private bool isBusy = false;
+    
+    protected override void OnInitialized()
+    {
+        if (Angajat != null)
+        {
+            model = new PersoanaModel
+            {
+                Id = Angajat.Id,
+                Guid = Angajat.Guid,
+                Nume = Angajat.Nume,
+                Prenume = Angajat.Prenume,
+                Judet = Angajat.Judet,
+                Localitate = Angajat.Localitate,
+                Strada = Angajat.Strada,
+                NumarStrada = Angajat.NumarStrada,
+                CodPostal = Angajat.CodPostal,
+                PozitieOrganizatie = Angajat.PozitieOrganizatie,
+                DataNasterii = Angajat.DataNasterii,
+                DataCreare = Angajat.DataCreare,
+                DataModificare = Angajat.DataModificare,
+                CNP = Angajat.CNP,
+                TipActIdentitate = Angajat.TipActIdentitate,
+                SerieActIdentitate = Angajat.SerieActIdentitate,
+                NumarActIdentitate = Angajat.NumarActIdentitate,
+                StareCivila = Angajat.StareCivila,
+                Gen = Angajat.Gen,
+                Specialitate = Angajat.Specialitate,
+                Departament = Angajat.Departament,
+                DataAngajarii = Angajat.DataAngajarii,
+                Status = Angajat.Status
+            };
+        }
+        else
+        {
+            model = new PersoanaModel
+            {
+                Guid = Guid.NewGuid(),
+                DataCreare = DateTime.Now,
+                Status = "Activ",
+                DataAngajarii = DateTime.Today
+            };
+        }
+    }
+    
+    async Task Submit()
+    {
+        submitted = true;
+        
+        // Basic validation
+        if (string.IsNullOrEmpty(model.Nume) || string.IsNullOrEmpty(model.Prenume))
+        {
+            Snackbar.Add("Completați câmpurile obligatorii", Severity.Warning);
+            return;
+        }
+        
+        isBusy = true;
+        
+        try
+        {
+            await Task.Delay(300); // Simulate network delay for better UX
+            MudDialog.Close(DialogResult.Ok(model));
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("A apărut o eroare la salvare", Severity.Error);
+            isBusy = false;
+        }
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}
