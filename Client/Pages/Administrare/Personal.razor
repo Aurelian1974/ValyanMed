@@ -28,82 +28,102 @@
         </MudAlert>
     }
 
-    <MudDataGrid T="PersoanaModel" Items="@personalListFiltrat" 
-                MultiSelection="true"
-                Dense="true"
-                Hover="true" 
-                Bordered="true" 
-                Striped="true"
-                Filterable="true" 
-                QuickFilter="@_quickFilter"
-                SortMode="SortMode.Multiple" 
-                Hideable="true"
-                Loading="@_loading"
-                LoadingProgressColor="Color.Primary"
-                RowClick="@RowClicked"
-                SelectedItemsChanged="@SelectedItemsChanged">
+    @if (personalListFiltrat.Count == 0 && !_loading && !_loadError)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">
+            Nu există personal înregistrat.
+        </MudAlert>
+    }
+
+    <MudDataGrid T="PersoanaModel" Items="@personalListFiltrat"
+        MultiSelection="true"
+        Dense="true"
+        Hover="true"
+        Bordered="true"
+        Striped="true"
+        Filterable="true"
+        QuickFilter="@_quickFilter"
+        SortMode="SortMode.Multiple"
+        Hideable="true"
+        Loading="@_loading"
+        LoadingProgressColor="Color.Primary"
+        RowClick="@RowClicked"
+        SelectedItemsChanged="@SelectedItemsChanged">
+
         <ToolBarContent>
-            <MudTextField @bind-Value="_searchString" Placeholder="Caută" 
-                          Adornment="Adornment.Start" 
+            <MudTextField @bind-Value="_searchString" Placeholder="Caută"
+                          Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium" 
-                          Class="mt-0" 
+                          IconSize="Size.Medium"
+                          Class="mt-0"
                           Immediate="true" />
         </ToolBarContent>
         <Columns>
-            <SelectColumn T="PersoanaModel" />
+            <HierarchyColumn T="PersoanaModel" />
             <PropertyColumn Property="x => x.Id" Title="ID" Hidden="true" />
-            <PropertyColumn Property="x => x.Guid" Title="GUID" Hidden = "true"/>
-            <PropertyColumn Property="x => x.Nume" Title="Nume" Filterable="true" SortBy="x => x.Nume" />
-            <PropertyColumn Property="x => x.Prenume" Title="Prenume" Filterable="true" />
-            <PropertyColumn Property="x => x.CNP" Title="CNP" Filterable="true" />
-            <PropertyColumn Property="x => x.Gen" Title="Gen" Filterable="true" />
-            <PropertyColumn Property="x => x.DataNasterii" Title="Data Nașterii" Format="dd.MM.yyyy" Filterable="true" />
-            <PropertyColumn Property="x => x.StareCivila" Title="Stare Civilă" Filterable="true" />
-            
-            <!-- Date identitate -->
-            <PropertyColumn Property="x => x.TipActIdentitate" Title="Tip Act" Filterable="true" />
-            <PropertyColumn Property="x => x.SerieActIdentitate" Title="Serie" Filterable="true" />
-            <PropertyColumn Property="x => x.NumarActIdentitate" Title="Număr Act" Filterable="true" />
-            
-            <!-- Adresa -->
-            <PropertyColumn Property="x => x.Judet" Title="Județ" Filterable="true" />
-            <PropertyColumn Property="x => x.Localitate" Title="Localitate" Filterable="true" />
-            <PropertyColumn Property="x => x.Strada" Title="Strada" Filterable="true" />
-            <PropertyColumn Property="x => x.NumarStrada" Title="Număr" Filterable="true" />
-            <PropertyColumn Property="x => x.CodPostal" Title="Cod Poștal" Filterable="true" />
-            
-            <!-- Informații angajare -->
-            <PropertyColumn Property="x => x.PozitieOrganizatie" Title="Poziție" Filterable="true" />
-            <PropertyColumn Property="x => x.Specialitate" Title="Specialitate" Filterable="true" />
-            <PropertyColumn Property="x => x.Departament" Title="Departament" Filterable="true" />
-            <PropertyColumn Property="x => x.DataAngajarii" Title="Data Angajării" Format="dd.MM.yyyy" Filterable="true" />
-            
-            <!-- Metadate -->
-            <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy" Filterable="true" />
-            <PropertyColumn Property="x => x.DataModificare" Title="Data Modificare" Format="dd.MM.yyyy" Filterable="true" />
-            
-            <!-- Status -->
-            <PropertyColumn T="PersoanaModel" TProperty="string" Property="x => x.Status" Title="Status">
-                <CellTemplate>
-                    <MudChip Color="@GetStatusColor(@context.Item.Status)" Size="Size.Small">
-                        @context.Item.Status
-                    </MudChip>
-                </CellTemplate>
-            </PropertyColumn>
-            
-            <!-- Acțiuni -->
+            <PropertyColumn Property="x => x.Guid" Title="GUID" Hidden="true" />
+            <PropertyColumn Property="x => x.Nume" Title="Nume" Filterable="true" SortBy="x => x.Nume" Groupable="true" />
+            <PropertyColumn Property="x => x.Prenume" Title="Prenume" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.CNP" Title="CNP" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Gen" Title="Gen" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.DataNasterii" Title="Data Nașterii" Format="dd.MM.yyyy" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.StareCivila" Title="Stare Civilă" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.DataModificare" Title="Data Modificare" Format="dd.MM.yyyy HH:mm:ss" Filterable="true" Groupable="true" />
+
+            <!-- Coloane din detaliu, dar Hidden, pentru grupare -->
+            <PropertyColumn Property="x => x.TipActIdentitate" Title="Tip Act" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.SerieActIdentitate" Title="Serie Act" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.NumarActIdentitate" Title="Număr Act" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Judet" Title="Județ" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Localitate" Title="Localitate" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Strada" Title="Strada" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.NumarStrada" Title="Număr Strada" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.CodPostal" Title="Cod Poștal" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.PozitieOrganizatie" Title="Poziție" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Specialitate" Title="Specialitate" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Departament" Title="Departament" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.DataAngajarii" Title="Data Angajării" Format="dd.MM.yyyy" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Status" Title="Status" Hidden="true" Groupable="true" />
+
             <PropertyColumn T="PersoanaModel" TProperty="string" Title="Acțiuni" Sortable="false">
                 <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                   OnClick="@(() => EditareAngajat(@context.Item))" Disabled="@_loading" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
                                   OnClick="@(() => StergereAngajat(@context.Item))" Disabled="@_loading" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" 
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info"
                                   OnClick="@(() => VizualizareAngajat(@context.Item))" Disabled="@_loading" />
                 </CellTemplate>
             </PropertyColumn>
         </Columns>
+
+        <ChildRowContent>
+            <MudPaper Class="pa-4" Elevation="0" Style="background: #f9f9f9;">
+                <MudText Typo="Typo.subtitle2">Detalii suplimentare</MudText>
+                <MudDivider Class="mb-2" />
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudText><b>Tip Act Identitate:</b> @context.Item.TipActIdentitate</MudText>
+                        <MudText><b>Serie Act Identitate:</b> @context.Item.SerieActIdentitate</MudText>
+                        <MudText><b>Număr Act Identitate:</b> @context.Item.NumarActIdentitate</MudText>
+                        <MudText><b>Județ:</b> @context.Item.Judet</MudText>
+                        <MudText><b>Localitate:</b> @context.Item.Localitate</MudText>
+                        <MudText><b>Strada:</b> @context.Item.Strada</MudText>
+                        <MudText><b>Număr Strada:</b> @context.Item.NumarStrada</MudText>
+                        <MudText><b>Cod Poștal:</b> @context.Item.CodPostal</MudText>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudText><b>Poziție Organizație:</b> @context.Item.PozitieOrganizatie</MudText>
+                        <MudText><b>Specialitate:</b> @context.Item.Specialitate</MudText>
+                        <MudText><b>Departament:</b> @context.Item.Departament</MudText>
+                        <MudText><b>Data Angajării:</b> @FormatDate(context.Item.DataAngajarii ?? DateTime.MinValue)</MudText>
+                        <MudText><b>Status:</b> @context.Item.Status</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </ChildRowContent>
+
         <PagerContent>
             <MudDataGridPager T="PersoanaModel" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
         </PagerContent>
@@ -144,6 +164,9 @@
     private bool _loading = false;
     private bool _loadError = false;
     private string _errorMessage = "";
+    private string deleteError;
+
+    private bool showDeleteError => !string.IsNullOrEmpty(deleteError);
 
     protected override async Task OnInitializedAsync()
     {
@@ -155,7 +178,8 @@
         _loading = true;
         _loadError = false;
         _errorMessage = "";
-        
+        deleteError = null;
+
         try
         {
             personalList = await PersoanaService.GetAllPersonalAsync();
@@ -232,6 +256,25 @@
             || x.Status?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true
             || x.CNP?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true;
     };
+
+    private async Task DeletePersoana(int id)
+    {
+        var result = await PersoanaService.DeletePersoanaAsync(id);
+        if (!result.Success)
+        {
+            deleteError = result.ErrorMessage;
+        }
+        else
+        {
+            deleteError = null;
+            // Reîncarcă lista sau actualizează UI-ul
+        }
+    }
+
+    private void OnDeleteErrorClose()
+    {
+        deleteError = null;
+    }
 
     // Event handlers
     void RowClicked(DataGridRowClickEventArgs<PersoanaModel> args)
@@ -334,21 +377,26 @@
         };
         
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
-        var dialog = DialogService.Show<ConfirmDialog>("Confirmare ștergere", parameters, options);
-        var result = await dialog.Result;
+        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare ștergere", parameters, options).Result;
         
-        if (!result.Canceled)
+        if (!dialogResult.Canceled)
         {
             try
             {
                 _loading = true;
-                var success = await PersoanaService.DeletePersoanaAsync(angajat.Id);
-                if (success)
+                var result = await PersoanaService.DeletePersoanaAsync(angajat.Id);
+                if (result.Success)
                 {
                     personalList.Remove(angajat);
                     personalListFiltrat = personalList.ToList(); // Create a new reference to ensure UI updates
                     Snackbar.Add("Angajat șters cu succes", Severity.Success);
                     _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat șters: {angajat.Nume} {angajat.Prenume}");
+                }
+                else
+                {
+                    deleteError = result.ErrorMessage;
+                    Snackbar.Add(deleteError, Severity.Error);
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la ștergere: {deleteError}");
                 }
             }
             catch (Exception ex)

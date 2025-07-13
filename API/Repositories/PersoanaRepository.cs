@@ -1,4 +1,4 @@
-﻿using API.DTOs;
+﻿using Shared.DTOs;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using System;

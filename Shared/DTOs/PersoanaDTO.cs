@@ -1,6 +1,6 @@
 using System;
 
-namespace API.DTOs
+namespace Shared.DTOs
 {
     /// <summary>
     /// DTO for transferring complete person data

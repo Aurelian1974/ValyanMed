@@ -31,6 +31,7 @@ builder.Services.AddScoped<IPersoanaService, PersoanaService>();
 
 // Add this to your service registrations
 builder.Services.AddScoped<Client.Services.JsInteropService>();
+builder.Services.AddScoped<JudetService>();
 
 // Single HttpClient registration
 builder.Services.AddScoped(sp => new HttpClient { 

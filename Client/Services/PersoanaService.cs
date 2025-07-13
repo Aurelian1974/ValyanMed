@@ -1,4 +1,4 @@
-using Client.Models;
+﻿using Client.Models;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -74,18 +74,46 @@ namespace Client.Services
             }
         }
 
-        public async Task<bool> DeletePersoanaAsync(int id)
+        public class DeleteResult
         {
-            try
+            public bool Success { get; set; }
+            public string ErrorMessage { get; set; }
+        }
+
+        public async Task<DeleteResult> DeletePersoanaAsync(int id)
+        {
+            var response = await _httpClient.DeleteAsync($"api/personal/{id}");
+            if (response.IsSuccessStatusCode)
+                return new DeleteResult { Success = true };
+
+            var error = await response.Content.ReadAsStringAsync();
+            return new DeleteResult { Success = false, ErrorMessage = error };
+        }
+
+        private string deleteError;
+
+        private async Task DeletePersoana(int id)
+        {
+            var result = await DeletePersoanaAsync(id);
+            if (!result.Success)
             {
-                var response = await _httpClient.DeleteAsync($"api/personal/{id}");
-                return response.IsSuccessStatusCode;
+                deleteError = result.ErrorMessage;
+                // Poți afișa deleteError într-un alert sau pe pagină
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Error deleting persona with ID {id}: {ex.Message}");
-                throw;
+                deleteError = null;
+                // Reîncarcă lista sau actualizează UI-ul
             }
+        }
+
+        public string RenderDeleteError()
+        {
+            if (!string.IsNullOrEmpty(deleteError))
+            {
+                return $"<div class=\"alert alert-danger\">{deleteError}</div>";
+            }
+            return string.Empty;
         }
     }
 }

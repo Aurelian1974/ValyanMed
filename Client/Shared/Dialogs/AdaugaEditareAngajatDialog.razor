@@ -1,6 +1,8 @@
 ﻿@using Client.Models
+@* @using Shared.DTOs *@
 @using MudBlazor
-@* @using MudBlazor.Dialog *@
+@using global::Shared.DTOs
+@inject JudetService JudetService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -67,7 +69,15 @@
             <MudTabPanel Text="Adresă">
                 <MudGrid>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="@model.Judet" Label="Județ" ReadOnly="@ReadOnly" />
+                        <MudAutocomplete T="string"
+                                         @bind-Value="model.Judet"
+                                         Label="Județ"
+                                         Dense="true"
+                                         Required="true"
+                                         ReadOnly="@ReadOnly"
+                                         ToStringFunc="@(j => j)"
+                                         SearchFunc="SearchJudet"
+                                         Items="judete.Select(j => j.Nume).ToList()" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudTextField @bind-Value="@model.Localitate" Label="Localitate" ReadOnly="@ReadOnly" />
@@ -145,16 +155,18 @@
 @code {
     [CascadingParameter] MudBlazor.IMudDialogInstance MudDialog { get; set; }
 
-    
     [Parameter] public PersoanaModel Angajat { get; set; }
     [Parameter] public bool ReadOnly { get; set; }
     
     private PersoanaModel model = new PersoanaModel();
     private bool submitted = false;
     private bool isBusy = false;
-    
-    protected override void OnInitialized()
+    private List<JudetDto> judete = new();
+
+    protected override async Task OnInitializedAsync()
     {
+        judete = await JudetService.GetAllAsync();
+
         if (Angajat != null)
         {
             model = new PersoanaModel
@@ -222,4 +234,20 @@
     }
     
     void Cancel() => MudDialog.Cancel();
+
+    private Task<IEnumerable<string>> SearchJudet(string value, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(judete.Select(j => j.Nume).AsEnumerable());
+
+        // Match if any word in the county name starts with the search value (case-insensitive)
+        var filtered = judete
+            .Where(j => j.Nume
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Any(word => word.Contains(value, StringComparison.InvariantCultureIgnoreCase)))
+            .Select(j => j.Nume)
+            .AsEnumerable();
+
+        return Task.FromResult(filtered);
+    }
 }

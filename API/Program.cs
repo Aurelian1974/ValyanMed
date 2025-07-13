@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data; // Add this at the top if not present
 using Microsoft.Data.SqlClient;
 using API.Repositories;
 using API.Services;
@@ -28,9 +29,16 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Register IDbConnection for DI
+builder.Services.AddScoped<IDbConnection>(sp =>
+    new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
+
 // Register repositories and services
 builder.Services.AddScoped<IPersoanaRepository, PersoanaRepository>();
 builder.Services.AddScoped<IPersoanaService, PersoanaService>();
+builder.Services.AddScoped<IJudetRepository, JudetRepository>();
+builder.Services.AddScoped<IJudetService, JudetService>();
 builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7294/") });
 

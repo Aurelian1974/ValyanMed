@@ -1,4 +1,4 @@
-using API.DTOs;
+﻿using Shared.DTOs;
 using API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -124,6 +124,7 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<ActionResult> DeletePersonal(int id)
         {
             try
@@ -137,6 +138,11 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
+                var msg = ex.ToString().ToUpperInvariant();
+                if (msg.Contains("REFERENCE") || msg.Contains("CONSTRAINT") || msg.Contains("FK_"))
+                {
+                    return Conflict("Această persoană nu poate fi ștearsă deoarece este asociată cu un utilizator. Ștergeți mai întâi utilizatorul asociat.");
+                }
                 return StatusCode(StatusCodes.Status500InternalServerError, 
                     $"Error deleting personnel record: {ex.Message}");
             }
