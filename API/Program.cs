@@ -6,6 +6,9 @@ using API.Services;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using Swashbuckle.AspNetCore.SwaggerGen; // Add this line
+using Application.Services;
+using Infrastructure.Repositories;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,6 +44,8 @@ builder.Services.AddScoped<IJudetRepository, JudetRepository>();
 builder.Services.AddScoped<IJudetService, JudetService>();
 builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7294/") });
+builder.Services.AddScoped<ILocalitateRepository, LocalitateRepository>();
+builder.Services.AddScoped<ILocalitateService, LocalitateService>();
 
 // CORS policy
 builder.Services.AddCors(options =>

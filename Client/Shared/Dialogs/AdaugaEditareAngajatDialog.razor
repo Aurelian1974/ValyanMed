@@ -1,8 +1,10 @@
 ﻿@using Client.Models
-@* @using Shared.DTOs *@
 @using MudBlazor
 @using global::Shared.DTOs
+@using Client.Services
+@using Syncfusion.Blazor.Grids
 @inject JudetService JudetService
+@inject ILocalitateService LocalitateService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -80,7 +82,16 @@
                                          Items="judete.Select(j => j.Nume).ToList()" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="@model.Localitate" Label="Localitate" ReadOnly="@ReadOnly" />
+                        <MudAutocomplete T="string"
+                                         @bind-Value="model.Localitate"
+                                         Label="Localitate"
+                                         Dense="true"
+                                         Required="true"
+                                         ReadOnly="@ReadOnly"
+                                         ToStringFunc="@(l => l)"
+                                         SearchFunc="SearchLocalitate"
+                                         Items="localitati.Select(l => l.Nume).ToList()" 
+                                         MaxItems="1000"/>
                     </MudItem>
                     <MudItem xs="12" sm="8">
                         <MudTextField @bind-Value="@model.Strada" Label="Strada" ReadOnly="@ReadOnly" />
@@ -131,6 +142,8 @@
                     </MudItem>
                 </MudGrid>
             </MudTabPanel>
+
+            
         </MudTabs>
     </DialogContent>
     <DialogActions>
@@ -162,6 +175,7 @@
     private bool submitted = false;
     private bool isBusy = false;
     private List<JudetDto> judete = new();
+    private List<LocalitateDto> localitati = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -240,7 +254,6 @@
         if (string.IsNullOrWhiteSpace(value))
             return Task.FromResult(judete.Select(j => j.Nume).AsEnumerable());
 
-        // Match if any word in the county name starts with the search value (case-insensitive)
         var filtered = judete
             .Where(j => j.Nume
                 .Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -250,4 +263,25 @@
 
         return Task.FromResult(filtered);
     }
+
+    private async Task<IEnumerable<string>> SearchLocalitate(string value, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(model.Judet))
+            return Enumerable.Empty<string>();
+
+        var judet = judete.FirstOrDefault(j => j.Nume == model.Judet);
+        if (judet == null)
+            return Enumerable.Empty<string>();
+
+        localitati = await LocalitateService.GetByJudetAsync(judet.IdJudet);
+
+        if (string.IsNullOrWhiteSpace(value))
+            return localitati.Select(l => l.Nume);
+
+        return localitati
+            .Where(l => l.Nume.Contains(value, StringComparison.InvariantCultureIgnoreCase))
+            .Select(l => l.Nume);
+    }
+
+    private List<PersoanaModel> angajatiList => new() { model };
 }

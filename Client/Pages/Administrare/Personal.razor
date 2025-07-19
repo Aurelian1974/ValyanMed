@@ -7,6 +7,8 @@
 @inject IPersoanaService PersoanaService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor
 
 <MudText Typo="Typo.h4" Class="mb-4">Administrare Personal</MudText>
 
@@ -35,6 +37,7 @@
         </MudAlert>
     }
 
+    <MudText Typo="Typo.h6" Class="mt-4 mb-2">Grid MudBlazor</MudText>
     <MudDataGrid T="PersoanaModel" Items="@personalListFiltrat"
         MultiSelection="true"
         Dense="true"
@@ -131,7 +134,44 @@
             <MudText>Nu au fost găsite înregistrări care să corespundă criteriilor.</MudText>
         </NoRecordsContent>
     </MudDataGrid>
-</MudPaper>
+
+@*     <MudText Typo="Typo.h6" Class="mt-6 mb-2">Grid Syncfusion</MudText>
+    <SfGrid DataSource="@personalListFiltrat" AllowPaging="true" AllowSorting="true" AllowFiltering="true"
+            PageSettings="@(new GridPageSettings { PageSize = 10 })" Width="100%">
+        <GridColumns>
+            <GridColumn Field=@nameof(PersoanaModel.Nume) HeaderText="Nume" Width="120"></GridColumn>
+            <GridColumn Field=@nameof(PersoanaModel.Prenume) HeaderText="Prenume" Width="120"></GridColumn>
+            <GridColumn Field=@nameof(PersoanaModel.CNP) HeaderText="CNP" Width="120"></GridColumn>
+            <GridColumn Field=@nameof(PersoanaModel.Gen) HeaderText="Gen" Width="80"></GridColumn>
+            <GridColumn Field=@nameof(PersoanaModel.DataNasterii) HeaderText="Data Nașterii" Format="dd.MM.yyyy" Type="ColumnType.Date" Width="120"></GridColumn>
+            <GridColumn Field=@nameof(PersoanaModel.StareCivila) HeaderText="Stare Civilă" Width="120"></GridColumn>
+            <GridColumn Field=@nameof(PersoanaModel.Status) HeaderText="Status" Width="100"></GridColumn>
+            <GridColumn HeaderText="Acțiuni" Width="150">
+                <Template>
+                    <button class="e-btn e-flat" @onclick="() => EditareAngajat((context as PersoanaModel))">Editare</button>
+                    <button class="e-btn e-flat e-danger" @onclick="() => StergereAngajat((context as PersoanaModel))">Ștergere</button>
+                    <button class="e-btn e-flat e-info" @onclick="() => VizualizareAngajat((context as PersoanaModel))">Vizualizare</button>
+                </Template>
+            </GridColumn>
+        </GridColumns>
+        <DetailTemplate Context="angajat">
+             <div style="padding: 16px; background: #f9f9f9;">
+                <b>Tip Act Identitate:</b> @angajat.TipActIdentitate <br />
+                <b>Serie Act Identitate:</b> @angajat.SerieActIdentitate <br />
+                <b>Număr Act Identitate:</b> @angajat.NumarActIdentitate <br />
+                <b>Județ:</b> @angajat.Judet <br />
+                <b>Localitate:</b> @angajat.Localitate <br />
+                <b>Strada:</b> @angajat.Strada <br />
+                <b>Număr Strada:</b> @angajat.NumarStrada <br />
+                <b>Cod Poștal:</b> @angajat.CodPostal <br />
+                <b>Poziție Organizație:</b> @angajat.PozitieOrganizatie <br />
+                <b>Specialitate:</b> @angajat.Specialitate <br />
+                <b>Departament:</b> @angajat.Departament <br />
+                <b>Data Angajării:</b> @(angajat.DataAngajarii?.ToString("dd.MM.yyyy")) <br />
+            </div>
+        </DetailTemplate>
+    </SfGrid>*@
+</MudPaper> 
 
 @if(_evenimente.Count > 0)
 {
@@ -167,6 +207,8 @@
     private string deleteError;
 
     private bool showDeleteError => !string.IsNullOrEmpty(deleteError);
+
+    private PersoanaModel angajat = new PersoanaModel();
 
     protected override async Task OnInitializedAsync()
     {

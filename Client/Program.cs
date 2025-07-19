@@ -7,6 +7,7 @@ using ValyanMed.Client.Services;
 using ValyanMed.Client.Models;
 using Client.Services;
 using Microsoft.AspNetCore.Components.Authorization;
+using Syncfusion.Blazor;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -32,6 +33,7 @@ builder.Services.AddScoped<IPersoanaService, PersoanaService>();
 // Add this to your service registrations
 builder.Services.AddScoped<Client.Services.JsInteropService>();
 builder.Services.AddScoped<JudetService>();
+builder.Services.AddScoped<ILocalitateService, LocalitateService>();
 
 // Single HttpClient registration
 builder.Services.AddScoped(sp => new HttpClient { 
@@ -40,5 +42,7 @@ builder.Services.AddScoped(sp => new HttpClient {
 
 // If you need to test JS interop, add a simple service:
 builder.Services.AddScoped<JsInteropTestService>();
+
+builder.Services.AddSyncfusionBlazor();
 
 await builder.Build().RunAsync();

@@ -23,8 +23,6 @@ namespace Client.Models
         public string NumarActIdentitate { get; set; }
         public string StareCivila { get; set; }
         public string Gen { get; set; }
-        
-        // Additional UI properties
         public string Specialitate { get; set; }
         public string Departament { get; set; }
         public DateTime? DataAngajarii { get; set; } = DateTime.Today;
