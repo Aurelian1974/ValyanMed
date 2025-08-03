@@ -1,11 +1,11 @@
-﻿using FluentValidation;
+﻿using Client.Models;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ValyanMed.Client.Models;
 
-namespace ValyanMed.Client.Validators
+namespace Client.Validators
 {
     public class RegisterModelValidator : AbstractValidator<RegisterModel>
     {

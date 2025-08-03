@@ -40,6 +40,7 @@ builder.Services.AddScoped<IDbConnection>(sp =>
 // Register repositories and services
 builder.Services.AddScoped<IPersoanaRepository, PersoanaRepository>();
 builder.Services.AddScoped<IPersoanaService, PersoanaService>();
+builder.Services.AddScoped<IUtilizatorService, UtilizatorService>();
 builder.Services.AddScoped<IJudetRepository, JudetRepository>();
 builder.Services.AddScoped<IJudetService, JudetService>();
 builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Shared.DTOs;
 
 namespace Client.Services
 {
@@ -43,15 +44,14 @@ namespace Client.Services
             }
         }
 
-        public async Task<int> CreatePersoanaAsync(PersoanaModel persoana)
+        public async Task<PersoanaDTO> CreatePersoanaAsync(CreatePersoanaDTO persoana)
         {
             try
             {
                 var response = await _httpClient.PostAsJsonAsync("api/personal", persoana);
                 response.EnsureSuccessStatusCode();
-
-                var createdPersoana = await response.Content.ReadFromJsonAsync<PersoanaModel>();
-                return createdPersoana?.Id ?? 0;
+                var createdPersoana = await response.Content.ReadFromJsonAsync<PersoanaDTO>();
+                return createdPersoana;
             }
             catch (Exception ex)
             {
@@ -98,12 +98,10 @@ namespace Client.Services
             if (!result.Success)
             {
                 deleteError = result.ErrorMessage;
-                // Poți afișa deleteError într-un alert sau pe pagină
             }
             else
             {
                 deleteError = null;
-                // Reîncarcă lista sau actualizează UI-ul
             }
         }
 

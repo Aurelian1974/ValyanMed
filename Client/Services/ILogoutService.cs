@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
 
-namespace ValyanMed.Client.Services
+namespace Client.Services
 {
     /// <summary>
     /// Interface for authentication providers that support logout functionality
     /// </summary>
-    public interface ILogoutService
+    public interface IClientLogoutService
     {
         /// <summary>
         /// Logs out the current user asynchronously

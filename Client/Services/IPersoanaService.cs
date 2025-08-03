@@ -1,6 +1,7 @@
 using Client.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Shared.DTOs;
 
 namespace Client.Services
 {
@@ -8,7 +9,7 @@ namespace Client.Services
     {
         Task<List<PersoanaModel>> GetAllPersonalAsync();
         Task<PersoanaModel> GetPersoanaByIdAsync(int id);
-        Task<int> CreatePersoanaAsync(PersoanaModel persoana);
+        Task<PersoanaDTO> CreatePersoanaAsync(CreatePersoanaDTO persoana);
         Task<bool> UpdatePersoanaAsync(PersoanaModel persoana);
         Task<PersoanaService.DeleteResult> DeletePersoanaAsync(int id);
     }

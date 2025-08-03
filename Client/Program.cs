@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
 using MudBlazor.Services;
-using ValyanMed.Client.Services;
-using ValyanMed.Client.Models;
+using Client.Models;
 using Client.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Syncfusion.Blazor;
@@ -15,25 +14,29 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddMudServices();
 
 // Register authentication services
-builder.Services.AddScoped<ValyanMed.Client.Services.IAuthService, ValyanMed.Client.Services.AuthService>();
-builder.Services.AddScoped<ValyanMed.Client.Services.ILogoutService, ValyanMed.Client.Services.AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILogoutService, AuthService>();
 
 // Bridge between namespaces using adapter
 builder.Services.AddScoped<Client.Services.ILogoutService>(sp => 
     new Client.Services.LogoutServiceAdapter(
-        sp.GetRequiredService<ValyanMed.Client.Services.ILogoutService>()));
+        sp.GetRequiredService<ILogoutService>()));
 
-builder.Services.AddScoped<AuthenticationStateProvider>(sp => 
-    sp.GetRequiredService<ValyanMed.Client.Services.IAuthService>() as ValyanMed.Client.Services.AuthService);
+builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+    sp.GetRequiredService<IAuthService>() as AuthService);
 builder.Services.AddAuthorizationCore();
 
 builder.Services.AddSingleton<IExceptionHandler>(_ => new LoggingExceptionHandler());
 builder.Services.AddScoped<IPersoanaService, PersoanaService>();
+//builder.Services.AddScoped<IUtilizatorService, UtilizatorService>();
+// Add this line to register the UtilizatorService
+builder.Services.AddScoped<IUtilizatorService, Client.Services.UtilizatorService>();
 
 // Add this to your service registrations
 builder.Services.AddScoped<Client.Services.JsInteropService>();
 builder.Services.AddScoped<JudetService>();
 builder.Services.AddScoped<ILocalitateService, LocalitateService>();
+builder.Services.AddScoped<IPersoanaService, PersoanaService>();
 
 // Single HttpClient registration
 builder.Services.AddScoped(sp => new HttpClient { 

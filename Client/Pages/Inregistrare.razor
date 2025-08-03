@@ -1,14 +1,18 @@
 ﻿@page "/inregistrare"
 @using System.ComponentModel.DataAnnotations
+@using Client.Services
+@using Client.Validators
 @using FluentValidation
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject IAuthService AuthService
 @inject ISnackbar Snackbar
-@using ValyanMed.Client.Models
-@using ValyanMed.Client.Services
-@using ValyanMed.Client.Validators
+@inject IDialogService DialogService
+@inject IPersoanaService PersoanaService
+@using Client.Models
+@using global::Shared.DTOs
 
+@using Client.Shared.Dialogs
 
 <MudPaper Class="signin-container" Elevation="3" Square="false">
     <MudStack Direction="Row" AlignItems="AlignItems.Center" Spacing="0" Class="title-row">
@@ -42,6 +46,35 @@
                       Variant="Variant.Outlined"
                       Class="mb-4" />
 
+        <!-- Person selection with Add New Person button -->
+        <MudGrid Class="mb-4">
+            <MudItem xs="10">
+                <MudSelect T="PersoanaDTO" 
+                          Label="Selectează persoana" 
+                          @bind-Value="_selectedPersoana"
+                          Variant="Variant.Outlined"
+                          AnchorOrigin="Origin.BottomCenter"
+                          Required="true"
+                          Style="width: 100%;">
+                    @if (_persoane != null)
+                    {
+                        @foreach (var persoana in _persoane)
+                        {
+                            <MudSelectItem Value="@persoana">@($"{persoana.Nume} {persoana.Prenume}")</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="2" Style="display: flex; align-items: center;">
+                <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" 
+                              Color="Color.Primary" 
+                              OnClick="@(async () => await AdaugaPersoana())" 
+                              Title="Adaugă persoană nouă"
+                              Disabled="@_isLoading"
+                              Style="margin-top: 10px;" />
+            </MudItem>
+        </MudGrid>
+                        
         <MudTextField @bind-Value="_registerModel.Parola"
                       For="@(() => _registerModel.Parola)"
                       Immediate="true"
@@ -101,6 +134,89 @@
     private bool _isLoading;
     private RegisterModel _registerModel = new();
     private RegisterModelValidator _registerValidator = new();
+    private PersoanaDTO _selectedPersoana;
+    private List<PersoanaDTO> _persoane = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadPersoane();
+    }
+
+    private async Task LoadPersoane()
+    {
+        try
+        {
+            _persoane = await Http.GetFromJsonAsync<List<PersoanaDTO>>("api/persoane") ?? new List<PersoanaDTO>();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Eroare la încărcarea persoanelor: {ex.Message}";
+            Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
+        }
+    }
+
+    private async Task AdaugaPersoana()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Adaugă persoană nouă", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                // Get the model from the dialog
+                var newPersoana = (PersoanaModel)result.Data;
+
+                // Map the model to DTO
+                var createPersoanaDTO = MapToCreateDto(newPersoana);
+
+                // Save the new person to the database
+                var createdPersoana = await PersoanaService.CreatePersoanaAsync(createPersoanaDTO);
+
+                // Adaugă direct în listă și selectează
+                _persoane.Add(createdPersoana);
+                _selectedPersoana = createdPersoana;
+
+                // (opțional) Forțează refresh UI
+                StateHasChanged();
+
+                Snackbar.Add("Persoana a fost adăugată cu succes", MudBlazor.Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"Eroare la adăugarea persoanei: {ex.Message}";
+                Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
+            }
+        }
+    }
+
+    private CreatePersoanaDTO MapToCreateDto(PersoanaModel newPersoana)
+    {
+        return new CreatePersoanaDTO
+        {
+            Nume = newPersoana.Nume,
+            Prenume = newPersoana.Prenume,
+            Judet = newPersoana.Judet,
+            Localitate = newPersoana.Localitate,
+            Strada = newPersoana.Strada,
+            NumarStrada = newPersoana.NumarStrada,
+            CodPostal = newPersoana.CodPostal,
+            PozitieOrganizatie = newPersoana.PozitieOrganizatie,
+            DataNasterii = newPersoana.DataNasterii,
+            CNP = newPersoana.CNP,
+            TipActIdentitate = newPersoana.TipActIdentitate,
+            SerieActIdentitate = newPersoana.SerieActIdentitate,
+            NumarActIdentitate = newPersoana.NumarActIdentitate,
+            StareCivila = newPersoana.StareCivila,
+            Gen = newPersoana.Gen,
+            Specialitate = newPersoana.Specialitate,
+            Departament = newPersoana.Departament,
+            DataAngajarii = newPersoana.DataAngajarii,
+            Status = newPersoana.Status
+        };
+    }
 
     private async Task Submit()
     {
@@ -110,6 +226,13 @@
 
         if (_form.IsValid)
         {
+            if (_selectedPersoana == null)
+            {
+                _errorMessage = "Trebuie să selectați o persoană";
+                _isLoading = false;
+                return;
+            }
+
             try
             {
                 var model = new UtilizatorRegisterDto
@@ -117,7 +240,7 @@
                     NumeUtilizator = _registerModel.NumeUtilizator,
                     Parola = _registerModel.Parola,
                     Email = _registerModel.Email,
-                    PersoanaId = 1
+                    PersoanaId = _selectedPersoana.Id
                 };
 
                 var (success, message) = await AuthService.Register(model);
