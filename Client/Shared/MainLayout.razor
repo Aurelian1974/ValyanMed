@@ -1,5 +1,5 @@
 ﻿@inherits LayoutComponentBase
-@using ValyanMed.Client.Services
+@using Client.Services
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
@@ -60,6 +60,7 @@
             {
                 <div style="margin-left:32px;">
                     <MudNavLink Href="/administrare/personal" Icon="@Icons.Material.Filled.People">Personal</MudNavLink>
+                    <MudNavLink Href="/administrare/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">Utilizatori</MudNavLink>
                     <MudNavLink Href="/administrare/roluri" Icon="@Icons.Material.Filled.GroupWork">Roluri</MudNavLink>
                 </div>
             }
@@ -73,11 +74,11 @@
         </MudContainer>
         
         <!-- Footer -->
-        <MudAppBar Bottom="true" Dense="true" Elevation="1" Color="Color.Transparent" Class="border-top app-footer">
+@*         <MudAppBar Bottom="true" Dense="true" Elevation="1" Color="Color.Transparent" Class="border-top app-footer">
             <MudText Typo="Typo.body2">Versiunea 1.0</MudText>
             <MudSpacer />
             <MudText Typo="Typo.body2">contact@exemplu.ro</MudText>
-        </MudAppBar>
+        </MudAppBar> *@
     </MudMainContent>
 </MudLayout>
 

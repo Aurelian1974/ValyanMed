@@ -1,12 +1,14 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using System.Data;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Configuration;
 using API.Models;
+using API.Services;
+using Shared.DTOs;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -14,11 +16,13 @@ public class UtilizatorController : ControllerBase
 {
     private readonly IConfiguration _config;
     private readonly ILogger<UtilizatorController> _logger;
+    private readonly IUtilizatorService _utilizatorService;
 
-    public UtilizatorController(IConfiguration config, ILogger<UtilizatorController> logger)
+    public UtilizatorController(IConfiguration config, ILogger<UtilizatorController> logger, IUtilizatorService utilizatorService)
     {
         _config = config;
         _logger = logger;
+        _utilizatorService = utilizatorService;
     }
 
     [HttpPost]
@@ -28,41 +32,28 @@ public class UtilizatorController : ControllerBase
 
         try
         {
-            var connectionString = _config.GetConnectionString("DefaultConnection");
-            using var connection = new SqlConnection(connectionString);
-
-            var parolaHash = BCrypt.Net.BCrypt.HashPassword(dto.Parola);
-            _logger.LogInformation("Password hashed.");
-
-            var parameters = new
+            // CreateUtilizatorDTO should have a Parola property for the plain password
+            // The service will handle hashing it to ParolaHash for database storage
+            var createDto = new CreateUtilizatorDTO
             {
                 NumeUtilizator = dto.NumeUtilizator,
-                ParolaHash = parolaHash,
+                Parola = dto.Parola,           // Plain text password
                 Email = dto.Email,
-                PersoanaId = dto.PersoanaId
+                PersoanaId = dto.PersoanaId,
+                Telefon = null                 // Optional field if needed
             };
 
-            _logger.LogInformation("Executing stored procedure usp_Utilizator_Insert with params: {@Params}", parameters);
+            var id = await _utilizatorService.CreateUtilizatorAsync(createDto);
 
-            var rows = await connection.ExecuteAsync(
-                "usp_Utilizator_Insert",
-                parameters,
-                commandType: CommandType.StoredProcedure);
-
-            _logger.LogInformation("Rows affected: {Rows}", rows);
-
-            if (rows > 0)
-                return Ok();
+            if (id > 0)
+                return Ok(new { Success = true, Message = "Utilizator înregistrat cu succes" });
             else
-            {
-                _logger.LogWarning("No rows inserted in database.");
-                return BadRequest("Nu s-a putut insera utilizatorul.");
-            }
+                return BadRequest(new { Success = false, Message = "Nu s-a putut înregistra utilizatorul" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Exception occurred during user registration.");
-            return BadRequest($"Eroare la inserare: {ex.Message}");
+            _logger.LogError(ex, "Exception occurred during user registration");
+            return BadRequest(new { Success = false, Message = $"Eroare la înregistrare: {ex.Message}" });
         }
     }
 
@@ -73,39 +64,27 @@ public class UtilizatorController : ControllerBase
 
         try
         {
-            var connectionString = _config.GetConnectionString("DefaultConnection");
-            using var connection = new SqlConnection(connectionString);
+            // Use the service for authentication instead of direct DB access
+            var authResult = await _utilizatorService.AuthenticateAsync(
+                loginDto.NumeUtilizatorSauEmail, 
+                loginDto.Parola);
 
-            // Verifică dacă utilizatorul există
-            var user = await connection.QueryFirstOrDefaultAsync<UtilizatorDb>(
-                "usp_Utilizator_Authenticate",
-                new { NumeUtilizatorSauEmail = loginDto.NumeUtilizatorSauEmail },
-                commandType: CommandType.StoredProcedure);
-
-            if (user == null)
+            if (!authResult.Success)
             {
-                _logger.LogWarning("User not found: {Username}", loginDto.NumeUtilizatorSauEmail);
-                return Unauthorized("Utilizator sau parolă incorectă");
+                _logger.LogWarning("Authentication failed: {Message}", authResult.Message);
+                return Unauthorized(authResult.Message);
             }
 
-            // Verifică parola
-            bool isValidPassword = BCrypt.Net.BCrypt.Verify(loginDto.Parola, user.ParolaHash);
-            if (!isValidPassword)
-            {
-                _logger.LogWarning("Invalid password for user: {Username}", loginDto.NumeUtilizatorSauEmail);
-                return Unauthorized("Utilizator sau parolă incorectă");
-            }
+            // Generate JWT token
+            var token = GenerateJwtToken(authResult.User);
 
-            // Generează token JWT
-            var token = GenerateJwtToken(user);
-
-            // Returnează rezultatul autentificării
+            // Return authentication result
             var result = new AuthResponseDto
             {
                 Token = token,
-                NumeUtilizator = user.NumeUtilizator,
-                NumeComplet = $"{user.Nume} {user.Prenume}",
-                Email = user.Email
+                NumeUtilizator = authResult.User.NumeUtilizator,
+                NumeComplet = authResult.NumeComplet,
+                Email = authResult.User.Email
             };
 
             _logger.LogInformation("Login successful for user: {Username}", loginDto.NumeUtilizatorSauEmail);
@@ -118,6 +97,78 @@ public class UtilizatorController : ControllerBase
         }
     }
 
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<UtilizatorDTO>>> GetAll()
+    {
+        try
+        {
+            var utilizatori = await _utilizatorService.GetAllUtilizatoriAsync();
+            return Ok(utilizatori);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all users");
+            return StatusCode(500, $"Error retrieving users: {ex.Message}");
+        }
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<UtilizatorDTO>> GetById(int id)
+    {
+        try
+        {
+            var utilizator = await _utilizatorService.GetUtilizatorByIdAsync(id);
+            
+            if (utilizator == null)
+                return NotFound($"User with ID {id} not found");
+                
+            return Ok(utilizator);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error getting user with id {id}");
+            return StatusCode(500, $"Error retrieving user: {ex.Message}");
+        }
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> Update([FromBody] UpdateUtilizatorDTO dto)
+    {
+        try
+        {
+            var success = await _utilizatorService.UpdateUtilizatorAsync(dto);
+            
+            if (success)
+                return Ok(new { Success = true, Message = "Utilizator actualizat cu succes" });
+            else
+                return BadRequest(new { Success = false, Message = "Nu s-a putut actualiza utilizatorul" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating user");
+            return StatusCode(500, $"Error updating user: {ex.Message}");
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            var success = await _utilizatorService.DeleteUtilizatorAsync(id);
+            
+            if (success)
+                return Ok(new { Success = true, Message = "Utilizator șters cu succes" });
+            else
+                return NotFound(new { Success = false, Message = "Utilizatorul nu a fost găsit" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting user with id {id}");
+            return StatusCode(500, $"Error deleting user: {ex.Message}");
+        }
+    }
+
     private string GenerateJwtToken(UtilizatorDb user)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
@@ -127,7 +178,7 @@ public class UtilizatorController : ControllerBase
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.NumeUtilizator),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
             new Claim("fullName", $"{user.Nume} {user.Prenume}"),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };

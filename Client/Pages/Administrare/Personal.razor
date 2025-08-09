@@ -1,14 +1,16 @@
 ﻿@page "/administrare/personal"
-@using MudBlazor
 @using System.ComponentModel.DataAnnotations
 @using Client.Models
+@using Client.Services
 @using Client.Shared.Dialogs
+@using MudBlazor
 @using Client.Services
 @inject IPersoanaService PersoanaService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @using Syncfusion.Blazor.Grids
 @using Syncfusion.Blazor
+@using global::Shared.DTOs
 
 <MudText Typo="Typo.h4" Class="mb-4">Administrare Personal</MudText>
 
@@ -37,7 +39,7 @@
         </MudAlert>
     }
 
-    <MudText Typo="Typo.h6" Class="mt-4 mb-2">Grid MudBlazor</MudText>
+    
     <MudDataGrid T="PersoanaModel" Items="@personalListFiltrat"
         MultiSelection="true"
         Dense="true"
@@ -404,8 +406,30 @@
             try
             {
                 _loading = true;
-                var id = await PersoanaService.CreatePersoanaAsync(newAngajat);
-                newAngajat.Id = id;
+                var createPersoanaDTO = new CreatePersoanaDTO
+                {
+                    Nume = newAngajat.Nume,
+                    Prenume = newAngajat.Prenume,
+                    Judet = newAngajat.Judet,
+                    Localitate = newAngajat.Localitate,
+                    Strada = newAngajat.Strada,
+                    NumarStrada = newAngajat.NumarStrada,
+                    CodPostal = newAngajat.CodPostal,
+                    PozitieOrganizatie = newAngajat.PozitieOrganizatie,
+                    DataNasterii = newAngajat.DataNasterii,
+                    CNP = newAngajat.CNP,
+                    TipActIdentitate = newAngajat.TipActIdentitate,
+                    SerieActIdentitate = newAngajat.SerieActIdentitate,
+                    NumarActIdentitate = newAngajat.NumarActIdentitate,
+                    StareCivila = newAngajat.StareCivila,
+                    Gen = newAngajat.Gen,
+                    Specialitate = newAngajat.Specialitate,
+                    Departament = newAngajat.Departament,
+                    DataAngajarii = newAngajat.DataAngajarii,
+                    Status = newAngajat.Status
+                };
+                var createdPersoana = await PersoanaService.CreatePersoanaAsync(createPersoanaDTO);
+                newAngajat.Id = createdPersoana.Id;
                 personalList.Add(newAngajat);
                 personalListFiltrat = personalList; // Update filtered list directly since search panel was removed
                 Snackbar.Add("Angajat adăugat cu succes", Severity.Success);

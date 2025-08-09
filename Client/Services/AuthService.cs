@@ -5,9 +5,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
-using ValyanMed.Client.Models;
+using Client.Models;
 
-namespace ValyanMed.Client.Services
+namespace Client.Services
 {
     public class AuthService : AuthenticationStateProvider, IAuthService, ILogoutService
     {

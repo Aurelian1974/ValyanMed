@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace ValyanMed.Client.Services
+namespace Client.Services
 {
     public interface IAuthService
     {

@@ -1,4 +1,4 @@
-namespace ValyanMed.Client.Models
+namespace Client.Models
 {
     public class LoginDto
     {
