@@ -135,9 +135,13 @@
         </NoRecordsContent>
     </MudDataGrid>
 
-@*     <MudText Typo="Typo.h6" Class="mt-6 mb-2">Grid Syncfusion</MudText>
-    <SfGrid DataSource="@personalListFiltrat" AllowPaging="true" AllowSorting="true" AllowFiltering="true"
+    @* <MudText Typo="Typo.h6" Class="mt-6 mb-2">Grid Syncfusion</MudText> *@
+    @* <SfGrid DataSource="@personalListFiltrat" AllowPaging="true" AllowSorting="true" AllowFiltering="true"
             PageSettings="@(new GridPageSettings { PageSize = 10 })" Width="100%">
+        <GridEvents TValue="PersoanaModel"></GridEvents>
+        <GridDetailRows>
+            <GridDetailRow></GridDetailRow>
+        </GridDetailRows>
         <GridColumns>
             <GridColumn Field=@nameof(PersoanaModel.Nume) HeaderText="Nume" Width="120"></GridColumn>
             <GridColumn Field=@nameof(PersoanaModel.Prenume) HeaderText="Prenume" Width="120"></GridColumn>
@@ -154,23 +158,76 @@
                 </Template>
             </GridColumn>
         </GridColumns>
-        <DetailTemplate Context="angajat">
-             <div style="padding: 16px; background: #f9f9f9;">
-                <b>Tip Act Identitate:</b> @angajat.TipActIdentitate <br />
-                <b>Serie Act Identitate:</b> @angajat.SerieActIdentitate <br />
-                <b>Număr Act Identitate:</b> @angajat.NumarActIdentitate <br />
-                <b>Județ:</b> @angajat.Judet <br />
-                <b>Localitate:</b> @angajat.Localitate <br />
-                <b>Strada:</b> @angajat.Strada <br />
-                <b>Număr Strada:</b> @angajat.NumarStrada <br />
-                <b>Cod Poștal:</b> @angajat.CodPostal <br />
-                <b>Poziție Organizație:</b> @angajat.PozitieOrganizatie <br />
-                <b>Specialitate:</b> @angajat.Specialitate <br />
-                <b>Departament:</b> @angajat.Departament <br />
-                <b>Data Angajării:</b> @(angajat.DataAngajarii?.ToString("dd.MM.yyyy")) <br />
+        <GridDetailTemplate Context="angajat">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; background-color: #f9f9f9;">
+                <div style="flex: 1; min-width: 300px; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="padding: 8px 16px; background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Informații personale</div>
+                    <div style="padding: 16px;">
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Tip Act Identitate:</div>
+                            <div>@angajat.TipActIdentitate</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Serie Act:</div>
+                            <div>@angajat.SerieActIdentitate</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Număr Act:</div>
+                            <div>@angajat.NumarActIdentitate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="flex: 1; min-width: 300px; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="padding: 8px 16px; background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Adresa</div>
+                    <div style="padding: 16px;">
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Județ:</div>
+                            <div>@angajat.Judet</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Localitate:</div>
+                            <div>@angajat.Localitate</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Strada:</div>
+                            <div>@angajat.Strada</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Număr:</div>
+                            <div>@angajat.NumarStrada</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Cod Poștal:</div>
+                            <div>@angajat.CodPostal</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="flex: 1; min-width: 300px; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                    <div style="padding: 8px 16px; background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Informații profesionale</div>
+                    <div style="padding: 16px;">
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Poziție:</div>
+                            <div>@angajat.PozitieOrganizatie</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Specialitate:</div>
+                            <div>@angajat.Specialitate</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Departament:</div>
+                            <div>@angajat.Departament</div>
+                        </div>
+                        <div style="display: flex; margin-bottom: 8px;">
+                            <div style="font-weight: bold; width: 140px;">Data Angajării:</div>
+                            <div>@(angajat.DataAngajarii?.ToString("dd.MM.yyyy"))</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </DetailTemplate>
-    </SfGrid>*@
+        </GridDetailTemplate>
+    </SfGrid> *@
 </MudPaper> 
 
 @if(_evenimente.Count > 0)
