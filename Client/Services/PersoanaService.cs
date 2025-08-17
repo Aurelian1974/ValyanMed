@@ -60,7 +60,7 @@ namespace Client.Services
             }
         }
 
-        public async Task<bool> UpdatePersoanaAsync(PersoanaModel persoana)
+        public async Task<bool> UpdatePersoanaAsync(UpdatePersoanaDTO persoana)
         {
             try
             {

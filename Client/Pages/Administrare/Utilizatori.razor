@@ -20,15 +20,15 @@
                   Color="Color.Success" 
                   StartIcon="@Icons.Material.Filled.Add" 
                   OnClick="AdaugaUtilizator" 
-                  Disabled="@_loading">Adaugă utilizator</MudButton>
+                  Disabled="@_loading">Adauga utilizator</MudButton>
     </MudToolBar>
 
     @if (_loadError)
     {
         <MudAlert Severity="Severity.Error" Class="mb-3">
-            Nu s-a putut încărca lista de utilizatori. @_errorMessage
+            Nu s-a putut incarca lista de utilizatori. @_errorMessage
             <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="LoadUtilizatoriAsync" Class="ml-auto">
-                Încearcă din nou
+                Incearca din nou
             </MudButton>
         </MudAlert>
     }
@@ -36,11 +36,12 @@
     @if (utilizatoriListFiltrat.Count == 0 && !_loading && !_loadError)
     {
         <MudAlert Severity="Severity.Info" Dense="true">
-            Nu există utilizatori înregistrați.
+            Nu exista utilizatori inregistrati.
         </MudAlert>
     }
 
     <MudDataGrid T="UtilizatorDTO" Items="@utilizatoriListFiltrat"
+                @key="@(_refreshKey)"
                 Dense="true"
                 Hover="true"
                 Bordered="true"
@@ -53,7 +54,7 @@
                 LoadingProgressColor="Color.Primary">
 
         <ToolBarContent>
-            <MudTextField @bind-Value="_searchString" Placeholder="Caută"
+            <MudTextField @bind-Value="_searchString" Placeholder="Cauta"
                          Adornment="Adornment.Start"
                          AdornmentIcon="@Icons.Material.Filled.Search"
                          IconSize="Size.Medium"
@@ -65,11 +66,11 @@
             <PropertyColumn Property="x => x.NumeUtilizator" Title="Nume Utilizator" />
             <PropertyColumn Property="x => x.Email" Title="Email" />
             <PropertyColumn Property="x => x.Telefon" Title="Telefon" />
-            <PropertyColumn Property="x => x.NumeComplet" Title="Persoană Asociată" />
+            <PropertyColumn Property="x => x.NumeComplet" Title="Persoana Asociata" />
             <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy HH:mm:ss" />
             <PropertyColumn Property="x => x.DataModificare" Title="Data Modificare" Format="dd.MM.yyyy HH:mm:ss" />
 
-            <PropertyColumn T="UtilizatorDTO" TProperty="string" Title="Acțiuni" Sortable="false">
+            <PropertyColumn T="UtilizatorDTO" TProperty="string" Title="Actiuni" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                   OnClick="@(() => EditareUtilizator(@context.Item))" Disabled="@_loading" />
@@ -82,7 +83,7 @@
             <MudDataGridPager T="UtilizatorDTO" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
         </PagerContent>
         <NoRecordsContent>
-            <MudText>Nu au fost găsite înregistrări care să corespundă criteriilor.</MudText>
+            <MudText>Nu au fost gasite inregistrari care sa corespunda criteriilor.</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
@@ -90,7 +91,7 @@
 @if(_evenimente.Count > 0)
 {
     <MudExpansionPanels Class="mt-4">
-        <MudExpansionPanel Text="Jurnal activități" IsInitiallyExpanded="false">
+        <MudExpansionPanel Text="Jurnal activitati" IsInitiallyExpanded="false">
             @foreach (var mesaj in _evenimente)
             {
                 <MudText Typo="@Typo.body2">@mesaj</MudText>
@@ -98,7 +99,7 @@
             <div class="d-flex">
                 <MudSpacer />
                 <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" 
-                          OnClick="@(() => _evenimente.Clear())">Golește jurnal</MudButton>
+                          OnClick="@(() => _evenimente.Clear())">Goleste jurnal</MudButton>
             </div>
         </MudExpansionPanel>
     </MudExpansionPanels>
@@ -113,6 +114,7 @@
     private bool _loading = false;
     private bool _loadError = false;
     private string _errorMessage = "";
+    private int _refreshKey = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -129,20 +131,21 @@
         try
         {
             utilizatoriList = await UtilizatorService.GetAllUtilizatoriAsync();
-            utilizatoriListFiltrat = utilizatoriList;
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Date încărcate cu succes: {utilizatoriList.Count} utilizatori");
+            utilizatoriListFiltrat = new List<UtilizatorDTO>(utilizatoriList); // Create a new list reference
+            _refreshKey++; // Increment refresh key to force complete grid rebuild
+            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Date incarcate cu succes: {utilizatoriList.Count} utilizatori");
         }
         catch (Exception ex)
         {
             _loadError = true;
             _errorMessage = ex.Message;
-            Snackbar.Add($"Eroare la încărcarea datelor: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Eroare la incarcarea datelor: {ex.Message}", Severity.Error);
             _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
         }
         finally
         {
             _loading = false;
-            StateHasChanged();
+            StateHasChanged(); // Ensure UI is updated
         }
     }
 
@@ -155,7 +158,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Eroare la încărcarea persoanelor: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Eroare la incarcarea persoanelor: {ex.Message}", Severity.Error);
         }
     }
 
@@ -172,13 +175,13 @@
 
     private async Task AdaugaUtilizator()
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Inițiere adăugare utilizator nou");
+        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Initiere adaugare utilizator nou");
         
         var parameters = new DialogParameters();
         parameters.Add("Persoane", persoane);
         
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<AdaugaEditareUtilizatorDialog>("Adaugă utilizator nou", parameters, options);
+        var dialog = DialogService.Show<AdaugaEditareUtilizatorDialog>("Adauga utilizator nou", parameters, options);
         var result = await dialog.Result;
         
         if (!result.Canceled)
@@ -193,12 +196,12 @@
                 // Reload the list after adding
                 await LoadUtilizatoriAsync();
                 
-                Snackbar.Add("Utilizator adăugat cu succes", Severity.Success);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator adăugat: {createUtilizatorDTO.NumeUtilizator}");
+                Snackbar.Add("Utilizator adaugat cu succes", Severity.Success);
+                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator adaugat: {createUtilizatorDTO.NumeUtilizator}");
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Eroare la adăugarea utilizatorului: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Eroare la adaugarea utilizatorului: {ex.Message}", Severity.Error);
                 _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
@@ -217,7 +220,7 @@
         parameters.Add("Persoane", persoane);
         
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<AdaugaEditareUtilizatorDialog>("Editează utilizator", parameters, options);
+        var dialog = DialogService.Show<AdaugaEditareUtilizatorDialog>("Editeaza utilizator", parameters, options);
         var result = await dialog.Result;
         
         if (!result.Canceled)
@@ -227,15 +230,44 @@
                 _loading = true;
                 var updateUtilizatorDTO = (UpdateUtilizatorDTO)result.Data;
                 
-                var success = await UtilizatorService.UpdateUtilizatorAsync(updateUtilizatorDTO);
+                // Log the data being sent for debugging
+                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Request data: ID={updateUtilizatorDTO.Id}, " +
+                    $"User={updateUtilizatorDTO.NumeUtilizator}, Email={updateUtilizatorDTO.Email}, " +
+                    $"PersoanaId={updateUtilizatorDTO.PersoanaId}, HasPassword={(string.IsNullOrEmpty(updateUtilizatorDTO.Parola) ? "No" : "Yes")}");
                 
-                if (success)
+                try
                 {
-                    // Reload the list after updating
-                    await LoadUtilizatoriAsync();
+                    var success = await UtilizatorService.UpdateUtilizatorAsync(updateUtilizatorDTO);
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - API response: {(success ? "Success" : "Failed")}");
                     
-                    Snackbar.Add("Utilizator actualizat cu succes", Severity.Success);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator actualizat: {updateUtilizatorDTO.NumeUtilizator}");
+                    if (success)
+                    {
+                        // Force complete refresh from server
+                        utilizatoriList.Clear(); // Clear the list first
+                        utilizatoriListFiltrat = new List<UtilizatorDTO>(); // Create empty filtered list to trigger UI update
+                        _refreshKey++; // Increment the refresh key to force UI update
+                        StateHasChanged(); // Force UI to update with empty list
+                        
+                        // Then reload the data
+                        await LoadUtilizatoriAsync();
+                        
+                        // Additional StateHasChanged to ensure UI updates
+                        StateHasChanged();
+                        
+                        Snackbar.Add("Utilizator actualizat cu succes", Severity.Success);
+                        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator actualizat: {updateUtilizatorDTO.NumeUtilizator}");
+                    }
+                    else
+                    {
+                        Snackbar.Add("Actualizarea utilizatorului a esuat", Severity.Error);
+                        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: Actualizarea utilizatorului a esuat");
+                    }
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    // More detailed HTTP error information
+                    Snackbar.Add($"Eroare HTTP: {httpEx.StatusCode} - {httpEx.Message}", Severity.Error);
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare HTTP: {httpEx.StatusCode} - {httpEx.Message}");
                 }
             }
             catch (Exception ex)
@@ -246,23 +278,24 @@
             finally
             {
                 _loading = false;
+                StateHasChanged(); // Additional StateHasChanged in finally block
             }
         }
     }
 
     private async Task StergereUtilizator(UtilizatorDTO utilizator)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Ștergere utilizator: {utilizator.NumeUtilizator}");
+        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Stergere utilizator: {utilizator.NumeUtilizator}");
         
         var parameters = new DialogParameters
         {
-            { "ContentText", $"Sigur doriți să ștergeți utilizatorul {utilizator.NumeUtilizator}?" },
-            { "ButtonText", "Șterge" },
+            { "ContentText", $"Sigur doriti sa stergeti utilizatorul {utilizator.NumeUtilizator}?" },
+            { "ButtonText", "Sterge" },
             { "Color", Color.Error }
         };
         
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
-        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare ștergere", parameters, options).Result;
+        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare stergere", parameters, options).Result;
         
         if (!dialogResult.Canceled)
         {
@@ -277,18 +310,18 @@
                     utilizatoriList.RemoveAll(u => u.Id == utilizator.Id);
                     utilizatoriListFiltrat = utilizatoriList.ToList();
                     
-                    Snackbar.Add("Utilizator șters cu succes", Severity.Success);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator șters: {utilizator.NumeUtilizator}");
+                    Snackbar.Add("Utilizator sters cu succes", Severity.Success);
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator sters: {utilizator.NumeUtilizator}");
                 }
                 else
                 {
                     Snackbar.Add(result.ErrorMessage, Severity.Error);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la ștergere: {result.ErrorMessage}");
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la stergere: {result.ErrorMessage}");
                 }
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Eroare la ștergerea utilizatorului: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Eroare la stergerea utilizatorului: {ex.Message}", Severity.Error);
                 _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally

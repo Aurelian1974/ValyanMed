@@ -5,14 +5,14 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            @(Utilizator?.Id > 0 ? "Editare utilizator" : "Adaugă utilizator nou")
+            @(Utilizator?.Id > 0 ? "Editare utilizator" : "Adauga utilizator nou")
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form">
             <MudGrid>
                 <MudItem xs="12">
-                    <MudSelect T="int" Label="Persoană asociată" @bind-Value="_persoanaId" Required="true">
+                    <MudSelect T="int" Label="Persoana asociata" @bind-Value="_persoanaId" Required="true">
                         @if (Persoane != null)
                         {
                             @foreach (var persoana in Persoane)
@@ -41,7 +41,7 @@
                     @if (Utilizator != null)
                     {
                         <MudText Typo="Typo.caption" Color="Color.Info">
-                            Lăsați gol pentru a păstra parola neschimbată
+                            Lasati gol pentru a pastra parola neschimbata
                         </MudText>
                     }
                 </MudItem>
@@ -49,16 +49,16 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Anulează</MudButton>
+        <MudButton OnClick="Cancel">Anuleaza</MudButton>
         <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@_isBusy">
             @if (_isBusy)
             {
                 <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                <MudText Class="ms-2">Se procesează...</MudText>
+                <MudText Class="ms-2">Se proceseaza...</MudText>
             }
             else
             {
-                <MudText>Salvează</MudText>
+                <MudText>Salveaza</MudText>
             }
         </MudButton>
     </DialogActions>
@@ -141,6 +141,7 @@
                     var updateDto = new UpdateUtilizatorDTO
                     {
                         Id = _id.Value,
+                        Guid = Utilizator.Guid, // Make sure to include the Guid
                         PersoanaId = _persoanaId,
                         NumeUtilizator = _numeUtilizator,
                         Email = _email,
@@ -165,13 +166,13 @@
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"A apărut o eroare: {ex.Message}", Severity.Error);
+                Snackbar.Add($"A aparut o eroare: {ex.Message}", Severity.Error);
                 _isBusy = false;
             }
         }
         else
         {
-            Snackbar.Add("Vă rugăm să completați toate câmpurile obligatorii", Severity.Warning);
+            Snackbar.Add("Va rugam sa completati toate câmpurile obligatorii", Severity.Warning);
         }
     }
 

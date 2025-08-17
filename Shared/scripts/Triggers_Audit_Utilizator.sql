@@ -7,7 +7,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Inseră în tabela de audit câmpurile modificate
+    -- Insera în tabela de audit câmpurile modificate
     INSERT INTO Audit_Utilizator (
         UtilizatorId,
         Actiune,
@@ -41,7 +41,7 @@ BEGIN
         ISNULL(d.Telefon, '') <> ISNULL(o.Telefon, '') OR
         ISNULL(d.ParolaHash, '') <> ISNULL(o.ParolaHash, '');
 
-    -- Exemplu extensibil: se pot adăuga coloane separate pentru valoare veche / nouă dacă se dorește
+    -- Exemplu extensibil: se pot adauga coloane separate pentru valoare veche / noua daca se dorește
 END;
 GO
 

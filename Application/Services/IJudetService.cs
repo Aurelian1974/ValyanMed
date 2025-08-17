@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Shared.DTOs;
 
-public interface IJudetService
+namespace Application.Services
 {
-    Task<IEnumerable<JudetDto>> GetAllAsync();
+    public interface IJudetService
+    {
+        Task<IEnumerable<JudetDto>> GetAllAsync();
+    }
 }

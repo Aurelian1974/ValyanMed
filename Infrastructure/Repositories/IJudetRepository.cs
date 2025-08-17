@@ -1,8 +1,2 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Shared.DTOs;
-
-public interface IJudetRepository
-{
-    Task<IEnumerable<JudetDto>> GetAllAsync();
-}
+// Moved to Core.Interfaces.IJudetRepository as part of Clean Architecture refactor.
+namespace Infrastructure.Repositories { }

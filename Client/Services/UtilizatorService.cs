@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Client.Services
@@ -32,17 +33,56 @@ namespace Client.Services
             
             if (response.IsSuccessStatusCode)
             {
-                var responseContent = await response.Content.ReadFromJsonAsync<dynamic>();
-                return 1; // Assuming success means 1 record was inserted
+                try
+                {
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var doc = await JsonDocument.ParseAsync(stream);
+                    if (doc.RootElement.TryGetProperty("Id", out var idProp) && idProp.TryGetInt32(out var id))
+                        return id;
+                }
+                catch { /* ignore and fall back */ }
+                return 1; // fallback for older API response without Id
             }
             
-            throw new Exception("Failed to create utilizator");
+            var err = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Failed to create utilizator: {response.StatusCode} {err}");
         }
 
         public async Task<bool> UpdateUtilizatorAsync(UpdateUtilizatorDTO utilizator)
         {
-            var response = await _httpClient.PutAsJsonAsync("api/utilizator", utilizator);
-            return response.IsSuccessStatusCode;
+            try 
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/utilizator/{utilizator.Id}", utilizator);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    return true;
+                }
+                
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error updating user: {response.StatusCode}, Details: {errorContent}");
+                
+                try
+                {
+                    using var stream = await response.Content.ReadAsStreamAsync();
+                    using var doc = await JsonDocument.ParseAsync(stream);
+                    var message = doc.RootElement.TryGetProperty("message", out var msgEl) ? msgEl.GetString() : "Eroare necunoscuta";
+                    throw new Exception(message);
+                }
+                catch (JsonException)
+                {
+                    throw new Exception($"Eroare HTTP {response.StatusCode}: {errorContent}");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP Exception in UpdateUtilizatorAsync: {ex.Message}");
+                throw new Exception($"Eroare de conexiune: {ex.Message}");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<DeleteResult> DeleteUtilizatorAsync(int id)
@@ -59,7 +99,7 @@ namespace Client.Services
                 { 
                     Success = false, 
                     ErrorMessage = response.StatusCode == System.Net.HttpStatusCode.Conflict
-                        ? "Acest utilizator nu poate fi șters deoarece este asociat cu alte înregistrări."
+                        ? "Acest utilizator nu poate fi șters deoarece este asociat cu alte înregistrari."
                         : $"Eroare la ștergere: {errorContent}"
                 };
             }

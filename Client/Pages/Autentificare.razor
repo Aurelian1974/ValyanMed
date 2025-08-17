@@ -44,7 +44,7 @@
                 @if (_isLoading)
                 {
                     <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                    <MudText Class="ms-2">Se procesează...</MudText>
+                    <MudText Class="ms-2">Se proceseaza...</MudText>
                 }
                 else
                 {
@@ -55,8 +55,8 @@
         </MudStack>
         <MudDivider Class="mb-4" />
         <MudText>
-            Nu ai încă cont de utilizator?
-            <MudLink Href="/inregistrare">Creează cont</MudLink>
+            Nu ai inca cont de utilizator?
+            <MudLink Href="/inregistrare">Creeaza cont</MudLink>
         </MudText>
     </MudForm>
 </MudPaper>
@@ -103,12 +103,12 @@
 
                 if (success)
                 {
-                    // Adaugă aici pentru debugging
+                    // Adauga aici pentru debugging
                     Console.WriteLine($"Token received: {token?.Substring(0, 20)}...");
                     
-                    Snackbar.Add("Autentificare reușită!", MudBlazor.Severity.Success);
+                    Snackbar.Add("Autentificare reusita!", MudBlazor.Severity.Success);
                     
-                    // Forțează un reload pentru a asigura preluarea noii stări
+                    // Forteaza un reload pentru a asigura preluarea noii stari
                     Navigation.NavigateTo("/dashboard", forceLoad: true);
                 }
                 else
@@ -119,7 +119,7 @@
             }
             catch (Exception ex)
             {
-                _errorMessage = $"A apărut o eroare: {ex.Message}";
+                _errorMessage = $"A aparut o eroare: {ex.Message}";
                 Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
             }
         }

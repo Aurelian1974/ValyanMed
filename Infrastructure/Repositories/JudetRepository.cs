@@ -3,21 +3,25 @@ using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using Shared.DTOs;
+using Core.Interfaces;
 
-public class JudetRepository : IJudetRepository
+namespace Infrastructure.Repositories
 {
-    private readonly IDbConnection _db;
-
-    public JudetRepository(IDbConnection db)
+    public class JudetRepository : IJudetRepository
     {
-        _db = db;
-    }
+        private readonly IDbConnection _db;
 
-    public async Task<IEnumerable<JudetDto>> GetAllAsync()
-    {
-        return await _db.QueryAsync<JudetDto>(
-            "dbo.GetAllJudete",
-            commandType: CommandType.StoredProcedure
-        );
+        public JudetRepository(IDbConnection db)
+        {
+            _db = db;
+        }
+
+        public async Task<IEnumerable<JudetDto>> GetAllAsync()
+        {
+            return await _db.QueryAsync<JudetDto>(
+                "dbo.GetAllJudete",
+                commandType: System.Data.CommandType.StoredProcedure
+            );
+        }
     }
 }

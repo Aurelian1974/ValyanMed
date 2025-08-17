@@ -21,7 +21,7 @@
         
         @if (IsLoggedIn && !IsAuthenticationPage)
         {
-            <!-- Informații utilizator și delogare - vizibile doar când utilizatorul este autentificat și nu e pe pagina de autentificare -->
+            <!-- Informatii utilizator și delogare - vizibile doar când utilizatorul este autentificat și nu e pe pagina de autentificare -->
             <div class="user-profile">
                 <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
                 <MudText>@(UserFullName ?? "Utilizator")</MudText>
@@ -45,12 +45,28 @@
         </MudDrawerHeader>
         <MudNavMenu Disabled="@(!IsLoggedIn)">
             <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Disabled="@(!IsLoggedIn)">Dashboard</MudNavLink>
-            <MudNavLink Href="/pacienti" Icon="@Icons.Material.Filled.People" Disabled="@(!IsLoggedIn)">Pacienți</MudNavLink>
+            <MudNavLink Href="/pacienti" Icon="@Icons.Material.Filled.People" Disabled="@(!IsLoggedIn)">Pacienti</MudNavLink>
             <MudNavLink Href="/rapoarte" Icon="@Icons.Material.Filled.Assessment" Disabled="@(!IsLoggedIn)">Rapoarte</MudNavLink>
             <MudNavLink Href="/facturare" Icon="@Icons.Material.Filled.Receipt" Disabled="@(!IsLoggedIn)">Facturare</MudNavLink>
-            <MudNavLink Href="/setari" Icon="@Icons.Material.Filled.Settings" Disabled="@(!IsLoggedIn)">Setări</MudNavLink>
 
-            <!-- Buton Administrare cu structură arborescentă -->
+            <!-- Farmacie submenu under Facturare -->
+            <MudNavLink Icon="@Icons.Material.Filled.LocalPharmacy" @onclick="@ToggleFarmacieMenu" Class="admin-nav-link">
+                Farmacie
+            </MudNavLink>
+            @if (_farmacieExpanded)
+            {
+                <div style="margin-left:32px;">
+                    <MudNavLink Href="/farmacie/medicamente" Icon="@Icons.Material.Filled.Medication">Medicamente</MudNavLink>
+                    <MudNavLink Href="/farmacie/materiale-sanitare" Icon="@Icons.Material.Filled.MedicalServices">Materiale sanitare</MudNavLink>
+                    <MudNavLink Href="/farmacie/dispozitive-medicale" Icon="@Icons.Material.Filled.MedicalInformation">Dispozitive medicale</MudNavLink>
+                    <MudNavLink Href="/farmacie/documente-intrare" Icon="@Icons.Material.Filled.Input">Documente intrare</MudNavLink>
+                    <MudNavLink Href="/farmacie/documente-iesire" Icon="@Icons.Material.Filled.Output">Documente ieșire</MudNavLink>
+                </div>
+            }
+
+            <MudNavLink Href="/setari" Icon="@Icons.Material.Filled.Settings" Disabled="@(!IsLoggedIn)">Setari</MudNavLink>
+
+            <!-- Buton Administrare cu structura arborescenta -->
             <MudNavLink Icon="@Icons.Material.Filled.AdminPanelSettings"
                         @onclick="@ToggleAdminMenu"
                         Class="admin-nav-link">
@@ -87,16 +103,17 @@
     private string UserName { get; set; }
     private string UserFullName { get; set; }
     private bool _adminExpanded = false;
+    private bool _farmacieExpanded = false;
     private bool IsAuthenticationPage => 
         NavigationManager.Uri.EndsWith("/") || 
         NavigationManager.Uri.EndsWith("/autentificare");
 
     protected override async Task OnInitializedAsync()
     {
-        // Încarcă CSS-ul specific pentru acest layout
+        // Încarca CSS-ul specific pentru acest layout
         await JSRuntime.InvokeVoidAsync("loadCSS", "css/mainlayout.css");
         
-        // Verifică dacă utilizatorul este autentificat
+        // Verifica daca utilizatorul este autentificat
         await CheckAuthenticationStatus();
         
         // Test the JS interop is working
@@ -110,7 +127,7 @@
     {
         if (firstRender)
         {
-            // Verifică din nou starea de autentificare după primul render
+            // Verifica din nou starea de autentificare dupa primul render
             await CheckAuthenticationStatus();
             StateHasChanged();
         }
@@ -120,19 +137,19 @@
     {
         try
         {
-            // Obține token-ul din localStorage
+            // Obtine token-ul din localStorage
             var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
             
-            // Setează starea de autentificare pe baza existenței token-ului
+            // Seteaza starea de autentificare pe baza existentei token-ului
             IsLoggedIn = !string.IsNullOrEmpty(token);
             
             if (IsLoggedIn)
             {
-                // Obține informațiile utilizatorului din localStorage
+                // Obtine informatiile utilizatorului din localStorage
                 UserName = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userName") ?? "Utilizator";
                 UserFullName = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userFullName") ?? UserName;
                 
-                // Dacă suntem pe pagina de autentificare și utilizatorul e autentificat, redirecționează către dashboard
+                // Daca suntem pe pagina de autentificare și utilizatorul e autentificat, redirectioneaza catre dashboard
                 if (IsAuthenticationPage)
                 {
                     NavigationManager.NavigateTo("/dashboard");
@@ -140,18 +157,18 @@
             }
             else 
             {
-                // Dacă nu este autentificat și încearcă să acceseze o pagină protejată
+                // Daca nu este autentificat și încearca sa acceseze o pagina protejata
                 if (!IsAuthenticationPage && !NavigationManager.Uri.EndsWith("/inregistrare"))
                 {
                     NavigationManager.NavigateTo("/");
                 }
             }
             
-            StateHasChanged(); // Asigură-te că UI-ul se actualizează
+            StateHasChanged(); // Asigura-te ca UI-ul se actualizeaza
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Eroare la verificarea autentificării: {ex.Message}");
+            Console.WriteLine($"Eroare la verificarea autentificarii: {ex.Message}");
         }
     }
 
@@ -163,4 +180,5 @@
     }
 
     void ToggleAdminMenu() => _adminExpanded = !_adminExpanded;
+    void ToggleFarmacieMenu() => _farmacieExpanded = !_farmacieExpanded;
 }

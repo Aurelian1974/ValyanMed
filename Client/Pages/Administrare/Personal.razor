@@ -8,8 +8,6 @@
 @inject IPersoanaService PersoanaService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
-@using Syncfusion.Blazor.Grids
-@using Syncfusion.Blazor
 @using global::Shared.DTOs
 
 <MudText Typo="Typo.h4" Class="mb-4">Administrare Personal</MudText>
@@ -19,15 +17,15 @@
         <MudText Typo="Typo.h6">Lista personalului (@personalListFiltrat.Count)</MudText>
         <MudSpacer />
         <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" 
-                  OnClick="AdaugaAngajat" Disabled="@_loading">Adaugă angajat</MudButton>
+                  OnClick="AdaugaAngajat" Disabled="@_loading">Adauga angajat</MudButton>
     </MudToolBar>
 
     @if (_loadError)
     {
         <MudAlert Severity="Severity.Error" Class="mb-3">
-            Nu s-a putut încărca lista de personal. @_errorMessage
+            Nu s-a putut incarca lista de personal. @_errorMessage
             <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="LoadPersonalAsync" Class="ml-auto">
-                Încearcă din nou
+                Incearca din nou
             </MudButton>
         </MudAlert>
     }
@@ -35,11 +33,11 @@
     @if (personalListFiltrat.Count == 0 && !_loading && !_loadError)
     {
         <MudAlert Severity="Severity.Info" Dense="true">
-            Nu există personal înregistrat.
+            Nu exista personal inregistrat.
         </MudAlert>
     }
 
-    
+    <!-- MudBlazor DataGrid -->
     <MudDataGrid T="PersoanaModel" Items="@personalListFiltrat"
         MultiSelection="true"
         Dense="true"
@@ -56,7 +54,7 @@
         SelectedItemsChanged="@SelectedItemsChanged">
 
         <ToolBarContent>
-            <MudTextField @bind-Value="_searchString" Placeholder="Caută"
+            <MudTextField @bind-Value="_searchString" Placeholder="Cauta"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           IconSize="Size.Medium"
@@ -71,27 +69,27 @@
             <PropertyColumn Property="x => x.Prenume" Title="Prenume" Filterable="true" Groupable="true" />
             <PropertyColumn Property="x => x.CNP" Title="CNP" Filterable="true" Groupable="true" />
             <PropertyColumn Property="x => x.Gen" Title="Gen" Filterable="true" Groupable="true" />
-            <PropertyColumn Property="x => x.DataNasterii" Title="Data Nașterii" Format="dd.MM.yyyy" Filterable="true" Groupable="true" />
-            <PropertyColumn Property="x => x.StareCivila" Title="Stare Civilă" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.DataNasterii" Title="Data Nasterii" Format="dd.MM.yyyy" Filterable="true" Groupable="true" />
+            <PropertyColumn Property="x => x.StareCivila" Title="Stare Civila" Filterable="true" Groupable="true" />
             <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy" Filterable="true" Groupable="true" />
             <PropertyColumn Property="x => x.DataModificare" Title="Data Modificare" Format="dd.MM.yyyy HH:mm:ss" Filterable="true" Groupable="true" />
 
             <!-- Coloane din detaliu, dar Hidden, pentru grupare -->
             <PropertyColumn Property="x => x.TipActIdentitate" Title="Tip Act" Hidden="true" Groupable="true" />
             <PropertyColumn Property="x => x.SerieActIdentitate" Title="Serie Act" Hidden="true" Groupable="true" />
-            <PropertyColumn Property="x => x.NumarActIdentitate" Title="Număr Act" Hidden="true" Groupable="true" />
-            <PropertyColumn Property="x => x.Judet" Title="Județ" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.NumarActIdentitate" Title="Numar Act" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.Judet" Title="Judet" Hidden="true" Groupable="true" />
             <PropertyColumn Property="x => x.Localitate" Title="Localitate" Hidden="true" Groupable="true" />
             <PropertyColumn Property="x => x.Strada" Title="Strada" Hidden="true" Groupable="true" />
-            <PropertyColumn Property="x => x.NumarStrada" Title="Număr Strada" Hidden="true" Groupable="true" />
-            <PropertyColumn Property="x => x.CodPostal" Title="Cod Poștal" Hidden="true" Groupable="true" />
-            <PropertyColumn Property="x => x.PozitieOrganizatie" Title="Poziție" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.NumarStrada" Title="Numar Strada" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.CodPostal" Title="Cod Postal" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.PozitieOrganizatie" Title="Pozitie" Hidden="true" Groupable="true" />
             <PropertyColumn Property="x => x.Specialitate" Title="Specialitate" Hidden="true" Groupable="true" />
             <PropertyColumn Property="x => x.Departament" Title="Departament" Hidden="true" Groupable="true" />
-            <PropertyColumn Property="x => x.DataAngajarii" Title="Data Angajării" Format="dd.MM.yyyy" Hidden="true" Groupable="true" />
+            <PropertyColumn Property="x => x.DataAngajarii" Title="Data Angajarii" Format="dd.MM.yyyy" Hidden="true" Groupable="true" />
             <PropertyColumn Property="x => x.Status" Title="Status" Hidden="true" Groupable="true" />
 
-            <PropertyColumn T="PersoanaModel" TProperty="string" Title="Acțiuni" Sortable="false">
+            <PropertyColumn T="PersoanaModel" TProperty="string" Title="Actiuni" Sortable="false">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                   OnClick="@(() => EditareAngajat(@context.Item))" Disabled="@_loading" />
@@ -111,18 +109,18 @@
                     <MudItem xs="12" sm="6">
                         <MudText><b>Tip Act Identitate:</b> @context.Item.TipActIdentitate</MudText>
                         <MudText><b>Serie Act Identitate:</b> @context.Item.SerieActIdentitate</MudText>
-                        <MudText><b>Număr Act Identitate:</b> @context.Item.NumarActIdentitate</MudText>
-                        <MudText><b>Județ:</b> @context.Item.Judet</MudText>
+                        <MudText><b>Numar Act Identitate:</b> @context.Item.NumarActIdentitate</MudText>
+                        <MudText><b>Judet:</b> @context.Item.Judet</MudText>
                         <MudText><b>Localitate:</b> @context.Item.Localitate</MudText>
                         <MudText><b>Strada:</b> @context.Item.Strada</MudText>
-                        <MudText><b>Număr Strada:</b> @context.Item.NumarStrada</MudText>
-                        <MudText><b>Cod Poștal:</b> @context.Item.CodPostal</MudText>
+                        <MudText><b>Numar Strada:</b> @context.Item.NumarStrada</MudText>
+                        <MudText><b>Cod Postal:</b> @context.Item.CodPostal</MudText>
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudText><b>Poziție Organizație:</b> @context.Item.PozitieOrganizatie</MudText>
+                        <MudText><b>Pozitie Organizatie:</b> @context.Item.PozitieOrganizatie</MudText>
                         <MudText><b>Specialitate:</b> @context.Item.Specialitate</MudText>
                         <MudText><b>Departament:</b> @context.Item.Departament</MudText>
-                        <MudText><b>Data Angajării:</b> @FormatDate(context.Item.DataAngajarii ?? DateTime.MinValue)</MudText>
+                        <MudText><b>Data Angajarii:</b> @FormatDate(context.Item.DataAngajarii ?? DateTime.MinValue)</MudText>
                         <MudText><b>Status:</b> @context.Item.Status</MudText>
                     </MudItem>
                 </MudGrid>
@@ -133,109 +131,15 @@
             <MudDataGridPager T="PersoanaModel" PageSizeOptions="new int[] { 10, 25, 50, 100 }" />
         </PagerContent>
         <NoRecordsContent>
-            <MudText>Nu au fost găsite înregistrări care să corespundă criteriilor.</MudText>
+            <MudText>Nu au fost gasite inregistrari care sa corespunda criteriilor.</MudText>
         </NoRecordsContent>
     </MudDataGrid>
-
-    @* <MudText Typo="Typo.h6" Class="mt-6 mb-2">Grid Syncfusion</MudText> *@
-    @* <SfGrid DataSource="@personalListFiltrat" AllowPaging="true" AllowSorting="true" AllowFiltering="true"
-            PageSettings="@(new GridPageSettings { PageSize = 10 })" Width="100%">
-        <GridEvents TValue="PersoanaModel"></GridEvents>
-        <GridDetailRows>
-            <GridDetailRow></GridDetailRow>
-        </GridDetailRows>
-        <GridColumns>
-            <GridColumn Field=@nameof(PersoanaModel.Nume) HeaderText="Nume" Width="120"></GridColumn>
-            <GridColumn Field=@nameof(PersoanaModel.Prenume) HeaderText="Prenume" Width="120"></GridColumn>
-            <GridColumn Field=@nameof(PersoanaModel.CNP) HeaderText="CNP" Width="120"></GridColumn>
-            <GridColumn Field=@nameof(PersoanaModel.Gen) HeaderText="Gen" Width="80"></GridColumn>
-            <GridColumn Field=@nameof(PersoanaModel.DataNasterii) HeaderText="Data Nașterii" Format="dd.MM.yyyy" Type="ColumnType.Date" Width="120"></GridColumn>
-            <GridColumn Field=@nameof(PersoanaModel.StareCivila) HeaderText="Stare Civilă" Width="120"></GridColumn>
-            <GridColumn Field=@nameof(PersoanaModel.Status) HeaderText="Status" Width="100"></GridColumn>
-            <GridColumn HeaderText="Acțiuni" Width="150">
-                <Template>
-                    <button class="e-btn e-flat" @onclick="() => EditareAngajat((context as PersoanaModel))">Editare</button>
-                    <button class="e-btn e-flat e-danger" @onclick="() => StergereAngajat((context as PersoanaModel))">Ștergere</button>
-                    <button class="e-btn e-flat e-info" @onclick="() => VizualizareAngajat((context as PersoanaModel))">Vizualizare</button>
-                </Template>
-            </GridColumn>
-        </GridColumns>
-        <GridDetailTemplate Context="angajat">
-            <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; background-color: #f9f9f9;">
-                <div style="flex: 1; min-width: 300px; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="padding: 8px 16px; background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Informații personale</div>
-                    <div style="padding: 16px;">
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Tip Act Identitate:</div>
-                            <div>@angajat.TipActIdentitate</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Serie Act:</div>
-                            <div>@angajat.SerieActIdentitate</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Număr Act:</div>
-                            <div>@angajat.NumarActIdentitate</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="flex: 1; min-width: 300px; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="padding: 8px 16px; background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Adresa</div>
-                    <div style="padding: 16px;">
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Județ:</div>
-                            <div>@angajat.Judet</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Localitate:</div>
-                            <div>@angajat.Localitate</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Strada:</div>
-                            <div>@angajat.Strada</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Număr:</div>
-                            <div>@angajat.NumarStrada</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Cod Poștal:</div>
-                            <div>@angajat.CodPostal</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="flex: 1; min-width: 300px; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    <div style="padding: 8px 16px; background-color: #f0f0f0; font-weight: bold; border-bottom: 1px solid #e0e0e0;">Informații profesionale</div>
-                    <div style="padding: 16px;">
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Poziție:</div>
-                            <div>@angajat.PozitieOrganizatie</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Specialitate:</div>
-                            <div>@angajat.Specialitate</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Departament:</div>
-                            <div>@angajat.Departament</div>
-                        </div>
-                        <div style="display: flex; margin-bottom: 8px;">
-                            <div style="font-weight: bold; width: 140px;">Data Angajării:</div>
-                            <div>@(angajat.DataAngajarii?.ToString("dd.MM.yyyy"))</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </GridDetailTemplate>
-    </SfGrid> *@
-</MudPaper> 
+</MudPaper>
 
 @if(_evenimente.Count > 0)
 {
     <MudExpansionPanels Class="mt-4">
-        <MudExpansionPanel Text="Jurnal activități" IsInitiallyExpanded="false">
+        <MudExpansionPanel Text="Jurnal activitati" IsInitiallyExpanded="false">
             @foreach (var mesaj in _evenimente)
             {
                 <MudText Typo="@Typo.body2">@mesaj</MudText>
@@ -243,7 +147,7 @@
             <div class="d-flex">
                 <MudSpacer />
                 <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" 
-                          OnClick="@(() => _evenimente.Clear())">Golește jurnal</MudButton>
+                          OnClick="@(() => _evenimente.Clear())">Goleste jurnal</MudButton>
             </div>
         </MudExpansionPanel>
     </MudExpansionPanels>
@@ -265,8 +169,6 @@
     private string _errorMessage = "";
     private string deleteError;
 
-    private bool showDeleteError => !string.IsNullOrEmpty(deleteError);
-
     private PersoanaModel angajat = new PersoanaModel();
 
     protected override async Task OnInitializedAsync()
@@ -285,13 +187,13 @@
         {
             personalList = await PersoanaService.GetAllPersonalAsync();
             personalListFiltrat = personalList;
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Date încărcate cu succes: {personalList.Count} angajați");
+            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Date incarcate cu succes: {personalList.Count} angajati");
         }
         catch (Exception ex)
         {
             _loadError = true;
             _errorMessage = ex.Message;
-            Snackbar.Add($"Eroare la încărcarea datelor: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Eroare la incarcarea datelor: {ex.Message}", Severity.Error);
             _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
         }
         finally
@@ -299,6 +201,17 @@
             _loading = false;
             StateHasChanged();
         }
+    }
+
+    private string GetStatusBadgeColor(string status)
+    {
+        return status switch
+        {
+            "Activ" => "#28a745",
+            "Inactiv" => "#dc3545",
+            "In concediu" => "#ffc107",
+            _ => "#6c757d"
+        };
     }
 
     private void AplicaFiltre()
@@ -340,7 +253,7 @@
         {
             "Activ" => Color.Success,
             "Inactiv" => Color.Error,
-            "În concediu" => Color.Warning,
+            "In concediu" => Color.Warning,
             _ => Color.Default
         };
     }
@@ -368,7 +281,7 @@
         else
         {
             deleteError = null;
-            // Reîncarcă lista sau actualizează UI-ul
+            // Reincarca lista sau actualizeaza UI-ul
         }
     }
 
@@ -380,24 +293,24 @@
     // Event handlers
     void RowClicked(DataGridRowClickEventArgs<PersoanaModel> args)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Click pe rândul {args.RowIndex}: {args.Item.Nume} {args.Item.Prenume}");
+        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - MudBlazor: Click pe randul {args.RowIndex}: {args.Item.Nume} {args.Item.Prenume}");
     }
 
     void SelectedItemsChanged(HashSet<PersoanaModel> items)
     {
         if (items.Count > 0)
         {
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - {items.Count} angajați selectați");
+            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - MudBlazor: {items.Count} angajati selectati");
         }
     }
 
     async Task AdaugaAngajat()
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Inițiere adăugare angajat nou");
+        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Initiere adaugare angajat nou");
         
         var parameters = new DialogParameters();
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Adaugă angajat nou", parameters, options);
+        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Adauga angajat nou", parameters, options);
         var result = await dialog.Result;
         
         if (!result.Canceled)
@@ -406,38 +319,17 @@
             try
             {
                 _loading = true;
-                var createPersoanaDTO = new CreatePersoanaDTO
-                {
-                    Nume = newAngajat.Nume,
-                    Prenume = newAngajat.Prenume,
-                    Judet = newAngajat.Judet,
-                    Localitate = newAngajat.Localitate,
-                    Strada = newAngajat.Strada,
-                    NumarStrada = newAngajat.NumarStrada,
-                    CodPostal = newAngajat.CodPostal,
-                    PozitieOrganizatie = newAngajat.PozitieOrganizatie,
-                    DataNasterii = newAngajat.DataNasterii,
-                    CNP = newAngajat.CNP,
-                    TipActIdentitate = newAngajat.TipActIdentitate,
-                    SerieActIdentitate = newAngajat.SerieActIdentitate,
-                    NumarActIdentitate = newAngajat.NumarActIdentitate,
-                    StareCivila = newAngajat.StareCivila,
-                    Gen = newAngajat.Gen,
-                    Specialitate = newAngajat.Specialitate,
-                    Departament = newAngajat.Departament,
-                    DataAngajarii = newAngajat.DataAngajarii,
-                    Status = newAngajat.Status
-                };
+                var createPersoanaDTO = newAngajat.ToCreateDto();
                 var createdPersoana = await PersoanaService.CreatePersoanaAsync(createPersoanaDTO);
                 newAngajat.Id = createdPersoana.Id;
                 personalList.Add(newAngajat);
-                personalListFiltrat = personalList; // Update filtered list directly since search panel was removed
-                Snackbar.Add("Angajat adăugat cu succes", Severity.Success);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat adăugat: {newAngajat.Nume} {newAngajat.Prenume}");
+                personalListFiltrat = personalList;
+                Snackbar.Add("Angajat adaugat cu succes", Severity.Success);
+                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat adaugat: {newAngajat.Nume} {newAngajat.Prenume}");
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Eroare la adăugarea angajatului: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Eroare la adaugarea angajatului: {ex.Message}", Severity.Error);
                 _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
@@ -454,7 +346,7 @@
         var parameters = new DialogParameters();
         parameters.Add("Angajat", angajat);
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Editează angajat", parameters, options);
+        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Editeaza angajat", parameters, options);
         var result = await dialog.Result;
         
         if (!result.Canceled)
@@ -463,14 +355,15 @@
             try
             {
                 _loading = true;
-                var success = await PersoanaService.UpdatePersoanaAsync(updatedAngajat);
+                var updateDto = updatedAngajat.ToUpdateDto();
+                var success = await PersoanaService.UpdatePersoanaAsync(updateDto);
                 if (success)
                 {
                     var index = personalList.FindIndex(p => p.Id == updatedAngajat.Id);
                     if (index >= 0)
                     {
                         personalList[index] = updatedAngajat;
-                        personalListFiltrat = personalList; // Update filtered list directly
+                        personalListFiltrat = personalList;
                     }
                     Snackbar.Add("Angajat actualizat cu succes", Severity.Success);
                     _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat actualizat: {updatedAngajat.Nume} {updatedAngajat.Prenume}");
@@ -490,17 +383,17 @@
 
     async Task StergereAngajat(PersoanaModel angajat)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Ștergere angajat: {angajat.Nume} {angajat.Prenume}");
+        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Stergere angajat: {angajat.Nume} {angajat.Prenume}");
         
         var parameters = new DialogParameters
         {
-            { "ContentText", $"Sigur doriți să ștergeți angajatul {angajat.Nume} {angajat.Prenume}?" },
-            { "ButtonText", "Șterge" },
+            { "ContentText", $"Sigur doriti sa stergeti angajatul {angajat.Nume} {angajat.Prenume}?" },
+            { "ButtonText", "Sterge" },
             { "Color", Color.Error }
         };
         
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
-        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare ștergere", parameters, options).Result;
+        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare stergere", parameters, options).Result;
         
         if (!dialogResult.Canceled)
         {
@@ -511,20 +404,20 @@
                 if (result.Success)
                 {
                     personalList.Remove(angajat);
-                    personalListFiltrat = personalList.ToList(); // Create a new reference to ensure UI updates
-                    Snackbar.Add("Angajat șters cu succes", Severity.Success);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat șters: {angajat.Nume} {angajat.Prenume}");
+                    personalListFiltrat = personalList.ToList();
+                    Snackbar.Add("Angajat sters cu succes", Severity.Success);
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat sters: {angajat.Nume} {angajat.Prenume}");
                 }
                 else
                 {
                     deleteError = result.ErrorMessage;
                     Snackbar.Add(deleteError, Severity.Error);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la ștergere: {deleteError}");
+                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la stergere: {deleteError}");
                 }
             }
             catch (Exception ex)
             {
-                Snackbar.Add($"Eroare la ștergerea angajatului: {ex.Message}", Severity.Error);
+                Snackbar.Add($"Eroare la stergerea angajatului: {ex.Message}", Severity.Error);
                 _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally

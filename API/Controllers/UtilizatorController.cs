@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using API.Models;
 using API.Services;
 using Shared.DTOs;
+using System.Collections.Generic;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,27 +27,26 @@ public class UtilizatorController : ControllerBase
     }
 
     [HttpPost]
+    [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UtilizatorRegisterDto dto)
     {
         _logger.LogInformation("Register endpoint called. Data: {@Dto}", dto);
 
         try
         {
-            // CreateUtilizatorDTO should have a Parola property for the plain password
-            // The service will handle hashing it to ParolaHash for database storage
             var createDto = new CreateUtilizatorDTO
             {
                 NumeUtilizator = dto.NumeUtilizator,
-                Parola = dto.Parola,           // Plain text password
+                Parola = dto.Parola,
                 Email = dto.Email,
                 PersoanaId = dto.PersoanaId,
-                Telefon = null                 // Optional field if needed
+                Telefon = null
             };
 
             var id = await _utilizatorService.CreateUtilizatorAsync(createDto);
 
             if (id > 0)
-                return Ok(new { Success = true, Message = "Utilizator înregistrat cu succes" });
+                return Ok(new { Success = true, Id = id, Message = "Utilizator înregistrat cu succes" });
             else
                 return BadRequest(new { Success = false, Message = "Nu s-a putut înregistra utilizatorul" });
         }
@@ -64,7 +64,6 @@ public class UtilizatorController : ControllerBase
 
         try
         {
-            // Use the service for authentication instead of direct DB access
             var authResult = await _utilizatorService.AuthenticateAsync(
                 loginDto.NumeUtilizatorSauEmail, 
                 loginDto.Parola);
@@ -75,10 +74,8 @@ public class UtilizatorController : ControllerBase
                 return Unauthorized(authResult.Message);
             }
 
-            // Generate JWT token
             var token = GenerateJwtToken(authResult.User);
 
-            // Return authentication result
             var result = new AuthResponseDto
             {
                 Token = token,
@@ -131,22 +128,64 @@ public class UtilizatorController : ControllerBase
         }
     }
 
-    [HttpPut]
-    public async Task<IActionResult> Update([FromBody] UpdateUtilizatorDTO dto)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateUtilizatorDTO dto)
     {
         try
         {
+            _logger.LogInformation("=== UPDATE CONTROLLER DEBUG ===");
+            _logger.LogInformation("URL ID: {UserId}", id);
+            _logger.LogInformation("DTO ID: {DtoId}", dto.Id);
+            _logger.LogInformation("DTO NumeUtilizator: {NumeUtilizator}", dto.NumeUtilizator);
+            _logger.LogInformation("DTO Email: {Email}", dto.Email);
+            _logger.LogInformation("DTO Telefon: {Telefon}", dto.Telefon);
+            _logger.LogInformation("DTO PersoanaId: {PersoanaId}", dto.PersoanaId);
+            _logger.LogInformation("DTO Guid: {Guid}", dto.Guid);
+            _logger.LogInformation("DTO HasPassword: {HasPassword}", !string.IsNullOrWhiteSpace(dto.Parola));
+            
+            if (id != dto.Id)
+            {
+                _logger.LogWarning("ID mismatch: URL ID {UrlId} vs DTO ID {DtoId}", id, dto.Id);
+                return BadRequest(new { Success = false, Message = "ID din URL nu corespunde cu ID din date" });
+            }
+
             var success = await _utilizatorService.UpdateUtilizatorAsync(dto);
             
+            _logger.LogInformation("Service returned: {Success}", success);
+            
             if (success)
+            {
+                _logger.LogInformation("User {UserId} updated successfully", id);
                 return Ok(new { Success = true, Message = "Utilizator actualizat cu succes" });
+            }
             else
+            {
+                _logger.LogWarning("Failed to update user {UserId} - no rows affected", id);
                 return BadRequest(new { Success = false, Message = "Nu s-a putut actualiza utilizatorul" });
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating user");
-            return StatusCode(500, $"Error updating user: {ex.Message}");
+            _logger.LogError(ex, "Error updating user {UserId}. Exception: {ExceptionMessage}", id, ex.Message);
+            
+            if (ex.Message.Contains("Numele de utilizator exista deja"))
+            {
+                return Conflict(new { Success = false, Message = "Numele de utilizator exista deja" });
+            }
+            if (ex.Message.Contains("Adresa de email exista deja"))
+            {
+                return Conflict(new { Success = false, Message = "Adresa de email exista deja" });
+            }
+            if (ex.Message.Contains("Persoana asociata nu exista"))
+            {
+                return BadRequest(new { Success = false, Message = "Persoana asociata nu exista" });
+            }
+            if (ex.Message.Contains("Utilizatorul nu a fost gasit"))
+            {
+                return NotFound(new { Success = false, Message = "Utilizatorul nu a fost gasit" });
+            }
+            
+            return StatusCode(500, new { Success = false, Message = $"Eroare interna: {ex.Message}" });
         }
     }
 
@@ -160,7 +199,7 @@ public class UtilizatorController : ControllerBase
             if (success)
                 return Ok(new { Success = true, Message = "Utilizator șters cu succes" });
             else
-                return NotFound(new { Success = false, Message = "Utilizatorul nu a fost găsit" });
+                return NotFound(new { Success = false, Message = "Utilizatorul nu a fost gasit" });
         }
         catch (Exception ex)
         {

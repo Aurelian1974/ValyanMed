@@ -87,7 +87,7 @@ code {
     text-align: start;
 }
 .signin-container {
-    max-width: 520px; /* Mărește pentru mai mult spațiu */
+    max-width: 520px; /* Marește pentru mai mult spatiu */
     margin: 6rem auto;
     padding: 2.5rem 2.5rem 2rem 2.5rem;
     border-radius: 1.5rem;
@@ -98,7 +98,7 @@ code {
 .signin-title {
     font-size: 1.75rem !important;
     font-weight: 700 !important;
-    margin: 0 !important; /* Elimină toate marginile */
+    margin: 0 !important; /* Elimina toate marginile */
     padding: 0 !important;
     line-height: 1.2 !important;
     flex: 1 !important;
@@ -144,7 +144,7 @@ code {
 .logo-img-inline {
     height: 200px !important;
     width: auto !important;
-    margin: 0 !important; /* Elimină toate marginile */
+    margin: 0 !important; /* Elimina toate marginile */
     padding: 0 !important;
     flex-shrink: 0 !important;
     vertical-align: middle !important;
@@ -167,7 +167,7 @@ code {
     flex-wrap: nowrap !important;
     width: 100% !important;
     margin-bottom: 2rem !important;
-    gap: 1rem !important; /* Spațiu consistent între elemente */
+    gap: 1rem !important; /* Spatiu consistent între elemente */
 }
 
 .back-btn-container {
@@ -179,7 +179,7 @@ code {
     align-self: flex-start;
 }
 
-/* Resetează stilurile MudBlazor care pot interfere */
+/* Reseteaza stilurile MudBlazor care pot interfere */
 .title-row .mud-typography {
     margin-bottom: 0 !important;
     margin-top: 0 !important;
@@ -190,7 +190,7 @@ code {
     margin-top: 0 !important;
 }
 
-/* Pentru debugging - aplică background temporar pentru a vedea spațiul ocupat */
+/* Pentru debugging - aplica background temporar pentru a vedea spatiul ocupat */
 /*.debug .title-row {
     background-color: rgba(255, 0, 0, 0.1) !important;
 }

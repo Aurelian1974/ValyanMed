@@ -1,17 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
+using Application.Services;
 
-[ApiController]
-[Route("api/[controller]")]
-public class JudetController : ControllerBase
+namespace API.Controllers
 {
-    private readonly IJudetService _service;
-    public JudetController(IJudetService service) => _service = service;
-
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<JudetDto>>> GetAll()
+    [ApiController]
+    [Route("api/[controller]")]
+    public class JudetController : ControllerBase
     {
-        var result = await _service.GetAllAsync();
-        return Ok(result);
+        private readonly IJudetService _service;
+        public JudetController(IJudetService service) => _service = service;
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<JudetDto>>> GetAll()
+        {
+            var result = await _service.GetAllAsync();
+            return Ok(result);
+        }
     }
 }

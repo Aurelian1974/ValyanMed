@@ -29,6 +29,7 @@ namespace Shared.DTOs
     public class UpdateUtilizatorDTO : IUtilizatorModel
     {
         public int Id { get; set; }
+        public Guid Guid { get; set; } // Add this property
         public int PersoanaId { get; set; }
         public string NumeUtilizator { get; set; }
         public string Parola { get; set; }

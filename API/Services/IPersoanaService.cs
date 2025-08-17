@@ -1,15 +1,4 @@
-using Shared.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Application.Services;
 
-namespace API.Services
-{
-    public interface IPersoanaService
-    {
-        Task<IEnumerable<PersoanaDTO>> GetAllPersonalAsync();
-        Task<PersoanaDTO> GetPersonaByIdAsync(int id);
-        Task<int> CreatePersonaAsync(CreatePersoanaDTO personaDto);
-        Task<bool> UpdatePersonaAsync(UpdatePersoanaDTO personaDto);
-        Task<bool> DeletePersonaAsync(int id);
-    }
-}
+// NOTE: This interface was moved to the Application layer for Clean Architecture.
+// This file remains to avoid broken file references. All usages should reference Application.Services.IPersoanaService.

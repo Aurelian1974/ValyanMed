@@ -6,11 +6,11 @@ using MudBlazor.Services;
 using Client.Models;
 using Client.Services;
 using Microsoft.AspNetCore.Components.Authorization;
-using Syncfusion.Blazor;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+
 builder.Services.AddMudServices();
 
 // Register authentication services
@@ -28,24 +28,21 @@ builder.Services.AddAuthorizationCore();
 
 builder.Services.AddSingleton<IExceptionHandler>(_ => new LoggingExceptionHandler());
 builder.Services.AddScoped<IPersoanaService, PersoanaService>();
-//builder.Services.AddScoped<IUtilizatorService, UtilizatorService>();
-// Add this line to register the UtilizatorService
 builder.Services.AddScoped<IUtilizatorService, Client.Services.UtilizatorService>();
 
-// Add this to your service registrations
 builder.Services.AddScoped<Client.Services.JsInteropService>();
 builder.Services.AddScoped<JudetService>();
 builder.Services.AddScoped<ILocalitateService, LocalitateService>();
 builder.Services.AddScoped<IPersoanaService, PersoanaService>();
+
+// Medicament client
+builder.Services.AddScoped<IMedicamentClient, MedicamentClient>();
 
 // Single HttpClient registration
 builder.Services.AddScoped(sp => new HttpClient { 
     BaseAddress = new Uri(builder.Configuration["ApiUrl"] ?? "https://localhost:7294/") 
 });
 
-// If you need to test JS interop, add a simple service:
 builder.Services.AddScoped<JsInteropTestService>();
-
-builder.Services.AddSyncfusionBlazor();
 
 await builder.Build().RunAsync();

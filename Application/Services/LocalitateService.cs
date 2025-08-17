@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Shared.DTOs;
-using Application.Services;
-using Infrastructure.Repositories;
+using Core.Interfaces;
 
 namespace Application.Services
 {

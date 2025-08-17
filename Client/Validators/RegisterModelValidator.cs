@@ -13,7 +13,7 @@ namespace Client.Validators
         {
             RuleFor(x => x.NumeUtilizator)
                 .NotEmpty().WithMessage("Numele de utilizator este obligatoriu")
-                .MaximumLength(50).WithMessage("Numele de utilizator nu poate depăși 50 de caractere");
+                .MaximumLength(50).WithMessage("Numele de utilizator nu poate depași 50 de caractere");
 
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email-ul este obligatoriu")
@@ -21,8 +21,8 @@ namespace Client.Validators
 
             RuleFor(x => x.Parola)
                 .NotEmpty().WithMessage("Parola este obligatorie")
-                .MinimumLength(6).WithMessage("Parola trebuie să aibă minim 6 caractere")
-                .MaximumLength(100).WithMessage("Parola nu poate depăși 100 de caractere");
+                .MinimumLength(6).WithMessage("Parola trebuie sa aiba minim 6 caractere")
+                .MaximumLength(100).WithMessage("Parola nu poate depași 100 de caractere");
 
             RuleFor(x => x.ConfirmaParola)
                 .NotEmpty().WithMessage("Confirmarea parolei este obligatorie")

@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Data; // Add this at the top if not present
 using Microsoft.Data.SqlClient;
-using API.Repositories;
-using API.Services;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using Swashbuckle.AspNetCore.SwaggerGen; // Add this line
 using Application.Services;
 using Infrastructure.Repositories;
+using Core.Interfaces;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,16 +36,20 @@ builder.Services.AddScoped<IDbConnection>(sp =>
     new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-// Register repositories and services
-builder.Services.AddScoped<IPersoanaRepository, PersoanaRepository>();
-builder.Services.AddScoped<IPersoanaService, PersoanaService>();
-builder.Services.AddScoped<IUtilizatorService, UtilizatorService>();
-builder.Services.AddScoped<IJudetRepository, JudetRepository>();
-builder.Services.AddScoped<IJudetService, JudetService>();
-builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7294/") });
-builder.Services.AddScoped<ILocalitateRepository, LocalitateRepository>();
-builder.Services.AddScoped<ILocalitateService, LocalitateService>();
+// Register repositories (Infrastructure) against Core interfaces
+builder.Services.AddScoped<Core.Interfaces.IPersoanaRepository, Infrastructure.Repositories.PersoanaRepository>();
+builder.Services.AddScoped<Core.Interfaces.IJudetRepository, Infrastructure.Repositories.JudetRepository>();
+builder.Services.AddScoped<Core.Interfaces.ILocalitateRepository, Infrastructure.Repositories.LocalitateRepository>();
+builder.Services.AddScoped<Core.Interfaces.IMedicamentRepository, Infrastructure.Repositories.MedicamentRepository>();
+
+// Register application services (Application)
+builder.Services.AddScoped<Application.Services.IPersoanaService, Application.Services.PersoanaService>();
+builder.Services.AddScoped<Application.Services.IJudetService, Application.Services.JudetService>();
+builder.Services.AddScoped<Application.Services.ILocalitateService, Application.Services.LocalitateService>();
+builder.Services.AddScoped<Application.Services.IMedicamentService, Application.Services.MedicamentService>();
+
+// Also register API-specific services
+builder.Services.AddScoped<API.Services.IUtilizatorService, API.Services.UtilizatorService>();
 
 // CORS policy
 builder.Services.AddCors(options =>
@@ -73,7 +76,7 @@ try
 catch (Exception ex)
 {
     app.Logger.LogCritical(ex, "Eroare la conectarea la baza de date!");
-    throw; // Oprește aplicația dacă nu se poate conecta
+    throw; // Oprește aplicatia daca nu se poate conecta
 }
 
 // Configure the HTTP request pipeline

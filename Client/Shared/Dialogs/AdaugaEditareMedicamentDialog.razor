@@ -1,0 +1,275 @@
+﻿@using MudBlazor
+@using global::Shared.DTOs
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(Model.MedicamentID > 0 ? (ReadOnly ? "Detalii medicament" : "Editare medicament") : "Adauga medicament")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.Nume" Label="Nume" Required="true" For="() => Model.Nume" Immediate="true" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.DenumireComunaInternationala" Label="DCI" Required="true" For="() => Model.DenumireComunaInternationala" Immediate="true" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.Concentratie" Label="Concentratie" Required="true" For="() => Model.Concentratie" Immediate="true" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.FormaFarmaceutica" Label="Forma" Required="true" For="() => Model.FormaFarmaceutica" Immediate="true" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.Producator" Label="Producator" Required="true" For="() => Model.Producator" Immediate="true" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.CodATC" Label="Cod ATC" Required="true" For="() => Model.CodATC" Immediate="true" HelperText="Format: R05CB01 (1 litera, 2 cifre, 2 litere, 2 cifre)" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="Model.Status" Label="Status" Required="true" Disabled="@ReadOnly">
+                        <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
+                        <MudSelectItem Value="@("Inactiv")">Inactiv</MudSelectItem>
+                        <MudSelectItem Value="@("Suspendat")">Suspendat</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Date="@Model.DataExpirare" DateChanged="@(d => Model.DataExpirare = d ?? DateTime.Today)" Label="Data expirare" Required="true" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Model.NumarAutorizatie" Label="Nr. Autorizatie" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker Date="@Model.DataAutorizatie" DateChanged="@(d => Model.DataAutorizatie = d)" Label="Data autorizatie" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="decimal?" @bind-Value="Model.Pret" Label="Pret" Min="0" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="decimal?" @bind-Value="Model.PretProducator" Label="Pret producator" Min="0" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="decimal?" @bind-Value="Model.TVA" Label="TVA (%)" Min="0" Max="100" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSwitch T="bool" @bind-Checked="_compensat" Color="Color.Primary" Label="Compensat" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSwitch T="bool" @bind-Checked="_prescriptie" Color="Color.Primary" Label="Prescriptie medicala" Disabled="@ReadOnly" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" @bind-Value="Model.Stoc" Label="Stoc" Min="0" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" @bind-Value="Model.StocSiguranta" Label="Stoc siguranta" Min="0" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Ambalaj" Label="Ambalaj" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Prospect" Label="Prospect" Lines="3" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Contraindicatii" Label="Contraindicatii" Lines="3" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Interactiuni" Label="Interactiuni" Lines="3" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Observatii" Label="Observatii" Lines="3" ReadOnly="@ReadOnly" Disabled="@ReadOnly" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        @if (ReadOnly)
+        {
+            <MudButton OnClick="Cancel">Inchide</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancel">Anuleaza</MudButton>
+            <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@_busy">
+                @if (_busy)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Se proceseaza...</MudText>
+                }
+                else
+                {
+                    <MudText>Salveaza</MudText>
+                }
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public MedicamentDTO? Medicament { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; } = default!;
+
+    private MudForm _form = default!;
+    private bool _busy;
+
+    // helpers for nullable bool switches
+    private bool _compensat
+    {
+        get => Model.Compensat ?? false;
+        set => Model.Compensat = value;
+    }
+    private bool _prescriptie
+    {
+        get => Model.PrescriptieMedicala ?? false;
+        set => Model.PrescriptieMedicala = value;
+    }
+
+    public MedicamentDTO Model { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        if (Medicament != null)
+        {
+            // Shallow copy to avoid editing original reference
+            Model = new MedicamentDTO
+            {
+                MedicamentID = Medicament.MedicamentID,
+                MedicamentGUID = Medicament.MedicamentGUID,
+                Nume = Medicament.Nume,
+                DenumireComunaInternationala = Medicament.DenumireComunaInternationala,
+                Concentratie = Medicament.Concentratie,
+                FormaFarmaceutica = Medicament.FormaFarmaceutica,
+                Producator = Medicament.Producator,
+                CodATC = Medicament.CodATC,
+                Status = Medicament.Status,
+                DataInregistrare = Medicament.DataInregistrare,
+                NumarAutorizatie = Medicament.NumarAutorizatie,
+                DataAutorizatie = Medicament.DataAutorizatie,
+                DataExpirare = Medicament.DataExpirare,
+                Ambalaj = Medicament.Ambalaj,
+                Prospect = Medicament.Prospect,
+                Contraindicatii = Medicament.Contraindicatii,
+                Interactiuni = Medicament.Interactiuni,
+                Pret = Medicament.Pret,
+                PretProducator = Medicament.PretProducator,
+                TVA = Medicament.TVA,
+                Compensat = Medicament.Compensat,
+                PrescriptieMedicala = Medicament.PrescriptieMedicala,
+                Stoc = Medicament.Stoc,
+                StocSiguranta = Medicament.StocSiguranta,
+                DataActualizare = Medicament.DataActualizare,
+                UtilizatorActualizare = Medicament.UtilizatorActualizare,
+                Observatii = Medicament.Observatii,
+                Activ = Medicament.Activ
+            };
+        }
+        else
+        {
+            Model = new MedicamentDTO
+            {
+                Status = "Activ",
+                DataExpirare = DateTime.Today.AddYears(1),
+                Stoc = 0,
+                StocSiguranta = 0,
+                Activ = true
+            };
+        }
+    }
+
+    private async Task Submit()
+    {
+        _busy = true;
+        await _form.Validate();
+
+        // Normalize inputs
+        Model.Nume = Model.Nume?.Trim();
+        Model.DenumireComunaInternationala = Model.DenumireComunaInternationala?.Trim();
+        Model.Concentratie = Model.Concentratie?.Trim();
+        Model.FormaFarmaceutica = Model.FormaFarmaceutica?.Trim();
+        Model.Producator = Model.Producator?.Trim();
+        Model.CodATC = Model.CodATC?.Trim().ToUpperInvariant().Replace(" ", string.Empty);
+
+        // Basic required checks
+        var missing = string.IsNullOrWhiteSpace(Model.Nume)
+            || string.IsNullOrWhiteSpace(Model.DenumireComunaInternationala)
+            || string.IsNullOrWhiteSpace(Model.Concentratie)
+            || string.IsNullOrWhiteSpace(Model.FormaFarmaceutica)
+            || string.IsNullOrWhiteSpace(Model.Producator)
+            || string.IsNullOrWhiteSpace(Model.CodATC)
+            || string.IsNullOrWhiteSpace(Model.Status)
+            || Model.DataExpirare == default;
+
+        if (missing)
+        {
+            Snackbar.Add("Completati campurile obligatorii.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+
+        // ATC format validation: 1 letter, 2 digits, 2 letters, 2 digits (e.g., R05CB01)
+        var atcPattern = System.Text.RegularExpressions.Regex.IsMatch(Model.CodATC, "^[A-Z][0-9]{2}[A-Z]{2}[0-9]{2}$");
+        if (!atcPattern)
+        {
+            Snackbar.Add("Cod ATC invalid. Format corect ex: R05CB01.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+
+        // Date coherence
+        if (Model.DataExpirare.Date < DateTime.Today)
+        {
+            Snackbar.Add("Data expirare trebuie sa fie in viitor.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+        if (Model.DataAutorizatie.HasValue && Model.DataAutorizatie.Value.Date > Model.DataExpirare.Date)
+        {
+            Snackbar.Add("Data autorizatie nu poate fi dupa data expirarii.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+        if (Model.DataAutorizatie.HasValue && string.IsNullOrWhiteSpace(Model.NumarAutorizatie))
+        {
+            Snackbar.Add("Numarul autorizatiei este necesar daca ati setat Data autorizatiei.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+
+        // Numeric ranges
+        if (Model.TVA.HasValue && (Model.TVA.Value < 0 || Model.TVA.Value > 100))
+        {
+            Snackbar.Add("TVA trebuie sa fie intre 0 si 100.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+        if (Model.Pret.HasValue && Model.Pret.Value < 0)
+        {
+            Snackbar.Add("Pretul nu poate fi negativ.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+        if (Model.PretProducator.HasValue && Model.PretProducator.Value < 0)
+        {
+            Snackbar.Add("Pretul producatorului nu poate fi negativ.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+        if (Model.Stoc < 0 || Model.StocSiguranta < 0)
+        {
+            Snackbar.Add("Stocurile nu pot fi negative.", Severity.Warning);
+            _busy = false;
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(Model));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

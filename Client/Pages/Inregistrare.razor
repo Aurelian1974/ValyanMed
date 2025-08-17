@@ -50,7 +50,7 @@
         <MudGrid Class="mb-4">
             <MudItem xs="10">
                 <MudSelect T="PersoanaDTO" 
-                          Label="Selectează persoana" 
+                          Label="Selecteaza persoana" 
                           @bind-Value="_selectedPersoana"
                           Variant="Variant.Outlined"
                           AnchorOrigin="Origin.BottomCenter"
@@ -69,7 +69,7 @@
                 <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" 
                               Color="Color.Primary" 
                               OnClick="@(async () => await AdaugaPersoana())" 
-                              Title="Adaugă persoană nouă"
+                              Title="Adauga persoana noua"
                               Disabled="@_isLoading"
                               Style="margin-top: 10px;" />
             </MudItem>
@@ -107,7 +107,7 @@
             @if (_isLoading)
             {
                 <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                <MudText Class="ms-2">Se procesează...</MudText>
+                <MudText Class="ms-2">Se proceseaza...</MudText>
             }
             else
             {
@@ -151,7 +151,7 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Eroare la încărcarea persoanelor: {ex.Message}";
+            _errorMessage = $"Eroare la încarcarea persoanelor: {ex.Message}";
             Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
         }
     }
@@ -159,7 +159,7 @@
     private async Task AdaugaPersoana()
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Adaugă persoană nouă", options);
+        var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Adauga persoana noua", options);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -175,18 +175,18 @@
                 // Save the new person to the database
                 var createdPersoana = await PersoanaService.CreatePersoanaAsync(createPersoanaDTO);
 
-                // Adaugă direct în listă și selectează
+                // Adauga direct în lista și selecteaza
                 _persoane.Add(createdPersoana);
                 _selectedPersoana = createdPersoana;
 
-                // (opțional) Forțează refresh UI
+                // (optional) Forteaza refresh UI
                 StateHasChanged();
 
-                Snackbar.Add("Persoana a fost adăugată cu succes", MudBlazor.Severity.Success);
+                Snackbar.Add("Persoana a fost adaugata cu succes", MudBlazor.Severity.Success);
             }
             catch (Exception ex)
             {
-                _errorMessage = $"Eroare la adăugarea persoanei: {ex.Message}";
+                _errorMessage = $"Eroare la adaugarea persoanei: {ex.Message}";
                 Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
             }
         }
@@ -228,7 +228,7 @@
         {
             if (_selectedPersoana == null)
             {
-                _errorMessage = "Trebuie să selectați o persoană";
+                _errorMessage = "Trebuie sa selectati o persoana";
                 _isLoading = false;
                 return;
             }
@@ -258,7 +258,7 @@
             }
             catch (Exception ex)
             {
-                _errorMessage = $"A apărut o eroare: {ex.Message}";
+                _errorMessage = $"A aparut o eroare: {ex.Message}";
                 Snackbar.Add(_errorMessage, MudBlazor.Severity.Error);
             }
         }

@@ -1,5 +1,5 @@
 ﻿using Shared.DTOs;
-using API.Services;
+using Application.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -141,7 +141,7 @@ namespace API.Controllers
                 var msg = ex.ToString().ToUpperInvariant();
                 if (msg.Contains("REFERENCE") || msg.Contains("CONSTRAINT") || msg.Contains("FK_"))
                 {
-                    return Conflict("Această persoană nu poate fi ștearsă deoarece este asociată cu un utilizator. Ștergeți mai întâi utilizatorul asociat.");
+                    return Conflict("Aceasta persoana nu poate fi ștearsa deoarece este asociata cu un utilizator. Ștergeti mai întâi utilizatorul asociat.");
                 }
                 return StatusCode(StatusCodes.Status500InternalServerError, 
                     $"Error deleting personnel record: {ex.Message}");

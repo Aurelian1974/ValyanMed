@@ -11,8 +11,15 @@
     <link href="manifest.webmanifest" rel="manifest" />
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
-    <link href="_content/Syncfusion.Blazor/styles/material.css" rel="stylesheet" />
     <link href="css/grid-details.css" rel="stylesheet" />
+
+    <!-- Fonts required by MudBlazor (icons and Roboto) + robust diacritics fallback (Noto Sans) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
 </head>
 
 <body>
@@ -31,80 +38,55 @@
     </div>
 
     <script>
-        /**
-         * Auto-logout solution using sessionStorage
-         *
-         * sessionStorage automatically clears when browser/tab closes,
-         * but persists during navigation within the app.
-         */
         (function () {
-            // Check if the session has ended (browser was closed)
             function checkSessionStatus() {
-                // If we have auth token but no session marker, browser was closed
                 if (localStorage.getItem('authToken') && !sessionStorage.getItem('sessionActive')) {
                     console.log("Browser was closed and reopened - clearing auth");
                     clearAuthData();
                 }
-
-                // Always set the session marker
                 sessionStorage.setItem('sessionActive', 'true');
             }
-
             function clearAuthData() {
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('userName');
                 localStorage.removeItem('userFullName');
                 console.log("Authentication data cleared");
             }
-
-            // Run check when page loads
             checkSessionStatus();
-
-            // Expose utility functions
-            window.authManager = {
-                clearAuthData: clearAuthData,
-                checkSessionStatus: checkSessionStatus
-            };
+            window.authManager = { clearAuthData, checkSessionStatus };
         })();
 
-        // LoadCSS utility function
         window.loadCSS = function (href) {
             var links = document.getElementsByTagName('link');
             for (var i = 0; i < links.length; i++) {
-                if (links[i].href.indexOf(href) !== -1) {
-                    return;
-                }
+                if (links[i].href.indexOf(href) !== -1) return;
             }
-
             var link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = href;
             document.head.appendChild(link);
         };
 
-        // Interop functions
         window.appInterop = {
-            sayHello: function (name) {
-                return "Hello, " + name;
-            },
-
-            logout: function () {
-                window.authManager.clearAuthData();
-                return true;
-            }
+            sayHello: function (name) { return "Hello, " + name; },
+            logout: function () { window.authManager.clearAuthData(); return true; }
         };
 
         window.appFunctions = {
-            test: function () {
-                return "JS interop is working!";
-            }
+            test: function () { return "JS interop is working!"; }
         };
     </script>
 
-    <!--<script src="_content/Syncfusion.Blazor/scripts/sf-blazor.min.js"></script>-->
+    <!-- MudBlazor -->
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+
+    <!-- Helpers (file utils, localStorage wrappers) -->
+    <script src="js/fileUtils.js"></script>
+
+    <!-- Blazor Framework -->
     <script src="_framework/blazor.webassembly.js"></script>
-    <!--<script src="_content/Syncfusion.Blazor/scripts/sf-blazor.min.js"></script>-->
+
+    <!-- Service Worker -->
     <script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
 

@@ -1,4 +1,15 @@
 ﻿body {
+    font-family: 'Roboto', 'Segoe UI', Arial, Helvetica, sans-serif !important;
+}
+
+html, body, input, button, textarea, select,
+.mud-typography, .mud-typography-root,
+.mud-input, .mud-input-root, .mud-select, .mud-select-root,
+.mud-button, .mud-button-label,
+.mud-table, .mud-table-head, .mud-table-body, .mud-th, .mud-td,
+.mud-toolbar, .mud-toolbar-row,
+.mud-data-grid, .mud-data-grid-cell, .mud-data-grid-header-cell {
+    font-family: 'Roboto', 'Segoe UI', Arial, Helvetica, sans-serif !important;
 }
 
 /*.border-top {
@@ -50,5 +61,5 @@
     font-weight: 400;
     font-size: 1rem;
     color: #e2e8f0 !important;
-    /* Elimină padding-left, padding, width, justify-content */
+    /* Elimina padding-left, padding, width, justify-content */
 }

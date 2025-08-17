@@ -24,7 +24,7 @@ namespace Client.Pages.Personal
                 {
                     // Success handling
                     await LoadData();
-                    Snackbar.Add("Persoana a fost ștearsă cu succes.", Severity.Success);
+                    Snackbar.Add("Persoana a fost ștearsa cu succes.", Severity.Success);
                 }
                 else
                 {

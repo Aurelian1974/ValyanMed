@@ -52,14 +52,14 @@ namespace Client.Services
                 var response = await _http.PostAsJsonAsync("api/utilizator", model);
 
                 if (response.IsSuccessStatusCode)
-                    return (true, "Înregistrarea a fost realizată cu succes!");
+                    return (true, "Înregistrarea a fost realizata cu succes!");
 
                 var error = await response.Content.ReadAsStringAsync();
                 return (false, error);
             }
             catch (Exception ex)
             {
-                return (false, $"A apărut o eroare: {ex.Message}");
+                return (false, $"A aparut o eroare: {ex.Message}");
             }
         }
 
@@ -79,7 +79,7 @@ namespace Client.Services
                 {
                     var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
 
-                    // Salvează token-ul în localStorage
+                    // Salveaza token-ul în localStorage
                     await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
                     await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "userName", result.NumeUtilizator);
                     await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "userFullName", result.NumeComplet);
@@ -89,7 +89,7 @@ namespace Client.Services
                         new Claim(ClaimTypes.Name, result.NumeUtilizator)
                     }, "apiauth_type")))));
 
-                    return (true, "Autentificare reușită", result.Token);
+                    return (true, "Autentificare reușita", result.Token);
                 }
 
                 var error = await response.Content.ReadAsStringAsync();
@@ -97,7 +97,7 @@ namespace Client.Services
             }
             catch (Exception ex)
             {
-                return (false, $"A apărut o eroare: {ex.Message}", null);
+                return (false, $"A aparut o eroare: {ex.Message}", null);
             }
         }
 
@@ -120,7 +120,7 @@ namespace Client.Services
         }
     }
 
-    // Clasa DTO pentru răspunsul de autentificare
+    // Clasa DTO pentru raspunsul de autentificare
     public class AuthResponseDto
     {
         public string Token { get; set; }

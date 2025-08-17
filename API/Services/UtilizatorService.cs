@@ -57,9 +57,9 @@ namespace API.Services
                 PersoanaId = utilizatorDto.PersoanaId
             };
 
-            // Execute stored procedure and get the identity value
+            // Execute stored procedure and get the identity value (assumes SP returns SCOPE_IDENTITY())
             var id = await connection.ExecuteScalarAsync<int>(
-                "usp_Utilizator_Insert; SELECT SCOPE_IDENTITY();",
+                "usp_Utilizator_Insert",
                 parameters,
                 commandType: CommandType.StoredProcedure);
                 
@@ -87,12 +87,65 @@ namespace API.Services
                 parameters.Add("@ParolaHash", null);
             }
 
-            var affectedRows = await connection.ExecuteAsync(
-                "usp_Utilizator_Update",
-                parameters,
-                commandType: CommandType.StoredProcedure);
+            // Add return parameter to capture stored procedure return value
+            parameters.Add("@ReturnValue", dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
+
+            try
+            {
+                Console.WriteLine($"=== UPDATE USER DEBUG ===");
+                Console.WriteLine($"ID: {utilizatorDto.Id}");
+                Console.WriteLine($"NumeUtilizator: {utilizatorDto.NumeUtilizator}");
+                Console.WriteLine($"Email: {utilizatorDto.Email}");
+                Console.WriteLine($"Telefon: {utilizatorDto.Telefon}");
+                Console.WriteLine($"PersoanaId: {utilizatorDto.PersoanaId}");
+                Console.WriteLine($"HasPassword: {!string.IsNullOrWhiteSpace(utilizatorDto.Parola)}");
                 
-            return affectedRows > 0;
+                await connection.ExecuteAsync(
+                    "usp_Utilizator_Update",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+                    
+                // Get the return value from stored procedure
+                var returnValue = parameters.Get<int>("@ReturnValue");
+                
+                Console.WriteLine($"Stored procedure return value: {returnValue}");
+                Console.WriteLine($"=== END DEBUG ===");
+                
+                // Handle specific return values from stored procedure
+                switch (returnValue)
+                {
+                    case -1:
+                        throw new Exception("Numele de utilizator exista deja");
+                    case -2:
+                        throw new Exception("Adresa de email exista deja");
+                    case -3:
+                        throw new Exception("Persoana asociata nu exista");
+                    case -4:
+                        throw new Exception("Utilizatorul nu a fost gasit sau nu s-au facut modificari");
+                    case var value when value > 0:
+                        return true; // Success - return value is number of affected rows
+                    default:
+                        return false;
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"SQL Exception: {ex.Message}");
+                Console.WriteLine($"SQL Number: {ex.Number}");
+                Console.WriteLine($"SQL State: {ex.State}");
+                Console.WriteLine($"SQL Severity: {ex.Class}");
+                throw new Exception(ex.Message, ex);
+            }
+            catch (Exception ex) when (ex.Message.Contains("exista deja") || ex.Message.Contains("nu exista") || ex.Message.Contains("nu a fost gasit"))
+            {
+                // Re-throw our custom exceptions
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"General Exception: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<bool> DeleteUtilizatorAsync(int id)
@@ -118,14 +171,14 @@ namespace API.Services
 
             if (user == null)
             {
-                return new AuthResult { Success = false, Message = "Utilizator negăsit" };
+                return new AuthResult { Success = false, Message = "Utilizator negasit" };
             }
 
             // Verify password
             bool isValidPassword = BCrypt.Net.BCrypt.Verify(password, user.ParolaHash);
             if (!isValidPassword)
             {
-                return new AuthResult { Success = false, Message = "Parolă incorectă" };
+                return new AuthResult { Success = false, Message = "Parola incorecta" };
             }
 
             // Get the full name from person table
@@ -140,7 +193,7 @@ namespace API.Services
                 User = user, 
                 NumeComplet = fullName, 
                 Success = true,
-                Message = "Autentificare reușită"
+                Message = "Autentificare reușita"
             };
         }
     }
