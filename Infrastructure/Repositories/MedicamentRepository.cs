@@ -46,7 +46,7 @@ namespace Infrastructure.Repositories
             return rows > 0;
         }
 
-        public async Task<PagedResult<MedicamentDTO>> GetPagedAsync(string? search, string? status, int page, int pageSize, string? sort)
+        public async Task<PagedResult<MedicamentDTO>> GetPagedAsync(string? search, string? status, int page, int pageSize, string? sort, string? groupBy)
         {
             // Decide once if stored procedure exists
             if (!_spPagedAvailable.HasValue)
@@ -59,7 +59,7 @@ namespace Infrastructure.Repositories
             {
                 var result = await _db.QueryMultipleAsync(
                     "dbo.sp_Medicament_GetPaged",
-                    new { Search = search, Status = status, Page = page, PageSize = pageSize, Sort = sort },
+                    new { Search = search, Status = status, Page = page, PageSize = pageSize, Sort = sort, GroupBy = groupBy },
                     commandType: CommandType.StoredProcedure);
                 var items = (await result.ReadAsync<MedicamentDTO>()).AsList();
                 var total = await result.ReadFirstAsync<int>();
@@ -67,8 +67,7 @@ namespace Infrastructure.Repositories
             }
             else
             {
-                // Fallback inline SQL (basic). Adjust table/columns names accordingly.
-                var orderBy = BuildOrderBy(sort);
+                var orderBy = BuildOrderBy(sort, groupBy);
                 var offset = (page - 1) * pageSize;
 
                 var sql = new StringBuilder();
@@ -87,34 +86,49 @@ namespace Infrastructure.Repositories
             }
         }
 
-        private static string BuildOrderBy(string? sort)
+        private static string BuildOrderBy(string? sort, string? groupBy)
         {
-            if (string.IsNullOrWhiteSpace(sort)) return "Nume ASC";
-            // very simple parser: Producator:asc,Nume:desc
-            var parts = sort.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries);
-            var cols = new List<string>();
-            foreach (var p in parts)
+            var order = new List<string>();
+            // handle grouping first
+            if (!string.IsNullOrWhiteSpace(groupBy))
             {
-                var kv = p.Split(':', System.StringSplitOptions.TrimEntries);
-                var col = kv[0];
-                var dir = kv.Length > 1 && kv[1].Equals("desc", System.StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
-                // Whitelist columns to avoid SQL injection
-                col = col switch
+                var groups = groupBy.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries);
+                foreach (var g in groups)
                 {
-                    "Nume" => "Nume",
-                    "DenumireComunaInternationala" => "DenumireComunaInternationala",
-                    "Concentratie" => "Concentratie",
-                    "FormaFarmaceutica" => "FormaFarmaceutica",
-                    "Producator" => "Producator",
-                    "CodATC" => "CodATC",
-                    "Status" => "Status",
-                    "Stoc" => "Stoc",
-                    "StocSiguranta" => "StocSiguranta",
-                    _ => "Nume"
-                };
-                cols.Add($"{col} {dir}");
+                    var col = MapColumn(g);
+                    if (!string.IsNullOrEmpty(col)) order.Add($"{col} ASC");
+                }
             }
-            return cols.Count > 0 ? string.Join(", ", cols) : "Nume ASC";
+            // then sorts
+            if (!string.IsNullOrWhiteSpace(sort))
+            {
+                var parts = sort.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries);
+                foreach (var p in parts)
+                {
+                    var kv = p.Split(':', System.StringSplitOptions.TrimEntries);
+                    var col = MapColumn(kv[0]);
+                    var dir = kv.Length > 1 && kv[1].Equals("desc", System.StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
+                    if (!string.IsNullOrEmpty(col)) order.Add($"{col} {dir}");
+                }
+            }
+            // Default to clustered key for fast paging if no explicit sort/group
+            if (order.Count == 0) order.Add("MedicamentID ASC");
+            return string.Join(", ", order);
         }
+
+        private static string MapColumn(string name) => name switch
+        {
+            "MedicamentID" => "MedicamentID",
+            "Nume" => "Nume",
+            "DenumireComunaInternationala" => "DenumireComunaInternationala",
+            "Concentratie" => "Concentratie",
+            "FormaFarmaceutica" => "FormaFarmaceutica",
+            "Producator" => "Producator",
+            "CodATC" => "CodATC",
+            "Status" => "Status",
+            "Stoc" => "Stoc",
+            "StocSiguranta" => "StocSiguranta",
+            _ => string.Empty
+        };
     }
 }

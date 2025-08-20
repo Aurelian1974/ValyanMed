@@ -16,12 +16,12 @@ namespace API.Controllers
             => Ok(await _service.GetAllAsync());
 
         [HttpGet("paged")]
-        public async Task<ActionResult<PagedResult<MedicamentDTO>>> GetPaged([FromQuery] string? search, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? sort = null)
+        public async Task<ActionResult<PagedResult<MedicamentDTO>>> GetPaged([FromQuery] string? search, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? sort = null, [FromQuery] string? groupBy = null)
         {
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 25;
             if (pageSize > 5000) pageSize = 5000; // safety cap
-            var result = await _service.GetPagedAsync(search, status, page, pageSize, sort);
+            var result = await _service.GetPagedAsync(search, status, page, pageSize, sort, groupBy);
             return Ok(result);
         }
 

@@ -32,10 +32,13 @@
                  Loading="@_loading"
                  LoadingProgressColor="Color.Primary"
                  CanExpand="true"
-                 ExpandMode="DataGridExpandMode.Single">
+                 ExpandMode="DataGridExpandMode.Single"
+                 @bind-Page="_pageIndex">
 
         <ToolBarContent>
-            <MudTextField @bind-Value="_search"
+            <MudTextField T="string"
+                          Value="@_search"
+                          ValueChanged="OnSearchChanged"
                           Label="Cauta"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
@@ -47,7 +50,9 @@
                           Class="mx-2"
                           Style="width: 420px;" />
 
-            <MudSelect T="string" @bind-Value="_statusFilter"
+            <MudSelect T="string"
+                       Value="@_statusFilter"
+                       ValueChanged="OnStatusChanged"
                        Label="Status"
                        Variant="Variant.Outlined"
                        Dense="true"
@@ -93,7 +98,7 @@
             </MudMenu>
 
             <MudDivider Vertical="true" Class="mx-2" />
-            <MudSwitch @bind-Checked="_groupAcrossAll" Color="Color.Primary" Class="mx-2" OnChanged="@((bool _) => _grid?.ReloadServerData())">Toate in pagina</MudSwitch>
+            <MudSwitch T="bool" Checked="@_groupAcrossAll" CheckedChanged="@ToggleAllInPagina" Color="Color.Primary" Class="mx-2">Toate in pagina</MudSwitch>
 
             <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.FileDownload" OnClick="ExportCsvAsync" Class="mx-2">CSV</MudButton>
             <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.GridOn" OnClick="ExportXlsxAsync" Class="mx-2">XLSX</MudButton>
@@ -151,7 +156,7 @@
 
         <PagerContent>
             <MudDataGridPager T="MedicamentDTO"
-                               PageSizeOptions="@_pageSizeOptions"
+                               PageSizeOptions="@_pageSizeOptions.ToArray()"
                                @bind-PageSize="_pageSize" />
         </PagerContent>
     </MudDataGrid>
@@ -159,10 +164,13 @@
 
 @code {
     private MudDataGrid<MedicamentDTO> _grid;
+    private int _pageIndex = 0;
     private int _pageSize = 25;
-    private int[] _pageSizeOptions => new[] { 10, 25, 50, 100 };
+    private readonly int _defaultPageSize = 25;
+    private List<int> _pageSizeOptions = new() { 10, 25, 50, 100 };
     private int _totalItems;
     private bool _groupAcrossAll;
+    private bool _pendingApplyAll;
 
     private bool showNume = true;
     private bool showDCI = true;
@@ -184,14 +192,43 @@
         try
         {
             var sort = BuildSort(state);
-            var page = state.Page + 1; // MudDataGrid pages are 0-based
-            var pageSize = state.PageSize;
+            var page = state.Page + 1;
+            int effectivePageSize;
             if (_groupAcrossAll)
             {
-                pageSize = _totalItems > 0 ? _totalItems : Math.Max(50, state.PageSize); // initial cap to avoid huge first load
+                effectivePageSize = _totalItems > 0 ? Math.Min(_totalItems, 5000) : Math.Max(50, state.PageSize);
             }
-            var result = await MedicamentClient.GetPagedAsync(_search, _statusFilter, page, pageSize, sort);
+            else
+            {
+                effectivePageSize = state.PageSize;
+            }
+
+            var result = await MedicamentClient.GetPagedAsync(_search, _statusFilter, page, effectivePageSize, sort, null);
             _totalItems = result.TotalCount;
+
+            if (_groupAcrossAll)
+            {
+                var desired = Math.Min(_totalItems, 5000);
+                // If grid state still not using desired page size, update and trigger a one-time reload
+                if (state.PageSize != desired && !_pendingApplyAll && desired > 0)
+                {
+                    if (!_pageSizeOptions.Contains(desired))
+                    {
+                        _pageSizeOptions.Add(desired);
+                        _pageSizeOptions.Sort();
+                    }
+                    _pageSize = desired;
+                    _pageIndex = 0;
+                    _pendingApplyAll = true;
+                    await InvokeAsync(() => _grid?.ReloadServerData());
+                }
+                else if (_pendingApplyAll)
+                {
+                    // Second call with correct state, clear the flag
+                    _pendingApplyAll = false;
+                }
+            }
+
             return new GridData<MedicamentDTO> { Items = result.Items, TotalItems = result.TotalCount };
         }
         finally
@@ -215,10 +252,48 @@
         return parts.Count == 0 ? null : string.Join(',', parts);
     }
 
+    private void OnSearchChanged(string? text)
+    {
+        _search = text ?? string.Empty;
+        _pageIndex = 0;
+        _totalItems = 0;
+        _grid?.ReloadServerData();
+    }
+
+    private void OnStatusChanged(string? value)
+    {
+        _statusFilter = string.IsNullOrWhiteSpace(value) ? "toate" : value;
+        _pageIndex = 0;
+        _totalItems = 0;
+        _grid?.ReloadServerData();
+    }
+
+    private void ToggleAllInPagina(bool value)
+    {
+        _groupAcrossAll = value;
+        if (_groupAcrossAll)
+        {
+            // ensure we have a larger initial page size option visible
+            if (!_pageSizeOptions.Contains(50)) _pageSizeOptions.Add(50);
+            _pageSizeOptions.Sort();
+            _pageSize = Math.Max(_pageSize, 50);
+            _totalItems = 0; // force recompute
+        }
+        else
+        {
+            _pageSize = _defaultPageSize;
+            _pendingApplyAll = false;
+        }
+        _pageIndex = 0;
+        _grid?.ReloadServerData();
+    }
+
     private void ClearFiltersAndReload()
     {
         _search = string.Empty;
         _statusFilter = "toate";
+        _pageIndex = 0;
+        _totalItems = 0;
         _grid?.ReloadServerData();
     }
 

@@ -11,6 +11,6 @@ namespace Core.Interfaces
         Task<int> CreateAsync(CreateMedicamentDTO dto);
         Task<bool> UpdateAsync(UpdateMedicamentDTO dto);
         Task<bool> DeleteAsync(int id);
-        Task<PagedResult<MedicamentDTO>> GetPagedAsync(string? search, string? status, int page, int pageSize, string? sort);
+        Task<PagedResult<MedicamentDTO>> GetPagedAsync(string? search, string? status, int page, int pageSize, string? sort, string? groupBy);
     }
 }

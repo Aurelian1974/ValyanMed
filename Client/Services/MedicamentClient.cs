@@ -34,7 +34,7 @@ namespace Client.Services
             return resp.IsSuccessStatusCode;
         }
 
-        public async Task<PagedResult<MedicamentDTO>> GetPagedAsync(string? search, string? status, int page, int pageSize, string? sort)
+        public async Task<PagedResult<MedicamentDTO>> GetPagedAsync(string? search, string? status, int page, int pageSize, string? sort, string? groupBy = null)
         {
             var sb = new StringBuilder("api/medicamente/paged?");
             if (!string.IsNullOrWhiteSpace(search)) sb.Append("search=").Append(Uri.EscapeDataString(search)).Append('&');
@@ -42,6 +42,7 @@ namespace Client.Services
             sb.Append("page=").Append(page).Append('&');
             sb.Append("pageSize=").Append(pageSize).Append('&');
             if (!string.IsNullOrWhiteSpace(sort)) sb.Append("sort=").Append(Uri.EscapeDataString(sort)).Append('&');
+            if (!string.IsNullOrWhiteSpace(groupBy)) sb.Append("groupBy=").Append(Uri.EscapeDataString(groupBy)).Append('&');
             var url = sb.ToString().TrimEnd('&', '?');
 
             return await _http.GetFromJsonAsync<PagedResult<MedicamentDTO>>(url) ?? new PagedResult<MedicamentDTO>();
