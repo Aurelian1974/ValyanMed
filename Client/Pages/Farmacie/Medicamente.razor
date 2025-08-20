@@ -21,7 +21,7 @@
 
     <MudDataGrid @ref="_grid"
                  T="MedicamentDTO"
-                 ServerData="LoadServerData"
+                 Items="@_filteredMedicamente"
                  Hover="true"
                  Bordered="true"
                  Dense="true"
@@ -33,7 +33,8 @@
                  LoadingProgressColor="Color.Primary"
                  CanExpand="true"
                  ExpandMode="DataGridExpandMode.Single"
-                 @bind-Page="_pageIndex">
+                 @bind-Page="_pageIndex"
+                 @bind-PageSize="_pageSize">
 
         <ToolBarContent>
             <MudTextField T="string"
@@ -168,9 +169,10 @@
     private int _pageSize = 25;
     private readonly int _defaultPageSize = 25;
     private List<int> _pageSizeOptions = new() { 10, 25, 50, 100 };
-    private int _totalItems;
+    private List<MedicamentDTO> _allMedicamente = new();
+    private List<MedicamentDTO> _filteredMedicamente = new();
+    private int _totalItems => _filteredMedicamente.Count;
     private bool _groupAcrossAll;
-    private bool _pendingApplyAll;
 
     private bool showNume = true;
     private bool showDCI = true;
@@ -186,86 +188,54 @@
     private string _search = string.Empty;
     private string _statusFilter = "toate";
 
-    private async Task<GridData<MedicamentDTO>> LoadServerData(GridState<MedicamentDTO> state)
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllMedicamenteAsync();
+    }
+
+    private async Task LoadAllMedicamenteAsync()
     {
         _loading = true;
         try
         {
-            var sort = BuildSort(state);
-            var page = state.Page + 1;
-            int effectivePageSize;
-            if (_groupAcrossAll)
-            {
-                effectivePageSize = _totalItems > 0 ? Math.Min(_totalItems, 5000) : Math.Max(50, state.PageSize);
-            }
-            else
-            {
-                effectivePageSize = state.PageSize;
-            }
-
-            var result = await MedicamentClient.GetPagedAsync(_search, _statusFilter, page, effectivePageSize, sort, null);
-            _totalItems = result.TotalCount;
-
-            if (_groupAcrossAll)
-            {
-                var desired = Math.Min(_totalItems, 5000);
-                // If grid state still not using desired page size, update and trigger a one-time reload
-                if (state.PageSize != desired && !_pendingApplyAll && desired > 0)
-                {
-                    if (!_pageSizeOptions.Contains(desired))
-                    {
-                        _pageSizeOptions.Add(desired);
-                        _pageSizeOptions.Sort();
-                    }
-                    _pageSize = desired;
-                    _pageIndex = 0;
-                    _pendingApplyAll = true;
-                    await InvokeAsync(() => _grid?.ReloadServerData());
-                }
-                else if (_pendingApplyAll)
-                {
-                    // Second call with correct state, clear the flag
-                    _pendingApplyAll = false;
-                }
-            }
-
-            return new GridData<MedicamentDTO> { Items = result.Items, TotalItems = result.TotalCount };
+            _allMedicamente = await MedicamentClient.GetAllAsync(); // Use GetAllAsync instead of GetPagedAsync
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Eroare la încărcarea datelor: {ex.Message}", Severity.Error);
         }
         finally
         {
             _loading = false;
+            StateHasChanged();
         }
     }
 
-    private static string? BuildSort(GridState<MedicamentDTO> state)
+    private void ApplyFilters()
     {
-        if (state.SortDefinitions is null || state.SortDefinitions.Count == 0) return null;
-        var parts = new List<string>();
-        foreach (var s in state.SortDefinitions)
-        {
-            var name = s.SortBy as string;
-            if (string.IsNullOrWhiteSpace(name))
-                continue;
-            var dir = s.Descending ? "desc" : "asc";
-            parts.Add($"{name}:{dir}");
-        }
-        return parts.Count == 0 ? null : string.Join(',', parts);
+        _filteredMedicamente = _allMedicamente.Where(m =>
+            (string.IsNullOrEmpty(_search) || 
+             m.Nume?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+             m.DenumireComunaInternationala?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+             m.Producator?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+             m.CodATC?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true) &&
+            (_statusFilter == "toate" || m.Status == _statusFilter)
+        ).ToList();
     }
 
     private void OnSearchChanged(string? text)
     {
         _search = text ?? string.Empty;
-        _pageIndex = 0;
-        _totalItems = 0;
-        _grid?.ReloadServerData();
+        ApplyFilters();
+        StateHasChanged();
     }
 
     private void OnStatusChanged(string? value)
     {
         _statusFilter = string.IsNullOrWhiteSpace(value) ? "toate" : value;
-        _pageIndex = 0;
-        _totalItems = 0;
-        _grid?.ReloadServerData();
+        ApplyFilters();
+        StateHasChanged();
     }
 
     private void ToggleAllInPagina(bool value)
@@ -273,28 +243,26 @@
         _groupAcrossAll = value;
         if (_groupAcrossAll)
         {
-            // ensure we have a larger initial page size option visible
-            if (!_pageSizeOptions.Contains(50)) _pageSizeOptions.Add(50);
+            var desired = Math.Max(_totalItems, 50);
+            if (!_pageSizeOptions.Contains(desired)) _pageSizeOptions.Add(desired);
             _pageSizeOptions.Sort();
-            _pageSize = Math.Max(_pageSize, 50);
-            _totalItems = 0; // force recompute
+            _pageSize = desired;
         }
         else
         {
             _pageSize = _defaultPageSize;
-            _pendingApplyAll = false;
         }
         _pageIndex = 0;
-        _grid?.ReloadServerData();
+        StateHasChanged();
     }
 
     private void ClearFiltersAndReload()
     {
         _search = string.Empty;
         _statusFilter = "toate";
+        ApplyFilters();
         _pageIndex = 0;
-        _totalItems = 0;
-        _grid?.ReloadServerData();
+        StateHasChanged();
     }
 
     private void ToggleColumn(string name)
