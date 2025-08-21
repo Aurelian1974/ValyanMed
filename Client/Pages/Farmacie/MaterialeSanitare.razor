@@ -1,7 +1,502 @@
 @page "/farmacie/materiale-sanitare"
+@using System.Text
+@using System.Text.Json
+@using global::Shared.DTOs
+@using Client.Services
+@using Client.Shared.Dialogs
 @using MudBlazor
+@inject IMaterialSanitarClient MaterialSanitarClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IJSRuntime JS
 
-<MudText Typo="Typo.h4" Class="mb-4">Farmacie - Materiale sanitare</MudText>
-<MudPaper Class="pa-4">
-    <MudText>Sec?iune în lucru.</MudText>
+<MudText Typo="Typo.h4" Class="mb-4">Farmacie - Materiale Sanitare</MudText>
+
+<MudPaper Elevation="3" Class="pa-4">
+    <MudToolBar Dense="true" DisableGutters="true" Class="mb-2">
+        <MudText Typo="Typo.h6">Lista materialelor sanitare (@_totalItems)</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="@_loading">Adauga</MudButton>
+    </MudToolBar>
+
+    <!-- GROUPING AREA -->
+    @if (_hasGrouping)
+    {
+        <MudPaper Elevation="1" Class="pa-2 mb-2" Style="min-height: 48px; border: 2px dashed #ccc;">
+            <MudText Typo="Typo.body2" Class="text-center mud-text-secondary">
+                @if (_groupedColumns.Any())
+                {
+                    <div class="d-flex flex-wrap gap-2 align-center justify-center">
+                        <MudText Typo="Typo.caption">Grupat dup?:</MudText>
+                        @foreach (var column in _groupedColumns)
+                        {
+                            <MudChip T="string"
+                                     Size="Size.Small" 
+                                     Color="Color.Primary" 
+                                     OnClose="@(() => RemoveGrouping(column))" 
+                                     CloseIcon="@Icons.Material.Filled.Close">
+                                @column
+                            </MudChip>
+                        }
+                        <MudButton Size="Size.Small" 
+                                   Variant="Variant.Text" 
+                                   StartIcon="@Icons.Material.Filled.Clear" 
+                                   OnClick="ClearAllGrouping">
+                            ?terge toate
+                        </MudButton>
+                    </div>
+                }
+                else
+                {
+                    <span>Trage?i o coloan? aici pentru a grupa datele</span>
+                }
+            </MudText>
+        </MudPaper>
+    }
+
+    <!-- SERVER-SIDE GRID WITH PAGINATION AND NATIVE GROUPING -->
+    <MudDataGrid @ref="_serverGrid"
+                 @key="@($"server-{_gridKey}")"
+                 T="MaterialSanitarDTO"
+                 ServerData="LoadServerData"
+                 Hover="true"
+                 Bordered="true"
+                 Dense="true"
+                 Striped="true"
+                 Filterable="false"
+                 SortMode="SortMode.Multiple"
+                 Hideable="true"
+                 Loading="@_loading"
+                 LoadingProgressColor="Color.Primary"
+                 CanExpand="true"
+                 ExpandMode="DataGridExpandMode.Single"
+                 Groupable="true"
+                 GroupExpanded="true"
+                 DragDropColumnReordering="true"
+                 ShowColumnOptions="true"
+                 ColumnResizeMode="ResizeMode.Column">
+
+        <ToolBarContent>
+            <MudTextField T="string"
+                          Value="@_search"
+                          ValueChanged="OnSearchChanged"
+                          Label="Cauta"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Dense="true"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          DebounceInterval="300"
+                          Class="mx-2"
+                          Style="width: 420px;" />
+
+            <MudSelect T="string"
+                       Value="@_categorieFilter"
+                       ValueChanged="OnCategorieChanged"
+                       Label="Categorie"
+                       Variant="Variant.Outlined"
+                       Dense="true"
+                       Margin="Margin.Dense"
+                       Class="mx-2"
+                       Style="width: 180px;">
+                <MudSelectItem Value="@("toate")">Toate</MudSelectItem>
+                <MudSelectItem Value="@("Consumabile")">Consumabile</MudSelectItem>
+                <MudSelectItem Value="@("Echipamente")">Echipamente</MudSelectItem>
+                <MudSelectItem Value="@("Instrumente")">Instrumente</MudSelectItem>
+                <MudSelectItem Value="@("Protective")">Protective</MudSelectItem>
+            </MudSelect>
+
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="ClearFiltersAndReload" Class="mx-2">Curata</MudButton>
+
+            <MudMenu Label="Coloane" StartIcon="@Icons.Material.Filled.ViewColumn" Class="mx-2" Dense="true">
+                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showDenumire)))">
+                    <MudIcon Icon="@(showDenumire ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Denumire
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showCategorie)))">
+                    <MudIcon Icon="@(showCategorie ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Categorie
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showUnitateMasura)))">
+                    <MudIcon Icon="@(showUnitateMasura ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> U.M.
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showSterile)))">
+                    <MudIcon Icon="@(showSterile ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Sterile
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showUniUzinta)))">
+                    <MudIcon Icon="@(showUniUzinta ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Uzinta
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showDataCreare)))">
+                    <MudIcon Icon="@(showDataCreare ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Data Creare
+                </MudMenuItem>
+            </MudMenu>
+
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Success"
+                      StartIcon="@Icons.Material.Filled.Refresh"
+                      OnClick="RefreshDataAsync" 
+                      Class="mx-2"
+                      Disabled="@_loading">
+                Reincarca
+            </MudButton>
+        </ToolBarContent>
+
+        <Columns>
+            <HierarchyColumn T="MaterialSanitarDTO" />
+            <PropertyColumn Property="x => x.Id" Title="ID" Hidden="true" />
+            <PropertyColumn Property="x => x.Denumire" Title="Denumire" Groupable="true" Sortable="true" Hidden="@(!showDenumire)" />
+            <PropertyColumn Property="x => x.Categorie" Title="Categorie" Groupable="true" Sortable="true" Hidden="@(!showCategorie)" />
+            <PropertyColumn Property="x => x.UnitateaMasura" Title="U.M." Groupable="true" Sortable="true" Hidden="@(!showUnitateMasura)" />
+            
+            <TemplateColumn Title="Sterile" Groupable="true" Sortable="true" SortBy="@(x => x.Sterile)" GroupBy="@(x => x.Sterile ? "Sterile" : "Nesterile")" Hidden="@(!showSterile)">
+                <CellTemplate>
+                    <MudChip Size="Size.Small" Color="@(context.Item.Sterile ? Color.Success : Color.Default)" Variant="Variant.Filled" Dense="true">
+                        @(context.Item.Sterile ? "Da" : "Nu")
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Uz unic" Groupable="true" Sortable="true" SortBy="@(x => x.UniUzinta)" GroupBy="@(x => x.UniUzinta ? "Uz Unic" : "Reutilizabil")" Hidden="@(!showUniUzinta)">
+                <CellTemplate>
+                    <MudChip Size="Size.Small" Color="@(context.Item.UniUzinta ? Color.Warning : Color.Info)" Variant="Variant.Filled" Dense="true">
+                        @(context.Item.UniUzinta ? "Da" : "Nu")
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy" Groupable="true" Sortable="true" Hidden="@(!showDataCreare)" />
+
+            <TemplateColumn Title="Actiuni" Groupable="false" Sortable="false">
+                <CellTemplate>
+                    <div class="d-inline-flex flex-row align-center" style="gap:6px; white-space:nowrap;">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" OnClick="@(() => ViewAsync(@context.Item))" Disabled="@_loading" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditAsync(@context.Item))" Disabled="@_loading" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(@context.Item))" Disabled="@_loading" />
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+
+        <PagerContent>
+            <MudDataGridPager T="MaterialSanitarDTO" 
+                             PageSizeOptions="new int[]{10, 25, 50, 100}" 
+                             InfoFormat="@("{first_item}-{last_item} din {all_items}")" />
+        </PagerContent>
+
+        <ChildRowContent>
+            <MudDataGrid T="DetailRow"
+                         Items="@GetDetails(context.Item)"
+                         Dense="true"
+                         Bordered="true"
+                         Hover="true"
+                         Hideable="false">
+                <Columns>
+                    <PropertyColumn Property="d => d.Label" Title="Camp" />
+                    <PropertyColumn Property="d => d.Value" Title="Valoare" />
+                </Columns>
+            </MudDataGrid>
+        </ChildRowContent>
+    </MudDataGrid>
 </MudPaper>
+
+@code {
+    private MudDataGrid<MaterialSanitarDTO> _serverGrid;
+    private int _gridKey = 0;
+    private int _totalItems;
+
+    private bool showDenumire = true;
+    private bool showCategorie = true;
+    private bool showUnitateMasura = true;
+    private bool showSterile = true;
+    private bool showUniUzinta = true;
+    private bool showDataCreare = false;
+
+    private bool _loading = false;
+    private string _search = string.Empty;
+    private string _categorieFilter = "toate";
+
+    // Grouping variables
+    private bool _hasGrouping = true;
+    private List<string> _groupedColumns = new();
+
+    private async Task<GridData<MaterialSanitarDTO>> LoadServerData(GridState<MaterialSanitarDTO> state)
+    {
+        try
+        {
+            _loading = true;
+            StateHasChanged();
+
+            // Build sort string from state
+            var sortDefinitions = new List<string>();
+            foreach (var sortDefinition in state.SortDefinitions)
+            {
+                var direction = sortDefinition.Descending ? "desc" : "asc";
+                sortDefinitions.Add($"{sortDefinition.SortBy}:{direction}");
+            }
+            var sort = string.Join(",", sortDefinitions);
+
+            // For now, let MudBlazor handle grouping client-side
+            // The groupBy parameter will be empty, but server will still sort properly
+            var groupBy = string.Empty;
+            if (_hasGrouping)
+            {
+                groupBy = string.Join(",", _groupedColumns);
+            }
+
+            // Use the new paged grouped method
+            var result = await MaterialSanitarClient.GetPagedGroupedAsync(
+                _search, 
+                _categorieFilter, 
+                groupBy, 
+                sort, 
+                state.Page + 1, // MudBlazor uses 0-based pages
+                state.PageSize);
+
+            _totalItems = result.TotalCount;
+
+            return new GridData<MaterialSanitarDTO>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Eroare la înc?rcarea datelor: {ex.Message}", Severity.Error);
+            return new GridData<MaterialSanitarDTO> { Items = new List<MaterialSanitarDTO>(), TotalItems = 0 };
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSearchChanged(string? text)
+    {
+        _search = text ?? string.Empty;
+        await RefreshDataAsync();
+    }
+
+    private async Task OnCategorieChanged(string? value)
+    {
+        _categorieFilter = string.IsNullOrWhiteSpace(value) ? "toate" : value;
+        await RefreshDataAsync();
+    }
+
+    private async Task ClearFiltersAndReload()
+    {
+        _search = string.Empty;
+        _categorieFilter = "toate";
+        await RefreshDataAsync();
+    }
+
+    private async Task RefreshDataAsync()
+    {
+        if (_serverGrid != null)
+        {
+            await _serverGrid.ReloadServerData();
+        }
+    }
+
+    private void ToggleColumn(string name)
+    {
+        switch (name)
+        {
+            case nameof(showDenumire): showDenumire = !showDenumire; break;
+            case nameof(showCategorie): showCategorie = !showCategorie; break;
+            case nameof(showUnitateMasura): showUnitateMasura = !showUnitateMasura; break;
+            case nameof(showSterile): showSterile = !showSterile; break;
+            case nameof(showUniUzinta): showUniUzinta = !showUniUzinta; break;
+            case nameof(showDataCreare): showDataCreare = !showDataCreare; break;
+        }
+    }
+
+    private IEnumerable<DetailRow> GetDetails(MaterialSanitarDTO item)
+    {
+        if (!string.IsNullOrEmpty(item.Specificatii))
+            yield return new DetailRow("Specificatii", item.Specificatii);
+        if (!string.IsNullOrEmpty(item.UnitateaMasura))
+            yield return new DetailRow("Unitatea Masura", item.UnitateaMasura);
+        yield return new DetailRow("Data Creare", item.DataCreare.ToString("dd.MM.yyyy HH:mm"));
+        yield return new DetailRow("Data Modificare", item.DataModificare.ToString("dd.MM.yyyy HH:mm"));
+        yield return new DetailRow("GUID", item.Guid.ToString());
+    }
+    
+    private class DetailRow 
+    { 
+        public string Label { get; set; } 
+        public string Value { get; set; } 
+        public DetailRow(string l, string v) { Label = l; Value = v; } 
+    }
+
+    private async Task AddAsync() 
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareMaterialSanitarDialog>("Adauga material sanitar nou", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                StateHasChanged();
+
+                var materialDto = (MaterialSanitarDTO)result.Data;
+                
+                var createDto = new CreateMaterialSanitarDTO
+                {
+                    Denumire = materialDto.Denumire,
+                    Categorie = materialDto.Categorie,
+                    Specificatii = materialDto.Specificatii,
+                    UnitateaMasura = materialDto.UnitateaMasura,
+                    Sterile = materialDto.Sterile,
+                    UniUzinta = materialDto.UniUzinta
+                };
+
+                var id = await MaterialSanitarClient.CreateAsync(createDto);
+
+                Snackbar.Add("Material sanitar adaugat cu succes", Severity.Success);
+                await RefreshDataAsync();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Eroare la adaugarea materialului sanitar: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task ViewAsync(MaterialSanitarDTO item) 
+    {
+        var parameters = new DialogParameters<AdaugaEditareMaterialSanitarDialog>
+        {
+            { x => x.Material, item },
+            { x => x.ReadOnly, true }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareMaterialSanitarDialog>("Detalii material sanitar", parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task EditAsync(MaterialSanitarDTO item) 
+    {
+        var parameters = new DialogParameters<AdaugaEditareMaterialSanitarDialog>
+        {
+            { x => x.Material, item },
+            { x => x.ReadOnly, false }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareMaterialSanitarDialog>("Editare material sanitar", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                StateHasChanged();
+
+                var materialDto = (MaterialSanitarDTO)result.Data;
+                
+                var updateDto = new UpdateMaterialSanitarDTO
+                {
+                    Id = materialDto.Id,
+                    Denumire = materialDto.Denumire,
+                    Categorie = materialDto.Categorie,
+                    Specificatii = materialDto.Specificatii,
+                    UnitateaMasura = materialDto.UnitateaMasura,
+                    Sterile = materialDto.Sterile,
+                    UniUzinta = materialDto.UniUzinta
+                };
+
+                var success = await MaterialSanitarClient.UpdateAsync(updateDto);
+
+                if (success)
+                {
+                    Snackbar.Add("Material sanitar actualizat cu succes", Severity.Success);
+                    await RefreshDataAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Actualizarea materialului sanitar a esuat", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Eroare la actualizarea materialului sanitar: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task DeleteAsync(MaterialSanitarDTO item) 
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Sigur doriti sa stergeti materialul sanitar '{item.Denumire}'? Aceasta actiune nu poate fi anulata." },
+            { "ButtonText", "Sterge" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare stergere", parameters, options).Result;
+
+        if (!dialogResult.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                StateHasChanged();
+
+                var success = await MaterialSanitarClient.DeleteAsync(item.Id);
+
+                if (success)
+                {
+                    Snackbar.Add("Material sanitar sters cu succes", Severity.Success);
+                    await RefreshDataAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Stergerea materialului sanitar a esuat", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Eroare la stergerea materialului sanitar: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void RemoveGrouping(string columnName)
+    {
+        _groupedColumns.Remove(columnName);
+        if (!_groupedColumns.Any())
+        {
+            _hasGrouping = false;
+        }
+        StateHasChanged();
+    }
+
+    private void ClearAllGrouping()
+    {
+        _groupedColumns.Clear();
+        _hasGrouping = false;
+        StateHasChanged();
+    }
+}

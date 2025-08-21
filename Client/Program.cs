@@ -35,8 +35,17 @@ builder.Services.AddScoped<JudetService>();
 builder.Services.AddScoped<ILocalitateService, LocalitateService>();
 builder.Services.AddScoped<IPersoanaService, PersoanaService>();
 
+// Partener services
+builder.Services.AddScoped<IPartenerService, PartenerService>();
+
 // Medicament client
 builder.Services.AddScoped<IMedicamentClient, MedicamentClient>();
+
+// Material sanitar client
+builder.Services.AddScoped<IMaterialSanitarClient, MaterialSanitarClient>();
+
+// Dispozitiv medical client
+builder.Services.AddScoped<IDispozitivMedicalClient, DispozitivMedicalClient>();
 
 // Register the authorization message handler
 builder.Services.AddScoped<AuthorizationMessageHandler>();

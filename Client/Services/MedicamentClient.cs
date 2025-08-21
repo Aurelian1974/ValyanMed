@@ -84,5 +84,17 @@ namespace Client.Services
 
             return await _http.GetFromJsonAsync<PagedResult<MedicamentDTO>>(url) ?? new PagedResult<MedicamentDTO>();
         }
+
+        public async Task<IEnumerable<MedicamentDTO>> GetAllGroupedAsync(string? search, string? status, string? groupBy, string? sort)
+        {
+            var sb = new StringBuilder("api/medicamente/grouped?");
+            if (!string.IsNullOrWhiteSpace(search)) sb.Append("search=").Append(Uri.EscapeDataString(search)).Append('&');
+            if (!string.IsNullOrWhiteSpace(status)) sb.Append("status=").Append(Uri.EscapeDataString(status)).Append('&');
+            if (!string.IsNullOrWhiteSpace(groupBy)) sb.Append("groupBy=").Append(Uri.EscapeDataString(groupBy)).Append('&');
+            if (!string.IsNullOrWhiteSpace(sort)) sb.Append("sort=").Append(Uri.EscapeDataString(sort)).Append('&');
+            var url = sb.ToString().TrimEnd('&', '?');
+
+            return await _http.GetFromJsonAsync<IEnumerable<MedicamentDTO>>(url) ?? new List<MedicamentDTO>();
+        }
     }
 }

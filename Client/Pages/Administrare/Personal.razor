@@ -49,9 +49,7 @@
         SortMode="SortMode.Multiple"
         Hideable="true"
         Loading="@_loading"
-        LoadingProgressColor="Color.Primary"
-        RowClick="@RowClicked"
-        SelectedItemsChanged="@SelectedItemsChanged">
+        LoadingProgressColor="Color.Primary">
 
         <ToolBarContent>
             <MudTextField @bind-Value="_searchString" Placeholder="Cauta"
@@ -136,23 +134,6 @@
     </MudDataGrid>
 </MudPaper>
 
-@if(_evenimente.Count > 0)
-{
-    <MudExpansionPanels Class="mt-4">
-        <MudExpansionPanel Text="Jurnal activitati" IsInitiallyExpanded="false">
-            @foreach (var mesaj in _evenimente)
-            {
-                <MudText Typo="@Typo.body2">@mesaj</MudText>
-            }
-            <div class="d-flex">
-                <MudSpacer />
-                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" 
-                          OnClick="@(() => _evenimente.Clear())">Goleste jurnal</MudButton>
-            </div>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
-}
-
 @code {
     private string _searchString = "";
     private string _filterNume = "";
@@ -161,7 +142,6 @@
     private string _filterStatus = "toti";
     private DateTime? _filterDataDeLa;
     private DateTime? _filterDataPanaLa;
-    private List<string> _evenimente = new();
     private List<PersoanaModel> personalList = new();
     private List<PersoanaModel> personalListFiltrat = new();
     private bool _loading = false;
@@ -187,14 +167,12 @@
         {
             personalList = await PersoanaService.GetAllPersonalAsync();
             personalListFiltrat = personalList;
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Date incarcate cu succes: {personalList.Count} angajati");
         }
         catch (Exception ex)
         {
             _loadError = true;
             _errorMessage = ex.Message;
             Snackbar.Add($"Eroare la incarcarea datelor: {ex.Message}", Severity.Error);
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
         }
         finally
         {
@@ -228,13 +206,10 @@
                 (!_filterDataDeLa.HasValue || !p.DataAngajarii.HasValue || p.DataAngajarii.Value.Date >= _filterDataDeLa.Value.Date) &&
                 (!_filterDataPanaLa.HasValue || !p.DataAngajarii.HasValue || p.DataAngajarii.Value.Date <= _filterDataPanaLa.Value.Date)
             ).ToList();
-
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Filtre aplicate: {personalListFiltrat.Count} rezultate");
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Eroare la filtrare: {ex.Message}", Severity.Error);
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la filtrare: {ex.Message}");
         }
         finally
         {
@@ -281,7 +256,6 @@
         else
         {
             deleteError = null;
-            // Reincarca lista sau actualizeaza UI-ul
         }
     }
 
@@ -290,24 +264,8 @@
         deleteError = null;
     }
 
-    // Event handlers
-    void RowClicked(DataGridRowClickEventArgs<PersoanaModel> args)
-    {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - MudBlazor: Click pe randul {args.RowIndex}: {args.Item.Nume} {args.Item.Prenume}");
-    }
-
-    void SelectedItemsChanged(HashSet<PersoanaModel> items)
-    {
-        if (items.Count > 0)
-        {
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - MudBlazor: {items.Count} angajati selectati");
-        }
-    }
-
     async Task AdaugaAngajat()
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Initiere adaugare angajat nou");
-        
         var parameters = new DialogParameters();
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = DialogService.Show<AdaugaEditareAngajatDialog>("Adauga angajat nou", parameters, options);
@@ -325,12 +283,10 @@
                 personalList.Add(newAngajat);
                 personalListFiltrat = personalList;
                 Snackbar.Add("Angajat adaugat cu succes", Severity.Success);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat adaugat: {newAngajat.Nume} {newAngajat.Prenume}");
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Eroare la adaugarea angajatului: {ex.Message}", Severity.Error);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
             {
@@ -341,8 +297,6 @@
 
     async Task EditareAngajat(PersoanaModel angajat)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Editare angajat: {angajat.Nume} {angajat.Prenume}");
-        
         var parameters = new DialogParameters();
         parameters.Add("Angajat", angajat);
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -366,13 +320,11 @@
                         personalListFiltrat = personalList;
                     }
                     Snackbar.Add("Angajat actualizat cu succes", Severity.Success);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat actualizat: {updatedAngajat.Nume} {updatedAngajat.Prenume}");
                 }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Eroare la actualizarea angajatului: {ex.Message}", Severity.Error);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
             {
@@ -383,8 +335,6 @@
 
     async Task StergereAngajat(PersoanaModel angajat)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Stergere angajat: {angajat.Nume} {angajat.Prenume}");
-        
         var parameters = new DialogParameters
         {
             { "ContentText", $"Sigur doriti sa stergeti angajatul {angajat.Nume} {angajat.Prenume}?" },
@@ -406,19 +356,16 @@
                     personalList.Remove(angajat);
                     personalListFiltrat = personalList.ToList();
                     Snackbar.Add("Angajat sters cu succes", Severity.Success);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Angajat sters: {angajat.Nume} {angajat.Prenume}");
                 }
                 else
                 {
                     deleteError = result.ErrorMessage;
                     Snackbar.Add(deleteError, Severity.Error);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la stergere: {deleteError}");
                 }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Eroare la stergerea angajatului: {ex.Message}", Severity.Error);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
             {
@@ -429,8 +376,6 @@
 
     void VizualizareAngajat(PersoanaModel angajat)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Vizualizare angajat: {angajat.Nume} {angajat.Prenume}");
-        
         var parameters = new DialogParameters();
         parameters.Add("Angajat", angajat);
         parameters.Add("ReadOnly", true);

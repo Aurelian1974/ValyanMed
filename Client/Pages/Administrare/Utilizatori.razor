@@ -88,26 +88,8 @@
     </MudDataGrid>
 </MudPaper>
 
-@if(_evenimente.Count > 0)
-{
-    <MudExpansionPanels Class="mt-4">
-        <MudExpansionPanel Text="Jurnal activitati" IsInitiallyExpanded="false">
-            @foreach (var mesaj in _evenimente)
-            {
-                <MudText Typo="@Typo.body2">@mesaj</MudText>
-            }
-            <div class="d-flex">
-                <MudSpacer />
-                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" 
-                          OnClick="@(() => _evenimente.Clear())">Goleste jurnal</MudButton>
-            </div>
-        </MudExpansionPanel>
-    </MudExpansionPanels>
-}
-
 @code {
     private string _searchString = "";
-    private List<string> _evenimente = new();
     private List<UtilizatorDTO> utilizatoriList = new();
     private List<UtilizatorDTO> utilizatoriListFiltrat = new();
     private List<PersoanaDTO> persoane = new();
@@ -131,21 +113,19 @@
         try
         {
             utilizatoriList = await UtilizatorService.GetAllUtilizatoriAsync();
-            utilizatoriListFiltrat = new List<UtilizatorDTO>(utilizatoriList); // Create a new list reference
-            _refreshKey++; // Increment refresh key to force complete grid rebuild
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Date incarcate cu succes: {utilizatoriList.Count} utilizatori");
+            utilizatoriListFiltrat = new List<UtilizatorDTO>(utilizatoriList);
+            _refreshKey++;
         }
         catch (Exception ex)
         {
             _loadError = true;
             _errorMessage = ex.Message;
             Snackbar.Add($"Eroare la incarcarea datelor: {ex.Message}", Severity.Error);
-            _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
         }
         finally
         {
             _loading = false;
-            StateHasChanged(); // Ensure UI is updated
+            StateHasChanged();
         }
     }
 
@@ -175,8 +155,6 @@
 
     private async Task AdaugaUtilizator()
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Initiere adaugare utilizator nou");
-        
         var parameters = new DialogParameters();
         parameters.Add("Persoane", persoane);
         
@@ -193,16 +171,13 @@
                 
                 var id = await UtilizatorService.CreateUtilizatorAsync(createUtilizatorDTO);
                 
-                // Reload the list after adding
                 await LoadUtilizatoriAsync();
                 
                 Snackbar.Add("Utilizator adaugat cu succes", Severity.Success);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator adaugat: {createUtilizatorDTO.NumeUtilizator}");
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Eroare la adaugarea utilizatorului: {ex.Message}", Severity.Error);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
             {
@@ -213,8 +188,6 @@
 
     private async Task EditareUtilizator(UtilizatorDTO utilizator)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Editare utilizator: {utilizator.NumeUtilizator}");
-        
         var parameters = new DialogParameters();
         parameters.Add("Utilizator", utilizator);
         parameters.Add("Persoane", persoane);
@@ -230,63 +203,47 @@
                 _loading = true;
                 var updateUtilizatorDTO = (UpdateUtilizatorDTO)result.Data;
                 
-                // Log the data being sent for debugging
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Request data: ID={updateUtilizatorDTO.Id}, " +
-                    $"User={updateUtilizatorDTO.NumeUtilizator}, Email={updateUtilizatorDTO.Email}, " +
-                    $"PersoanaId={updateUtilizatorDTO.PersoanaId}, HasPassword={(string.IsNullOrEmpty(updateUtilizatorDTO.Parola) ? "No" : "Yes")}");
-                
                 try
                 {
                     var success = await UtilizatorService.UpdateUtilizatorAsync(updateUtilizatorDTO);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - API response: {(success ? "Success" : "Failed")}");
                     
                     if (success)
                     {
-                        // Force complete refresh from server
-                        utilizatoriList.Clear(); // Clear the list first
-                        utilizatoriListFiltrat = new List<UtilizatorDTO>(); // Create empty filtered list to trigger UI update
-                        _refreshKey++; // Increment the refresh key to force UI update
-                        StateHasChanged(); // Force UI to update with empty list
+                        utilizatoriList.Clear();
+                        utilizatoriListFiltrat = new List<UtilizatorDTO>();
+                        _refreshKey++;
+                        StateHasChanged();
                         
-                        // Then reload the data
                         await LoadUtilizatoriAsync();
                         
-                        // Additional StateHasChanged to ensure UI updates
                         StateHasChanged();
                         
                         Snackbar.Add("Utilizator actualizat cu succes", Severity.Success);
-                        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator actualizat: {updateUtilizatorDTO.NumeUtilizator}");
                     }
                     else
                     {
                         Snackbar.Add("Actualizarea utilizatorului a esuat", Severity.Error);
-                        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: Actualizarea utilizatorului a esuat");
                     }
                 }
                 catch (HttpRequestException httpEx)
                 {
-                    // More detailed HTTP error information
                     Snackbar.Add($"Eroare HTTP: {httpEx.StatusCode} - {httpEx.Message}", Severity.Error);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare HTTP: {httpEx.StatusCode} - {httpEx.Message}");
                 }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Eroare la actualizarea utilizatorului: {ex.Message}", Severity.Error);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
             {
                 _loading = false;
-                StateHasChanged(); // Additional StateHasChanged in finally block
+                StateHasChanged();
             }
         }
     }
 
     private async Task StergereUtilizator(UtilizatorDTO utilizator)
     {
-        _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Stergere utilizator: {utilizator.NumeUtilizator}");
-        
         var parameters = new DialogParameters
         {
             { "ContentText", $"Sigur doriti sa stergeti utilizatorul {utilizator.NumeUtilizator}?" },
@@ -306,23 +263,19 @@
                 
                 if (result.Success)
                 {
-                    // Remove from the list
                     utilizatoriList.RemoveAll(u => u.Id == utilizator.Id);
                     utilizatoriListFiltrat = utilizatoriList.ToList();
                     
                     Snackbar.Add("Utilizator sters cu succes", Severity.Success);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Utilizator sters: {utilizator.NumeUtilizator}");
                 }
                 else
                 {
                     Snackbar.Add(result.ErrorMessage, Severity.Error);
-                    _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare la stergere: {result.ErrorMessage}");
                 }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"Eroare la stergerea utilizatorului: {ex.Message}", Severity.Error);
-                _evenimente.Insert(0, $"{DateTime.Now:HH:mm:ss} - Eroare: {ex.Message}");
             }
             finally
             {

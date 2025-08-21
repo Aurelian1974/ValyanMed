@@ -1,0 +1,180 @@
+@using MudBlazor
+@using global::Shared.DTOs
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(Material?.Id > 0 ? "Editare material sanitar" : "Adauga material sanitar nou")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            <MudTabPanel Text="Informatii generale">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@model.Denumire" 
+                                     Label="Denumire" 
+                                     Required="true" 
+                                     ReadOnly="@ReadOnly" 
+                                     Error="@(string.IsNullOrEmpty(model.Denumire) && submitted)" 
+                                     ErrorText="Denumirea este obligatorie"
+                                     HelperText="Denumirea completa a materialului sanitar" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.Categorie" 
+                                  Label="Categorie" 
+                                  ReadOnly="@ReadOnly"
+                                  HelperText="Categoria materialului sanitar">
+                            <MudSelectItem Value="@("Consumabile")">Consumabile</MudSelectItem>
+                            <MudSelectItem Value="@("Echipamente")">Echipamente</MudSelectItem>
+                            <MudSelectItem Value="@("Instrumente")">Instrumente</MudSelectItem>
+                            <MudSelectItem Value="@("Protective")">Protective</MudSelectItem>
+                            <MudSelectItem Value="@("Dispozitive")">Dispozitive</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.UnitateaMasura" 
+                                     Label="Unitatea de masura" 
+                                     ReadOnly="@ReadOnly"
+                                     HelperText="buc, kg, l, m, etc." />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Caracteristici">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@model.Specificatii" 
+                                     Label="Specificatii" 
+                                     ReadOnly="@ReadOnly"
+                                     Lines="4"
+                                     HelperText="Specificatii tehnice detaliate" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSwitch @bind-Value="@model.Sterile" 
+                                  Label="Steril" 
+                                  ReadOnly="@ReadOnly"
+                                  Color="Color.Success"
+                                  HelperText="Materialul este steril" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSwitch @bind-Value="@model.UniUzinta" 
+                                  Label="De unica folosinta" 
+                                  ReadOnly="@ReadOnly"
+                                  Color="Color.Warning"
+                                  HelperText="Materialul este de unica folosinta" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Informatii audit" Disabled="@(Material?.Id == 0)">
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@model.DataCreare.ToString("dd.MM.yyyy HH:mm:ss")" 
+                                     Label="Data crearii" 
+                                     ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@model.DataModificare.ToString("dd.MM.yyyy HH:mm:ss")" 
+                                     Label="Data modificarii" 
+                                     ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@model.Guid.ToString()" 
+                                     Label="GUID" 
+                                     ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@(ReadOnly ? "Inchide" : "Anuleaza")</MudButton>
+        @if (!ReadOnly)
+        {
+            <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@isBusy">
+                @if (isBusy)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Se proceseaza...</MudText>
+                }
+                else
+                {
+                    <MudText>Salveaza</MudText>
+                }
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudBlazor.IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public MaterialSanitarDTO? Material { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    
+    private MaterialSanitarDTO model = new MaterialSanitarDTO();
+    private bool submitted = false;
+    private bool isBusy = false;
+
+    protected override Task OnInitializedAsync()
+    {
+        if (Material != null)
+        {
+            // Editare - copiaza datele existente
+            model = new MaterialSanitarDTO
+            {
+                Id = Material.Id,
+                Guid = Material.Guid,
+                Denumire = Material.Denumire,
+                Categorie = Material.Categorie,
+                Specificatii = Material.Specificatii,
+                UnitateaMasura = Material.UnitateaMasura,
+                Sterile = Material.Sterile,
+                UniUzinta = Material.UniUzinta,
+                DataCreare = Material.DataCreare,
+                DataModificare = Material.DataModificare
+            };
+        }
+        else
+        {
+            // Adaugare noua - seteaza valori default
+            model = new MaterialSanitarDTO
+            {
+                Guid = Guid.NewGuid(),
+                DataCreare = DateTime.Now,
+                DataModificare = DateTime.Now,
+                Sterile = false,
+                UniUzinta = true,
+                Denumire = string.Empty
+            };
+        }
+
+        return base.OnInitializedAsync();
+    }
+    
+    async Task Submit()
+    {
+        submitted = true;
+        
+        // Validari de baza
+        if (string.IsNullOrEmpty(model.Denumire))
+        {
+            return;
+        }
+        
+        isBusy = true;
+        
+        try
+        {
+            await Task.Delay(300); // Simuleaza delay pentru UX mai bun
+            MudDialog.Close(DialogResult.Ok(model));
+        }
+        catch (Exception)
+        {
+            isBusy = false;
+        }
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

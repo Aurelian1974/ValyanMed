@@ -60,7 +60,6 @@ namespace Client.Services
                 }
                 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Error updating user: {response.StatusCode}, Details: {errorContent}");
                 
                 try
                 {
@@ -76,7 +75,6 @@ namespace Client.Services
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HTTP Exception in UpdateUtilizatorAsync: {ex.Message}");
                 throw new Exception($"Eroare de conexiune: {ex.Message}");
             }
             catch (Exception)

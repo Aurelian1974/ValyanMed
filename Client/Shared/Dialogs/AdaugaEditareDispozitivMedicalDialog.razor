@@ -1,0 +1,213 @@
+@using MudBlazor
+@using global::Shared.DTOs
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            @(Dispozitiv?.Id > 0 ? "Editare dispozitiv medical" : "Adauga dispozitiv medical nou")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            <MudTabPanel Text="Informatii generale">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@model.Denumire" 
+                                     Label="Denumire" 
+                                     Required="true" 
+                                     ReadOnly="@ReadOnly" 
+                                     Error="@(string.IsNullOrEmpty(model.Denumire) && submitted)" 
+                                     ErrorText="Denumirea este obligatorie"
+                                     HelperText="Denumirea completa a dispozitivului medical" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.Categorie" 
+                                  Label="Categorie" 
+                                  ReadOnly="@ReadOnly"
+                                  HelperText="Categoria dispozitivului medical">
+                            <MudSelectItem Value="@("Monitoring")">Monitoring</MudSelectItem>
+                            <MudSelectItem Value="@("Diagnostic")">Diagnostic</MudSelectItem>
+                            <MudSelectItem Value="@("Chirurgical")">Chirurgical</MudSelectItem>
+                            <MudSelectItem Value="@("Terapeutic")">Terapeutic</MudSelectItem>
+                            <MudSelectItem Value="@("Implant")">Implant</MudSelectItem>
+                            <MudSelectItem Value="@("Echipament suport")">Echipament suport</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect @bind-Value="@model.ClasaRisc" 
+                                  Label="Clasa de risc" 
+                                  ReadOnly="@ReadOnly"
+                                  HelperText="Clasa de risc conform regulamentelor UE">
+                            <MudSelectItem Value="@("I")">Clasa I (risc scazut)</MudSelectItem>
+                            <MudSelectItem Value="@("IIa")">Clasa IIa (risc mediu-scazut)</MudSelectItem>
+                            <MudSelectItem Value="@("IIb")">Clasa IIb (risc mediu-ridicat)</MudSelectItem>
+                            <MudSelectItem Value="@("III")">Clasa III (risc ridicat)</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.Producator" 
+                                     Label="Producator" 
+                                     ReadOnly="@ReadOnly"
+                                     HelperText="Numele producatorului" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.ModelTip" 
+                                     Label="Model/Tip" 
+                                     ReadOnly="@ReadOnly"
+                                     HelperText="Modelul sau tipul dispozitivului" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="@model.NumarSerie" 
+                                     Label="Numar de serie" 
+                                     ReadOnly="@ReadOnly"
+                                     HelperText="Numarul de serie unic" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="@model.DataExpirare" 
+                                      Label="Data expirare" 
+                                      ReadOnly="@ReadOnly"
+                                      HelperText="Data expirarii dispozitivului (optional)" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Caracteristici">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@model.Specificatii" 
+                                     Label="Specificatii tehnice" 
+                                     ReadOnly="@ReadOnly"
+                                     Lines="4"
+                                     HelperText="Specificatii tehnice detaliate ale dispozitivului" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSwitch @bind-Value="@model.CertificareCE" 
+                                  Label="Certificare CE" 
+                                  ReadOnly="@ReadOnly"
+                                  Color="Color.Success"
+                                  HelperText="Dispozitivul are certificare CE" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+            
+            <MudTabPanel Text="Informatii audit" Disabled="@(Dispozitiv?.Id == 0)">
+                <MudGrid>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@model.DataCreare.ToString("dd.MM.yyyy HH:mm:ss")" 
+                                     Label="Data crearii" 
+                                     ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@model.DataModificare.ToString("dd.MM.yyyy HH:mm:ss")" 
+                                     Label="Data modificarii" 
+                                     ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@model.Guid.ToString()" 
+                                     Label="GUID" 
+                                     ReadOnly="true" />
+                    </MudItem>
+                    @if (model.DataExpirare.HasValue)
+                    {
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Value="@model.DataExpirare.Value.ToString("dd.MM.yyyy")" 
+                                         Label="Data expirare" 
+                                         ReadOnly="true" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@(ReadOnly ? "Inchide" : "Anuleaza")</MudButton>
+        @if (!ReadOnly)
+        {
+            <MudButton Color="Color.Primary" OnClick="Submit" Disabled="@isBusy">
+                @if (isBusy)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Se proceseaza...</MudText>
+                }
+                else
+                {
+                    <MudText>Salveaza</MudText>
+                }
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudBlazor.IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public DispozitivMedicalDTO? Dispozitiv { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    
+    private DispozitivMedicalDTO model = new DispozitivMedicalDTO();
+    private bool submitted = false;
+    private bool isBusy = false;
+
+    protected override Task OnInitializedAsync()
+    {
+        if (Dispozitiv != null)
+        {
+            // Editare - copiaza datele existente
+            model = new DispozitivMedicalDTO
+            {
+                Id = Dispozitiv.Id,
+                Guid = Dispozitiv.Guid,
+                Denumire = Dispozitiv.Denumire,
+                Categorie = Dispozitiv.Categorie,
+                ClasaRisc = Dispozitiv.ClasaRisc,
+                Producator = Dispozitiv.Producator,
+                ModelTip = Dispozitiv.ModelTip,
+                NumarSerie = Dispozitiv.NumarSerie,
+                CertificareCE = Dispozitiv.CertificareCE,
+                DataExpirare = Dispozitiv.DataExpirare,
+                Specificatii = Dispozitiv.Specificatii,
+                DataCreare = Dispozitiv.DataCreare,
+                DataModificare = Dispozitiv.DataModificare
+            };
+        }
+        else
+        {
+            // Adaugare noua - seteaza valori default
+            model = new DispozitivMedicalDTO
+            {
+                Guid = Guid.NewGuid(),
+                DataCreare = DateTime.Now,
+                DataModificare = DateTime.Now,
+                CertificareCE = false,
+                Denumire = string.Empty
+            };
+        }
+
+        return base.OnInitializedAsync();
+    }
+    
+    async Task Submit()
+    {
+        submitted = true;
+        
+        // Validari de baza
+        if (string.IsNullOrEmpty(model.Denumire))
+        {
+            return;
+        }
+        
+        isBusy = true;
+        
+        try
+        {
+            await Task.Delay(300); // Simuleaza delay pentru UX mai bun
+            MudDialog.Close(DialogResult.Ok(model));
+        }
+        catch (Exception)
+        {
+            isBusy = false;
+        }
+    }
+    
+    void Cancel() => MudDialog.Cancel();
+}

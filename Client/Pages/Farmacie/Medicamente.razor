@@ -402,9 +402,8 @@
             _allItems = result.Items.ToList();
             _totalItems = result.TotalCount;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Error in LoadAllItems: {ex.Message}");
             throw;
         }
     }
@@ -592,7 +591,6 @@
                     Stoc = medicamentDto.Stoc,
                     StocSiguranta = medicamentDto.StocSiguranta,
                     Observatii = medicamentDto.Observatii ?? string.Empty,
-                    // UtilizatorActualizare will be set by the server
                     Activ = true
                 };
 
@@ -602,10 +600,25 @@
                 
                 if (_groupAcrossAll)
                 {
-                    await LoadAllItems();
+                    // Get the newly created item from server and add it at the beginning
+                    var newItem = await MedicamentClient.GetByIdAsync(id);
+                    if (newItem != null)
+                    {
+                        _allItems.Insert(0, newItem);
+                        _totalItems++;
+                    }
+                    StateHasChanged();
                 }
                 else
                 {
+                    // For server-side mode, force sort by creation date descending to show the newest item first
+                    _search = string.Empty;
+                    _statusFilter = "toate";
+                    _totalItems = 0;
+                    
+                    // Force the grid to sort by DataInregistrare descending to show the newest item first
+                    _serverGrid.SortDefinitions.Clear();
+                    await _serverGrid.SetSortAsync("DataInregistrare", SortDirection.Descending, x => x.DataInregistrare);
                     _serverGrid?.ReloadServerData();
                 }
             }
@@ -680,7 +693,6 @@
                     Stoc = medicamentDto.Stoc,
                     StocSiguranta = medicamentDto.StocSiguranta,
                     Observatii = medicamentDto.Observatii ?? string.Empty,
-                    // UtilizatorActualizare will be set by the server
                     Activ = medicamentDto.Activ
                 };
 

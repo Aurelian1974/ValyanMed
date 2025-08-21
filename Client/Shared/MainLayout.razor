@@ -3,7 +3,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject IAuthService AuthService
-@inject Client.Services.JsInteropService JsInteropService
+@inject JsInteropService JsInteropService
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -77,6 +77,7 @@
                 <div style="margin-left:32px;">
                     <MudNavLink Href="/administrare/personal" Icon="@Icons.Material.Filled.People">Personal</MudNavLink>
                     <MudNavLink Href="/administrare/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">Utilizatori</MudNavLink>
+                    <MudNavLink Href="/administrare/parteneri" Icon="@Icons.Material.Filled.Business">Parteneri</MudNavLink>
                     <MudNavLink Href="/administrare/roluri" Icon="@Icons.Material.Filled.GroupWork">Roluri</MudNavLink>
                 </div>
             }
@@ -115,10 +116,6 @@
         
         // Verifica daca utilizatorul este autentificat
         await CheckAuthenticationStatus();
-        
-        // Test the JS interop is working
-        var result = await JsInteropService.SayHelloAsync("Blazor");
-        Console.WriteLine($"JS Interop test result: {result}");
         
         await base.OnInitializedAsync();
     }

@@ -106,6 +106,14 @@ namespace Infrastructure.Repositories
             }
         }
 
+        public async Task<IEnumerable<MedicamentDTO>> GetAllGroupedAsync(string? search, string? status, string? groupBy, string? sort)
+        {
+            return await _db.QueryAsync<MedicamentDTO>(
+                "dbo.sp_Medicament_GetAllGrouped",
+                new { Search = search, Status = status, GroupBy = groupBy, Sort = sort },
+                commandType: CommandType.StoredProcedure);
+        }
+
         private static string BuildOrderBy(string? sort, string? groupBy)
         {
             var order = new List<string>();

@@ -28,14 +28,11 @@
     protected override async Task OnInitializedAsync()
     {
         try {
-            await JSRuntime.InvokeVoidAsync("console.log", "Dashboard initialized");
-            
             // Verifica daca CSS-ul exista înainte de a-l încarca
             await JSRuntime.InvokeVoidAsync("loadCSS", "css/dashboard.css");
         }
-        catch (Exception ex) {
+        catch {
             // Ignora eroarea daca CSS-ul nu poate fi încarcat
-            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading CSS: {ex.Message}");
         }
         
         await base.OnInitializedAsync();

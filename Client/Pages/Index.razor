@@ -1,0 +1,56 @@
+@page "/"
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="redirect-container">
+    <div class="redirect-spinner"></div>
+    <p>Se incarca aplicatia...</p>
+</div>
+
+<style>
+    .redirect-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+    }
+    .redirect-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #1976d2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Verifica rapid daca exista token in localStorage
+            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+            
+            if (string.IsNullOrEmpty(token))
+            {
+                Navigation.NavigateTo("/autentificare", forceLoad: true);
+            }
+            else
+            {
+                Navigation.NavigateTo("/dashboard", forceLoad: true);
+            }
+        }
+        catch
+        {
+            // In caz de eroare, redirectioneaza la autentificare
+            Navigation.NavigateTo("/autentificare", forceLoad: true);
+        }
+    }
+}

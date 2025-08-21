@@ -14,11 +14,13 @@ namespace API.Services
     {
         private readonly IConfiguration _config;
         private readonly string _connectionString;
+        private readonly IJwtTokenService _jwt;
 
-        public UtilizatorService(IConfiguration config)
+        public UtilizatorService(IConfiguration config, IJwtTokenService jwt)
         {
             _config = config;
             _connectionString = _config.GetConnectionString("DefaultConnection");
+            _jwt = jwt;
         }
 
         public async Task<IEnumerable<UtilizatorDTO>> GetAllUtilizatoriAsync()
@@ -44,7 +46,6 @@ namespace API.Services
 
         public async Task<int> CreateUtilizatorAsync(CreateUtilizatorDTO utilizatorDto)
         {
-            // Hash password
             var parolaHash = BCrypt.Net.BCrypt.HashPassword(utilizatorDto.Parola);
             
             using var connection = new SqlConnection(_connectionString);
@@ -57,7 +58,6 @@ namespace API.Services
                 PersoanaId = utilizatorDto.PersoanaId
             };
 
-            // Execute stored procedure and get the identity value (assumes SP returns SCOPE_IDENTITY())
             var id = await connection.ExecuteScalarAsync<int>(
                 "usp_Utilizator_Insert",
                 parameters,
@@ -77,7 +77,6 @@ namespace API.Services
             parameters.Add("@Telefon", utilizatorDto.Telefon);
             parameters.Add("@PersoanaId", utilizatorDto.PersoanaId);
             
-            // Only update password if provided
             if (!string.IsNullOrWhiteSpace(utilizatorDto.Parola))
             {
                 parameters.Add("@ParolaHash", BCrypt.Net.BCrypt.HashPassword(utilizatorDto.Parola));
@@ -87,31 +86,17 @@ namespace API.Services
                 parameters.Add("@ParolaHash", null);
             }
 
-            // Add return parameter to capture stored procedure return value
             parameters.Add("@ReturnValue", dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
 
             try
             {
-                Console.WriteLine($"=== UPDATE USER DEBUG ===");
-                Console.WriteLine($"ID: {utilizatorDto.Id}");
-                Console.WriteLine($"NumeUtilizator: {utilizatorDto.NumeUtilizator}");
-                Console.WriteLine($"Email: {utilizatorDto.Email}");
-                Console.WriteLine($"Telefon: {utilizatorDto.Telefon}");
-                Console.WriteLine($"PersoanaId: {utilizatorDto.PersoanaId}");
-                Console.WriteLine($"HasPassword: {!string.IsNullOrWhiteSpace(utilizatorDto.Parola)}");
-                
                 await connection.ExecuteAsync(
                     "usp_Utilizator_Update",
                     parameters,
                     commandType: CommandType.StoredProcedure);
                     
-                // Get the return value from stored procedure
                 var returnValue = parameters.Get<int>("@ReturnValue");
                 
-                Console.WriteLine($"Stored procedure return value: {returnValue}");
-                Console.WriteLine($"=== END DEBUG ===");
-                
-                // Handle specific return values from stored procedure
                 switch (returnValue)
                 {
                     case -1:
@@ -123,27 +108,21 @@ namespace API.Services
                     case -4:
                         throw new Exception("Utilizatorul nu a fost gasit sau nu s-au facut modificari");
                     case var value when value > 0:
-                        return true; // Success - return value is number of affected rows
+                        return true;
                     default:
                         return false;
                 }
             }
             catch (SqlException ex)
             {
-                Console.WriteLine($"SQL Exception: {ex.Message}");
-                Console.WriteLine($"SQL Number: {ex.Number}");
-                Console.WriteLine($"SQL State: {ex.State}");
-                Console.WriteLine($"SQL Severity: {ex.Class}");
                 throw new Exception(ex.Message, ex);
             }
             catch (Exception ex) when (ex.Message.Contains("exista deja") || ex.Message.Contains("nu exista") || ex.Message.Contains("nu a fost gasit"))
             {
-                // Re-throw our custom exceptions
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"General Exception: {ex.Message}");
                 throw;
             }
         }
@@ -163,7 +142,6 @@ namespace API.Services
         {
             using var connection = new SqlConnection(_connectionString);
             
-            // Get user from database
             var user = await connection.QueryFirstOrDefaultAsync<UtilizatorDb>(
                 "usp_Utilizator_Authenticate",
                 new { NumeUtilizatorSauEmail = usernameOrEmail },
@@ -174,26 +152,27 @@ namespace API.Services
                 return new AuthResult { Success = false, Message = "Utilizator negasit" };
             }
 
-            // Verify password
             bool isValidPassword = BCrypt.Net.BCrypt.Verify(password, user.ParolaHash);
             if (!isValidPassword)
             {
                 return new AuthResult { Success = false, Message = "Parola incorecta" };
             }
 
-            // Get the full name from person table
             var person = await connection.QueryFirstOrDefaultAsync<dynamic>(
                 "SELECT Nume, Prenume FROM Persoana WHERE Id = @PersoanaId",
                 new { PersoanaId = user.PersoanaId });
 
             string fullName = person != null ? $"{person.Nume} {person.Prenume}" : user.NumeUtilizator;
 
+            var token = _jwt.GenerateToken(user, fullName);
+
             return new AuthResult 
             { 
                 User = user, 
                 NumeComplet = fullName, 
                 Success = true,
-                Message = "Autentificare reușita"
+                Message = "Autentificare reușita",
+                Token = token
             };
         }
     }

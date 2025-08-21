@@ -1,9 +1,9 @@
-using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
-using Application.Services;
-using API.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using API.Services; // for ICurrentUserService
+using Application.Services; // for IMedicamentService
 
 namespace API.Controllers
 {
@@ -12,97 +12,37 @@ namespace API.Controllers
     public class MedicamenteController : ControllerBase
     {
         private readonly IMedicamentService _service;
+        private readonly ILogger<MedicamenteController> _logger;
         private readonly ICurrentUserService _currentUserService;
-        
-        public MedicamenteController(IMedicamentService service, ICurrentUserService currentUserService) 
+
+        public MedicamenteController(IMedicamentService service, ILogger<MedicamenteController> logger, ICurrentUserService currentUserService)
         {
             _service = service;
+            _logger = logger;
             _currentUserService = currentUserService;
-            Console.WriteLine("MedicamentController instantiated");
         }
 
+        // Existing default GET that also returns paged data
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MedicamentDTO>>> GetAll()
-            => Ok(await _service.GetAllAsync());
+        public async Task<ActionResult<PagedResult<MedicamentDTO>>> Get([FromQuery] string? search, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? sort = null)
+            => Ok(await _service.GetPagedAsync(search, status, page, pageSize, sort, null));
 
+        // Explicit alias used by the client: GET api/medicamente/paged
         [HttpGet("paged")]
         public async Task<ActionResult<PagedResult<MedicamentDTO>>> GetPaged([FromQuery] string? search, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? sort = null, [FromQuery] string? groupBy = null)
-        {
-            if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 25;
-            if (pageSize > 5000) pageSize = 5000; // safety cap
-            var result = await _service.GetPagedAsync(search, status, page, pageSize, sort, groupBy);
-            return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<MedicamentDTO>> GetById(int id)
-        {
-            var item = await _service.GetByIdAsync(id);
-            return item is null ? NotFound() : Ok(item);
-        }
+            => Ok(await _service.GetPagedAsync(search, status, page, pageSize, sort, groupBy));
 
         [HttpPost]
-        [Authorize] // Only protect write operations for now
-        public async Task<ActionResult<int>> Create([FromBody] CreateMedicamentDTO dto)
-        {
-            Console.WriteLine($"=== CREATE MEDICAMENT ENTERED ===");
-            
-            // Check model state first
-            if (!ModelState.IsValid)
-            {
-                Console.WriteLine("CREATE ModelState is INVALID:");
-                foreach (var kvp in ModelState)
-                {
-                    Console.WriteLine($"  Key: {kvp.Key}");
-                    foreach (var error in kvp.Value.Errors)
-                    {
-                        Console.WriteLine($"    Error: {error.ErrorMessage}");
-                    }
-                }
-                return BadRequest(ModelState);
-            }
-            
-            // ALWAYS set the current user, regardless of what's in the DTO
-            var currentUser = _currentUserService.GetCurrentUserFullName();
-            dto.UtilizatorActualizare = currentUser;
-            Console.WriteLine($"CREATE: Setting UtilizatorActualizare to: '{currentUser}'");
-            
-            var id = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id }, id);
-        }
+        [Authorize]
+        public async Task<ActionResult> Create([FromBody] CreateMedicamentDTO dto)
+            => Ok(new { Id = await _service.CreateAsync(dto) });
 
         [HttpPut("{id}")]
-        [Authorize] // Only protect write operations for now
+        [Authorize]
         public async Task<ActionResult> Update(int id, [FromBody] UpdateMedicamentDTO dto)
         {
-            Console.WriteLine($"=== UPDATE MEDICAMENT ENTERED ===");
-            
-            // Temporarily skip ModelState validation to see if that's the issue
-            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
-            if (!ModelState.IsValid)
-            {
-                Console.WriteLine("ModelState is INVALID - but continuing anyway for debugging:");
-                foreach (var kvp in ModelState)
-                {
-                    Console.WriteLine($"  Key: {kvp.Key}");
-                    foreach (var error in kvp.Value.Errors)
-                    {
-                        Console.WriteLine($"    Error: {error.ErrorMessage}");
-                    }
-                }
-                // Don't return BadRequest here - continue to see what happens
-            }
-            
             try
             {
-                Console.WriteLine($"=== UPDATE MEDICAMENT DEBUG ===");
-                Console.WriteLine($"Request received for ID: {id}");
-                Console.WriteLine($"DTO ID: {dto?.MedicamentID}");
-                Console.WriteLine($"DTO is null: {dto == null}");
-                Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
-                Console.WriteLine($"DTO UtilizatorActualizare before setting: '{dto?.UtilizatorActualizare}'");
-                
                 if (dto == null)
                 {
                     return BadRequest(new { Success = false, Message = "DTO is null" });
@@ -113,12 +53,9 @@ namespace API.Controllers
                     return BadRequest(new { Success = false, Message = "ID din URL nu corespunde cu ID din DTO" });
                 }
 
-                // ALWAYS set the current user, regardless of what's in the DTO
                 var currentUser = _currentUserService.GetCurrentUserFullName();
                 dto.UtilizatorActualizare = currentUser;
                 
-                Console.WriteLine($"Setting UtilizatorActualizare to: '{currentUser}'");
-                    
                 var ok = await _service.UpdateAsync(dto);
                 
                 if (ok)
@@ -132,14 +69,13 @@ namespace API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in Update: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                _logger.LogError(ex, "Exception in Update");
                 return StatusCode(500, new { Success = false, Message = $"Eroare interna: {ex.Message}" });
             }
         }
 
         [HttpDelete("{id}")]
-        [Authorize] // Only protect write operations for now
+        [Authorize]
         public async Task<ActionResult> Delete(int id)
             => Ok(await _service.DeleteAsync(id) ? "Deleted" : "Not found");
 
@@ -147,24 +83,7 @@ namespace API.Controllers
         [Authorize]
         public ActionResult TestAuth()
         {
-            Console.WriteLine($"=== TEST AUTH ENDPOINT ===");
-            Console.WriteLine($"Request Headers:");
-            foreach (var header in Request.Headers)
-            {
-                Console.WriteLine($"  {header.Key}: {string.Join(", ", header.Value.ToArray())}");
-            }
-            Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
-            Console.WriteLine($"User name: {User.Identity?.Name}");
-            Console.WriteLine($"Claims count: {User.Claims.Count()}");
-            
-            foreach (var claim in User.Claims)
-            {
-                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
-            }
-            
             var currentUser = _currentUserService.GetCurrentUserFullName();
-            Console.WriteLine($"CurrentUserService returned: {currentUser}");
-            
             return Ok(new { 
                 Authenticated = User.Identity?.IsAuthenticated,
                 UserName = User.Identity?.Name,
@@ -177,20 +96,33 @@ namespace API.Controllers
         [Authorize]
         public ActionResult TestUpdate(int id)
         {
-            Console.WriteLine($"=== TEST UPDATE ENDPOINT REACHED ===");
-            Console.WriteLine($"ID: {id}");
-            Console.WriteLine($"User authenticated: {User.Identity?.IsAuthenticated}");
-            Console.WriteLine($"User name: {User.Identity?.Name}");
-            
             var currentUser = _currentUserService.GetCurrentUserFullName();
-            Console.WriteLine($"CurrentUserService returned: '{currentUser}'");
-            
             return Ok(new { 
-                Message = "Test update endpoint reached",
                 Id = id,
-                User = currentUser,
-                Authenticated = User.Identity?.IsAuthenticated
+                Authenticated = User.Identity?.IsAuthenticated,
+                UserName = User.Identity?.Name,
+                CurrentUser = currentUser
             });
+        }
+
+        // GET api/medicamente/grouped
+        [HttpGet("grouped")]
+        public async Task<ActionResult<IEnumerable<MedicamentDTO>>> GetGrouped(
+            [FromQuery] string? search, 
+            [FromQuery] string? status, 
+            [FromQuery] string? groupBy = null, 
+            [FromQuery] string? sort = null)
+        {
+            try
+            {
+                var result = await _service.GetAllGroupedAsync(search, status, groupBy, sort);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Eroare la obtinerea medicamentelor grupate");
+                return StatusCode(500, new { message = "Eroare interna la obtinerea medicamentelor" });
+            }
         }
     }
 }

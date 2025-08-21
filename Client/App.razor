@@ -1,6 +1,5 @@
 ﻿@using Client.Shared
 @using Client.Services
-@* @using Client.Services *@
 @using Microsoft.AspNetCore.Components.Authorization
 
 
@@ -13,7 +12,7 @@
         <NotFound>
             <PageTitle>Not found</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
+                <RedirectToLogin />
             </LayoutView>
         </NotFound>
     </Router>

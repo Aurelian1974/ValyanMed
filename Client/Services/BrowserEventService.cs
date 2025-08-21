@@ -27,11 +27,10 @@ namespace Client.Services
             {
                 await _jsRuntime.InvokeVoidAsync("browserInterop.registerBeforeUnload", _dotNetObjectReference);
                 _initialized = true;
-                Console.WriteLine("Browser close detection initialized successfully");
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error initializing browser close detection: {ex.Message}");
+                // ignore initialization errors silently
             }
         }
 
@@ -41,11 +40,10 @@ namespace Client.Services
             try
             {
                 await _logoutService.LogoutAsync();
-                Console.WriteLine("Logout executed during browser close");
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"Error during logout: {ex.Message}");
+                // ignore logout errors silently
             }
         }
 

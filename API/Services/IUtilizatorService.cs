@@ -1,5 +1,5 @@
 ﻿using Shared.DTOs;
-using API.Models;
+using API.Models; // use AuthResult from API.Models
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,13 +13,5 @@ namespace API.Services
         Task<bool> UpdateUtilizatorAsync(UpdateUtilizatorDTO utilizatorDto);
         Task<bool> DeleteUtilizatorAsync(int id);
         Task<AuthResult> AuthenticateAsync(string usernameOrEmail, string password);
-    }
-
-    public class AuthResult
-    {
-        public UtilizatorDb User { get; set; }
-        public string NumeComplet { get; set; }
-        public bool Success { get; set; }
-        public string Message { get; set; }
     }
 }
