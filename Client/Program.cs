@@ -38,9 +38,21 @@ builder.Services.AddScoped<IPersoanaService, PersoanaService>();
 // Medicament client
 builder.Services.AddScoped<IMedicamentClient, MedicamentClient>();
 
-// Single HttpClient registration
-builder.Services.AddScoped(sp => new HttpClient { 
-    BaseAddress = new Uri(builder.Configuration["ApiUrl"] ?? "https://localhost:7294/") 
+// Register the authorization message handler
+builder.Services.AddScoped<AuthorizationMessageHandler>();
+
+// Single HttpClient registration with authorization handler
+builder.Services.AddScoped(sp =>
+{
+    var authHandler = sp.GetRequiredService<AuthorizationMessageHandler>();
+    authHandler.InnerHandler = new HttpClientHandler();
+    
+    var httpClient = new HttpClient(authHandler)
+    {
+        BaseAddress = new Uri(builder.Configuration["ApiUrl"] ?? "https://localhost:7294/")
+    };
+    
+    return httpClient;
 });
 
 builder.Services.AddScoped<JsInteropTestService>();

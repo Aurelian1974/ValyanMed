@@ -1,4 +1,4 @@
-﻿@page "/farmacie/medicamente"
+@page "/farmacie/medicamente"
 @using System.Text
 @using System.Text.Json
 @using global::Shared.DTOs
@@ -19,160 +19,323 @@
         <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="@_loading">Adauga</MudButton>
     </MudToolBar>
 
-    <MudDataGrid @ref="_grid"
-                 T="MedicamentDTO"
-                 Items="@_filteredMedicamente"
-                 Hover="true"
-                 Bordered="true"
-                 Dense="true"
-                 Striped="true"
-                 Filterable="true"
-                 SortMode="SortMode.Multiple"
-                 Hideable="true"
-                 Loading="@_loading"
-                 LoadingProgressColor="Color.Primary"
-                 CanExpand="true"
-                 ExpandMode="DataGridExpandMode.Single"
-                 @bind-Page="_pageIndex"
-                 @bind-PageSize="_pageSize">
-
-        <ToolBarContent>
-            <MudTextField T="string"
-                          Value="@_search"
-                          ValueChanged="OnSearchChanged"
-                          Label="Cauta"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Variant="Variant.Outlined"
-                          Dense="true"
-                          Margin="Margin.Dense"
-                          Immediate="true"
-                          DebounceInterval="300"
-                          Class="mx-2"
-                          Style="width: 420px;" />
-
-            <MudSelect T="string"
-                       Value="@_statusFilter"
-                       ValueChanged="OnStatusChanged"
-                       Label="Status"
-                       Variant="Variant.Outlined"
-                       Dense="true"
-                       Margin="Margin.Dense"
-                       Class="mx-2"
-                       Style="width: 180px;">
-                <MudSelectItem Value="@("toate")">Toate</MudSelectItem>
-                <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
-                <MudSelectItem Value="@("Inactiv")">Inactiv</MudSelectItem>
-                <MudSelectItem Value="@("Suspendat")">Suspendat</MudSelectItem>
-            </MudSelect>
-
-            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="ClearFiltersAndReload" Class="mx-2">Curata</MudButton>
-
-            <MudMenu Label="Coloane" StartIcon="@Icons.Material.Filled.ViewColumn" Class="mx-2" Dense="true">
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showNume)))">
-                    <MudIcon Icon="@(showNume ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Nume
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showDCI)))">
-                    <MudIcon Icon="@(showDCI ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> DCI
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showConcentratie)))">
-                    <MudIcon Icon="@(showConcentratie ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Concentratie
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showForma)))">
-                    <MudIcon Icon="@(showForma ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Forma
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showProducator)))">
-                    <MudIcon Icon="@(showProducator ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Producator
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showATC)))">
-                    <MudIcon Icon="@(showATC ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> ATC
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStatus)))">
-                    <MudIcon Icon="@(showStatus ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Status
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStoc)))">
-                    <MudIcon Icon="@(showStoc ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Stoc
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStocSig)))">
-                    <MudIcon Icon="@(showStocSig ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Stoc Sig.
-                </MudMenuItem>
-            </MudMenu>
-
-            <MudDivider Vertical="true" Class="mx-2" />
-            <MudSwitch T="bool" Checked="@_groupAcrossAll" CheckedChanged="@ToggleAllInPagina" Color="Color.Primary" Class="mx-2">Toate in pagina</MudSwitch>
-
-            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.FileDownload" OnClick="ExportCsvAsync" Class="mx-2">CSV</MudButton>
-            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.GridOn" OnClick="ExportXlsxAsync" Class="mx-2">XLSX</MudButton>
-        </ToolBarContent>
-
-        <Columns>
-            <HierarchyColumn T="MedicamentDTO" />
-            <PropertyColumn Property="x => x.MedicamentID" Title="ID" Hidden="true" />
-            <PropertyColumn Property="x => x.Nume" Title="Nume" Groupable="true" Hidden="@(!showNume)" />
-            <PropertyColumn Property="x => x.DenumireComunaInternationala" Title="DCI" Hidden="@(!showDCI)" />
-            <PropertyColumn Property="x => x.Concentratie" Title="Concentratie" Hidden="@(!showConcentratie)" />
-            <PropertyColumn Property="x => x.FormaFarmaceutica" Title="Forma" Groupable="true" Hidden="@(!showForma)" />
-            <PropertyColumn Property="x => x.Producator" Title="Producator" Groupable="true" Hidden="@(!showProducator)" />
-            <PropertyColumn Property="x => x.CodATC" Title="ATC" Hidden="@(!showATC)" />
-            <PropertyColumn Property="x => x.Status" Title="Status (grp)" Hidden="true" Groupable="true" />
-
-            <TemplateColumn Title="Status" Hidden="@(!showStatus)">
-                <CellTemplate>
-                    <MudChip Size="Size.Small" Color="@GetStatusColor(@context.Item.Status)" Variant="Variant.Filled" Dense="true">@context.Item.Status</MudChip>
-                </CellTemplate>
-            </TemplateColumn>
-
-            <TemplateColumn Title="Stoc" Hidden="@(!showStoc)">
-                <CellTemplate>
-                    <MudChip Size="Size.Small" Color="@GetStocColor(@context.Item)" Variant="Variant.Outlined" Dense="true">@context.Item.Stoc</MudChip>
-                </CellTemplate>
-            </TemplateColumn>
-
-            <PropertyColumn Property="x => x.StocSiguranta" Title="Stoc Sig." Hidden="@(!showStocSig)" />
-
-            <TemplateColumn Title="Actiuni">
-                <CellTemplate>
-                    <div class="d-inline-flex flex-row align-center" style="gap:6px; white-space:nowrap;">
-                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" OnClick="@(() => ViewAsync(@context.Item))" Disabled="@_loading" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditAsync(@context.Item))" Disabled="@_loading" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(@context.Item))" Disabled="@_loading" />
-                    </div>
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-
-        <ChildRowContent>
-            <MudDataGrid T="DetailRow"
-                         Items="@GetDetails(context.Item)"
-                         Dense="true"
-                         Bordered="true"
+    @if (_showGrid)
+    {
+        @if (_groupAcrossAll)
+        {
+            <!-- CLIENT-SIDE GRID -->
+            <MudDataGrid @ref="_clientGrid"
+                         @key="@($"client-{_gridKey}")"
+                         T="MedicamentDTO"
+                         Items="@_filteredItems"
                          Hover="true"
-                         Hideable="false">
-                <Columns>
-                    <PropertyColumn Property="d => d.Label" Title="Camp" />
-                    <PropertyColumn Property="d => d.Value" Title="Valoare" />
-                </Columns>
-            </MudDataGrid>
-        </ChildRowContent>
+                         Bordered="true"
+                         Dense="true"
+                         Striped="true"
+                         Filterable="false"
+                         SortMode="SortMode.Multiple"
+                         Hideable="true"
+                         Loading="@_loading"
+                         LoadingProgressColor="Color.Primary"
+                         CanExpand="true"
+                         ExpandMode="DataGridExpandMode.Single">
 
-        <PagerContent>
-            <MudDataGridPager T="MedicamentDTO"
-                               PageSizeOptions="@_pageSizeOptions.ToArray()"
-                               @bind-PageSize="_pageSize" />
-        </PagerContent>
-    </MudDataGrid>
+                <ToolBarContent>
+                    <MudTextField T="string"
+                                  Value="@_search"
+                                  ValueChanged="OnSearchChanged"
+                                  Label="Cauta"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  Margin="Margin.Dense"
+                                  Immediate="true"
+                                  DebounceInterval="300"
+                                  Class="mx-2"
+                                  Style="width: 420px;" />
+
+                    <MudSelect T="string"
+                               Value="@_statusFilter"
+                               ValueChanged="OnStatusChanged"
+                               Label="Status"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               Margin="Margin.Dense"
+                               Class="mx-2"
+                               Style="width: 180px;">
+                        <MudSelectItem Value="@("toate")">Toate</MudSelectItem>
+                        <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
+                        <MudSelectItem Value="@("Inactiv")">Inactiv</MudSelectItem>
+                        <MudSelectItem Value="@("Suspendat")">Suspendat</MudSelectItem>
+                    </MudSelect>
+
+                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="ClearFiltersAndReload" Class="mx-2">Curata</MudButton>
+
+                    <MudMenu Label="Coloane" StartIcon="@Icons.Material.Filled.ViewColumn" Class="mx-2" Dense="true">
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showNume)))">
+                            <MudIcon Icon="@(showNume ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Nume
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showDCI)))">
+                            <MudIcon Icon="@(showDCI ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> DCI
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showConcentratie)))">
+                            <MudIcon Icon="@(showConcentratie ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Concentratie
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showForma)))">
+                            <MudIcon Icon="@(showForma ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Forma
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showProducator)))">
+                            <MudIcon Icon="@(showProducator ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Producator
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showATC)))">
+                            <MudIcon Icon="@(showATC ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> ATC
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStatus)))">
+                            <MudIcon Icon="@(showStatus ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Status
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStoc)))">
+                            <MudIcon Icon="@(showStoc ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Stoc
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStocSig)))">
+                            <MudIcon Icon="@(showStocSig ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Stoc Sig.
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showUtilizator)))">
+                            <MudIcon Icon="@(showUtilizator ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Utilizator
+                        </MudMenuItem>
+                    </MudMenu>
+
+                    <MudDivider Vertical="true" Class="mx-2" />
+                    <MudButton Variant="Variant.Filled" 
+                              Color="@(_groupAcrossAll ? Color.Success : Color.Primary)" 
+                              StartIcon="@(_groupAcrossAll ? Icons.Material.Filled.ViewList : Icons.Material.Filled.GridView)"
+                              OnClick="@(() => ToggleAllInPagina(false))" 
+                              Class="mx-2">
+                        @(_groupAcrossAll ? "TOATE IN PAGINA (ON)" : "TOATE IN PAGINA (OFF)")
+                    </MudButton>
+                </ToolBarContent>
+
+                <Columns>
+                    <HierarchyColumn T="MedicamentDTO" />
+                    <PropertyColumn Property="x => x.MedicamentID" Title="ID" Hidden="true" />
+                    <PropertyColumn Property="x => x.Nume" Title="Nume" Groupable="true" Hidden="@(!showNume)" />
+                    <PropertyColumn Property="x => x.DenumireComunaInternationala" Title="DCI" Hidden="@(!showDCI)" />
+                    <PropertyColumn Property="x => x.Concentratie" Title="Concentratie" Hidden="@(!showConcentratie)" />
+                    <PropertyColumn Property="x => x.FormaFarmaceutica" Title="Forma" Groupable="true" Hidden="@(!showForma)" />
+                    <PropertyColumn Property="x => x.Producator" Title="Producator" Groupable="true" Hidden="@(!showProducator)" />
+                    <PropertyColumn Property="x => x.CodATC" Title="ATC" Hidden="@(!showATC)" />
+                    <PropertyColumn Property="x => x.Status" Title="Status (grp)" Hidden="true" Groupable="true" />
+
+                    <TemplateColumn Title="Status" Hidden="@(!showStatus)">
+                        <CellTemplate>
+                            <MudChip Size="Size.Small" Color="@GetStatusColor(@context.Item.Status)" Variant="Variant.Filled" Dense="true">@context.Item.Status</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Stoc" Hidden="@(!showStoc)">
+                        <CellTemplate>
+                            <MudChip Size="Size.Small" Color="@GetStocColor(@context.Item)" Variant="Variant.Outlined" Dense="true">@context.Item.Stoc</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.StocSiguranta" Title="Stoc Sig." Hidden="@(!showStocSig)" />
+
+                    <PropertyColumn Property="x => x.UtilizatorActualizare" Title="Utilizator" Hidden="@(!showUtilizator)" />
+
+                    <TemplateColumn Title="Actiuni">
+                        <CellTemplate>
+                            <div class="d-inline-flex flex-row align-center" style="gap:6px; white-space:nowrap;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" OnClick="@(() => ViewAsync(@context.Item))" Disabled="@_loading" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditAsync(@context.Item))" Disabled="@_loading" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(@context.Item))" Disabled="@_loading" />
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <ChildRowContent>
+                    <MudDataGrid T="DetailRow"
+                                 Items="@GetDetails(context.Item)"
+                                 Dense="true"
+                                 Bordered="true"
+                                 Hover="true"
+                                 Hideable="false">
+                        <Columns>
+                            <PropertyColumn Property="d => d.Label" Title="Camp" />
+                            <PropertyColumn Property="d => d.Value" Title="Valoare" />
+                        </Columns>
+                    </MudDataGrid>
+                </ChildRowContent>
+            </MudDataGrid>
+        }
+        else
+        {
+            <!-- SERVER-SIDE GRID -->
+            <MudDataGrid @ref="_serverGrid"
+                         @key="@($"server-{_gridKey}")"
+                         T="MedicamentDTO"
+                         ServerData="LoadServerData"
+                         Hover="true"
+                         Bordered="true"
+                         Dense="true"
+                         Striped="true"
+                         Filterable="true"
+                         SortMode="SortMode.Multiple"
+                         Hideable="true"
+                         Loading="@_loading"
+                         LoadingProgressColor="Color.Primary"
+                         CanExpand="true"
+                         ExpandMode="DataGridExpandMode.Single">
+
+                <ToolBarContent>
+                    <MudTextField T="string"
+                                  Value="@_search"
+                                  ValueChanged="OnSearchChanged"
+                                  Label="Cauta"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  Margin="Margin.Dense"
+                                  Immediate="true"
+                                  DebounceInterval="300"
+                                  Class="mx-2"
+                                  Style="width: 420px;" />
+
+                    <MudSelect T="string"
+                               Value="@_statusFilter"
+                               ValueChanged="OnStatusChanged"
+                               Label="Status"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               Margin="Margin.Dense"
+                               Class="mx-2"
+                               Style="width: 180px;">
+                        <MudSelectItem Value="@("toate")">Toate</MudSelectItem>
+                        <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
+                        <MudSelectItem Value="@("Inactiv")">Inactiv</MudSelectItem>
+                        <MudSelectItem Value="@("Suspendat")">Suspendat</MudSelectItem>
+                    </MudSelect>
+
+                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ClearAll" OnClick="ClearFiltersAndReload" Class="mx-2">Curata</MudButton>
+
+                    <MudMenu Label="Coloane" StartIcon="@Icons.Material.Filled.ViewColumn" Class="mx-2" Dense="true">
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showNume)))">
+                            <MudIcon Icon="@(showNume ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Nume
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showDCI)))">
+                            <MudIcon Icon="@(showDCI ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> DCI
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showConcentratie)))">
+                            <MudIcon Icon="@(showConcentratie ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Concentratie
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showForma)))">
+                            <MudIcon Icon="@(showForma ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Forma
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showProducator)))">
+                            <MudIcon Icon="@(showProducator ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Producator
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showATC)))">
+                            <MudIcon Icon="@(showATC ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> ATC
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStatus)))">
+                            <MudIcon Icon="@(showStatus ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Status
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStoc)))">
+                            <MudIcon Icon="@(showStoc ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Stoc
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showStocSig)))">
+                            <MudIcon Icon="@(showStocSig ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Stoc Sig.
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => ToggleColumn(nameof(showUtilizator)))">
+                            <MudIcon Icon="@(showUtilizator ? Icons.Material.Filled.CheckBox : Icons.Material.Outlined.CheckBoxOutlineBlank)" Class="mr-2" /> Utilizator
+                        </MudMenuItem>
+                    </MudMenu>
+
+                    <MudDivider Vertical="true" Class="mx-2" />
+                    <MudButton Variant="Variant.Filled" 
+                              Color="@(_groupAcrossAll ? Color.Success : Color.Primary)" 
+                              StartIcon="@(_groupAcrossAll ? Icons.Material.Filled.ViewList : Icons.Material.Filled.GridView)"
+                              OnClick="@(() => ToggleAllInPagina(true))" 
+                              Class="mx-2">
+                        @(_groupAcrossAll ? "TOATE IN PAGINA (ON)" : "TOATE IN PAGINA (OFF)")
+                    </MudButton>
+                </ToolBarContent>
+
+                <Columns>
+                    <HierarchyColumn T="MedicamentDTO" />
+                    <PropertyColumn Property="x => x.MedicamentID" Title="ID" Hidden="true" />
+                    <PropertyColumn Property="x => x.Nume" Title="Nume" Groupable="true" Hidden="@(!showNume)" />
+                    <PropertyColumn Property="x => x.DenumireComunaInternationala" Title="DCI" Hidden="@(!showDCI)" />
+                    <PropertyColumn Property="x => x.Concentratie" Title="Concentratie" Hidden="@(!showConcentratie)" />
+                    <PropertyColumn Property="x => x.FormaFarmaceutica" Title="Forma" Groupable="true" Hidden="@(!showForma)" />
+                    <PropertyColumn Property="x => x.Producator" Title="Producator" Groupable="true" Hidden="@(!showProducator)" />
+                    <PropertyColumn Property="x => x.CodATC" Title="ATC" Hidden="@(!showATC)" />
+                    <PropertyColumn Property="x => x.Status" Title="Status (grp)" Hidden="true" Groupable="true" />
+
+                    <TemplateColumn Title="Status" Hidden="@(!showStatus)">
+                        <CellTemplate>
+                            <MudChip Size="Size.Small" Color="@GetStatusColor(@context.Item.Status)" Variant="Variant.Filled" Dense="true">@context.Item.Status</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="Stoc" Hidden="@(!showStoc)">
+                        <CellTemplate>
+                            <MudChip Size="Size.Small" Color="@GetStocColor(@context.Item)" Variant="Variant.Outlined" Dense="true">@context.Item.Stoc</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <PropertyColumn Property="x => x.StocSiguranta" Title="Stoc Sig." Hidden="@(!showStocSig)" />
+
+                    <PropertyColumn Property="x => x.UtilizatorActualizare" Title="Utilizator" Hidden="@(!showUtilizator)" />
+
+                    <TemplateColumn Title="Actiuni">
+                        <CellTemplate>
+                            <div class="d-inline-flex flex-row align-center" style="gap:6px; white-space:nowrap;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Info" OnClick="@(() => ViewAsync(@context.Item))" Disabled="@_loading" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditAsync(@context.Item))" Disabled="@_loading" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(@context.Item))" Disabled="@_loading" />
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <ChildRowContent>
+                    <MudDataGrid T="DetailRow"
+                                 Items="@GetDetails(context.Item)"
+                                 Dense="true"
+                                 Bordered="true"
+                                 Hover="true"
+                                 Hideable="false">
+                        <Columns>
+                            <PropertyColumn Property="d => d.Label" Title="Camp" />
+                            <PropertyColumn Property="d => d.Value" Title="Valoare" />
+                        </Columns>
+                    </MudDataGrid>
+                </ChildRowContent>
+
+                <PagerContent>
+                    <MudDataGridPager T="MedicamentDTO" 
+                                      PageSizeOptions="@_pageSizeOptions.ToArray()"
+                                      InfoFormat="{first_item}-{last_item} din {all_items}"
+                                      RowsPerPageString="Randuri pe pagina:" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    }
 </MudPaper>
 
 @code {
-    private MudDataGrid<MedicamentDTO> _grid;
-    private int _pageIndex = 0;
-    private int _pageSize = 25;
+    private MudDataGrid<MedicamentDTO> _serverGrid;
+    private MudDataGrid<MedicamentDTO> _clientGrid;
+    private int _gridKey = 0;
+    private bool _showGrid = true;
     private readonly int _defaultPageSize = 25;
     private List<int> _pageSizeOptions = new() { 10, 25, 50, 100 };
-    private List<MedicamentDTO> _allMedicamente = new();
-    private List<MedicamentDTO> _filteredMedicamente = new();
-    private int _totalItems => _filteredMedicamente.Count;
+    private int _totalItems;
     private bool _groupAcrossAll;
+    private List<MedicamentDTO> _allItems = new();
+    private List<MedicamentDTO> _filteredItems => ApplyClientFilters();
 
     private bool showNume = true;
     private bool showDCI = true;
@@ -183,27 +346,46 @@
     private bool showStatus = true;
     private bool showStoc = true;
     private bool showStocSig = true;
+    private bool showUtilizator = false; // Hidden by default since it takes space
 
-    private bool _loading;
+    private bool _loading = false;
     private string _search = string.Empty;
     private string _statusFilter = "toate";
 
-    protected override async Task OnInitializedAsync()
+    private List<MedicamentDTO> ApplyClientFilters()
     {
-        await LoadAllMedicamenteAsync();
+        if (_allItems == null || _allItems.Count == 0)
+            return new List<MedicamentDTO>();
+
+        return _allItems.Where(item =>
+        {
+            var searchMatch = string.IsNullOrWhiteSpace(_search) ||
+                              item.Nume?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+                              item.DenumireComunaInternationala?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+                              item.Producator?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
+                              item.CodATC?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true;
+
+            var statusMatch = _statusFilter == "toate" || item.Status == _statusFilter;
+
+            return searchMatch && statusMatch;
+        }).ToList();
     }
 
-    private async Task LoadAllMedicamenteAsync()
+    private async Task<GridData<MedicamentDTO>> LoadServerData(GridState<MedicamentDTO> state)
     {
         _loading = true;
+        StateHasChanged();
+        
         try
         {
-            _allMedicamente = await MedicamentClient.GetAllAsync(); // Use GetAllAsync instead of GetPagedAsync
-            ApplyFilters();
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Eroare la încărcarea datelor: {ex.Message}", Severity.Error);
+            var sort = BuildSort(state);
+            var page = state.Page + 1;
+            var effectivePageSize = state.PageSize;
+
+            var result = await MedicamentClient.GetPagedAsync(_search, _statusFilter, page, effectivePageSize, sort, null);
+            _totalItems = result.TotalCount;
+
+            return new GridData<MedicamentDTO> { Items = result.Items, TotalItems = result.TotalCount };
         }
         finally
         {
@@ -212,57 +394,114 @@
         }
     }
 
-    private void ApplyFilters()
+    private async Task LoadAllItems()
     {
-        _filteredMedicamente = _allMedicamente.Where(m =>
-            (string.IsNullOrEmpty(_search) || 
-             m.Nume?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
-             m.DenumireComunaInternationala?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
-             m.Producator?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true ||
-             m.CodATC?.Contains(_search, StringComparison.OrdinalIgnoreCase) == true) &&
-            (_statusFilter == "toate" || m.Status == _statusFilter)
-        ).ToList();
+        try
+        {
+            var result = await MedicamentClient.GetPagedAsync("", "toate", 1, 5000, null, null);
+            _allItems = result.Items.ToList();
+            _totalItems = result.TotalCount;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in LoadAllItems: {ex.Message}");
+            throw;
+        }
+    }
+
+    private static string? BuildSort(GridState<MedicamentDTO> state)
+    {
+        if (state.SortDefinitions is null || state.SortDefinitions.Count == 0) return null;
+        var parts = new List<string>();
+        foreach (var s in state.SortDefinitions)
+        {
+            var name = s.SortBy as string;
+            if (string.IsNullOrWhiteSpace(name))
+                continue;
+            var dir = s.Descending ? "desc" : "asc";
+            parts.Add($"{name}:{dir}");
+        }
+        return parts.Count == 0 ? null : string.Join(',', parts);
     }
 
     private void OnSearchChanged(string? text)
     {
         _search = text ?? string.Empty;
-        ApplyFilters();
-        StateHasChanged();
+        if (!_groupAcrossAll)
+        {
+            _totalItems = 0;
+            _serverGrid?.ReloadServerData();
+        }
+        else
+        {
+            StateHasChanged();
+        }
     }
 
     private void OnStatusChanged(string? value)
     {
         _statusFilter = string.IsNullOrWhiteSpace(value) ? "toate" : value;
-        ApplyFilters();
-        StateHasChanged();
-    }
-
-    private void ToggleAllInPagina(bool value)
-    {
-        _groupAcrossAll = value;
-        if (_groupAcrossAll)
+        if (!_groupAcrossAll)
         {
-            var desired = Math.Max(_totalItems, 50);
-            if (!_pageSizeOptions.Contains(desired)) _pageSizeOptions.Add(desired);
-            _pageSizeOptions.Sort();
-            _pageSize = desired;
+            _totalItems = 0;
+            _serverGrid?.ReloadServerData();
         }
         else
         {
-            _pageSize = _defaultPageSize;
+            StateHasChanged();
         }
-        _pageIndex = 0;
+    }
+
+    private async Task ToggleAllInPagina(bool value)
+    {
+        _loading = true;
         StateHasChanged();
+        
+        try
+        {
+            _showGrid = false;
+            StateHasChanged();
+            await Task.Delay(100);
+            
+            _groupAcrossAll = value;
+            
+            if (_groupAcrossAll)
+            {
+                await LoadAllItems();
+            }
+            else
+            {
+                _allItems.Clear();
+            }
+            
+            _gridKey++;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Eroare la schimbarea modului: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            _showGrid = true;
+            StateHasChanged();
+        }
     }
 
     private void ClearFiltersAndReload()
     {
         _search = string.Empty;
         _statusFilter = "toate";
-        ApplyFilters();
-        _pageIndex = 0;
-        StateHasChanged();
+        
+        if (_groupAcrossAll)
+        {
+            StateHasChanged();
+        }
+        else
+        {
+            _totalItems = 0;
+            _serverGrid?.ReloadServerData();
+        }
     }
 
     private void ToggleColumn(string name)
@@ -278,6 +517,7 @@
             case nameof(showStatus): showStatus = !showStatus; break;
             case nameof(showStoc): showStoc = !showStoc; break;
             case nameof(showStocSig): showStocSig = !showStocSig; break;
+            case nameof(showUtilizator): showUtilizator = !showUtilizator; break;
         }
     }
 
@@ -292,14 +532,238 @@
     private Color GetStocColor(MedicamentDTO m)
         => m.Stoc < m.StocSiguranta ? Color.Error : Color.Primary;
 
-    // Export and details unchanged from previous
-    private async Task ExportCsvAsync() { }
-    private async Task ExportXlsxAsync() { }
-    private IEnumerable<DetailRow> GetDetails(MedicamentDTO item) { yield break; }
-    private class DetailRow { public string Label { get; set; } public string Value { get; set; } public DetailRow(string l,string v){Label=l;Value=v;} }
+    private IEnumerable<DetailRow> GetDetails(MedicamentDTO item)
+    {
+        yield return new DetailRow("Data Inregistrare", item.DataInregistrare.ToString("dd.MM.yyyy"));
+        yield return new DetailRow("Data Expirare", item.DataExpirare.ToString("dd.MM.yyyy"));
+        if (item.Pret.HasValue)
+            yield return new DetailRow("Pret", $"{item.Pret:F2} RON");
+        if (item.TVA.HasValue)
+            yield return new DetailRow("TVA", $"{item.TVA:F1}%");
+        yield return new DetailRow("Compensat", item.Compensat == true ? "Da" : "Nu");
+        yield return new DetailRow("Prescriptie Medicala", item.PrescriptieMedicala == true ? "Da" : "Nu");
+        if (!string.IsNullOrEmpty(item.Observatii))
+            yield return new DetailRow("Observatii", item.Observatii);
+    }
+    
+    private class DetailRow 
+    { 
+        public string Label { get; set; } 
+        public string Value { get; set; } 
+        public DetailRow(string l, string v) { Label = l; Value = v; } 
+    }
 
-    private async Task AddAsync() { }
-    private async Task ViewAsync(MedicamentDTO item) { }
-    private async Task EditAsync(MedicamentDTO item) { }
-    private async Task DeleteAsync(MedicamentDTO item) { }
+    private async Task AddAsync() 
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareMedicamentDialog>("Adauga medicament nou", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                StateHasChanged();
+
+                var medicamentDto = (MedicamentDTO)result.Data;
+                
+                var createDto = new CreateMedicamentDTO
+                {
+                    Nume = medicamentDto.Nume,
+                    DenumireComunaInternationala = medicamentDto.DenumireComunaInternationala,
+                    Concentratie = medicamentDto.Concentratie,
+                    FormaFarmaceutica = medicamentDto.FormaFarmaceutica,
+                    Producator = medicamentDto.Producator,
+                    CodATC = medicamentDto.CodATC,
+                    Status = medicamentDto.Status,
+                    NumarAutorizatie = medicamentDto.NumarAutorizatie ?? string.Empty,
+                    DataAutorizatie = medicamentDto.DataAutorizatie,
+                    DataExpirare = medicamentDto.DataExpirare,
+                    Ambalaj = medicamentDto.Ambalaj ?? string.Empty,
+                    Prospect = medicamentDto.Prospect ?? string.Empty,
+                    Contraindicatii = medicamentDto.Contraindicatii ?? string.Empty,
+                    Interactiuni = medicamentDto.Interactiuni ?? string.Empty,
+                    Pret = medicamentDto.Pret,
+                    PretProducator = medicamentDto.PretProducator,
+                    TVA = medicamentDto.TVA,
+                    Compensat = medicamentDto.Compensat,
+                    PrescriptieMedicala = medicamentDto.PrescriptieMedicala,
+                    Stoc = medicamentDto.Stoc,
+                    StocSiguranta = medicamentDto.StocSiguranta,
+                    Observatii = medicamentDto.Observatii ?? string.Empty,
+                    // UtilizatorActualizare will be set by the server
+                    Activ = true
+                };
+
+                var id = await MedicamentClient.CreateAsync(createDto);
+
+                Snackbar.Add("Medicament adaugat cu succes", Severity.Success);
+                
+                if (_groupAcrossAll)
+                {
+                    await LoadAllItems();
+                }
+                else
+                {
+                    _serverGrid?.ReloadServerData();
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Eroare la adaugarea medicamentului: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task ViewAsync(MedicamentDTO item) 
+    {
+        var parameters = new DialogParameters<AdaugaEditareMedicamentDialog>
+        {
+            { x => x.Medicament, item },
+            { x => x.ReadOnly, true }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareMedicamentDialog>("Detalii medicament", parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task EditAsync(MedicamentDTO item) 
+    {
+        var parameters = new DialogParameters<AdaugaEditareMedicamentDialog>
+        {
+            { x => x.Medicament, item },
+            { x => x.ReadOnly, false }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = DialogService.Show<AdaugaEditareMedicamentDialog>("Editare medicament", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                StateHasChanged();
+
+                var medicamentDto = (MedicamentDTO)result.Data;
+                
+                var updateDto = new UpdateMedicamentDTO
+                {
+                    MedicamentID = medicamentDto.MedicamentID,
+                    Nume = medicamentDto.Nume,
+                    DenumireComunaInternationala = medicamentDto.DenumireComunaInternationala,
+                    Concentratie = medicamentDto.Concentratie,
+                    FormaFarmaceutica = medicamentDto.FormaFarmaceutica,
+                    Producator = medicamentDto.Producator,
+                    CodATC = medicamentDto.CodATC,
+                    Status = medicamentDto.Status,
+                    NumarAutorizatie = medicamentDto.NumarAutorizatie ?? string.Empty,
+                    DataAutorizatie = medicamentDto.DataAutorizatie,
+                    DataExpirare = medicamentDto.DataExpirare,
+                    Ambalaj = medicamentDto.Ambalaj ?? string.Empty,
+                    Prospect = medicamentDto.Prospect ?? string.Empty,
+                    Contraindicatii = medicamentDto.Contraindicatii ?? string.Empty,
+                    Interactiuni = medicamentDto.Interactiuni ?? string.Empty,
+                    Pret = medicamentDto.Pret,
+                    PretProducator = medicamentDto.PretProducator,
+                    TVA = medicamentDto.TVA,
+                    Compensat = medicamentDto.Compensat,
+                    PrescriptieMedicala = medicamentDto.PrescriptieMedicala,
+                    Stoc = medicamentDto.Stoc,
+                    StocSiguranta = medicamentDto.StocSiguranta,
+                    Observatii = medicamentDto.Observatii ?? string.Empty,
+                    // UtilizatorActualizare will be set by the server
+                    Activ = medicamentDto.Activ
+                };
+
+                var success = await MedicamentClient.UpdateAsync(updateDto);
+
+                if (success)
+                {
+                    Snackbar.Add("Medicament actualizat cu succes", Severity.Success);
+                    
+                    if (_groupAcrossAll)
+                    {
+                        await LoadAllItems();
+                    }
+                    else
+                    {
+                        _serverGrid?.ReloadServerData();
+                    }
+                }
+                else
+                {
+                    Snackbar.Add("Actualizarea medicamentului a esuat", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Eroare la actualizarea medicamentului: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task DeleteAsync(MedicamentDTO item) 
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Sigur doriti sa stergeti medicamentul '{item.Nume}'? Aceasta actiune nu poate fi anulata." },
+            { "ButtonText", "Sterge" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialogResult = await DialogService.Show<ConfirmDialog>("Confirmare stergere", parameters, options).Result;
+
+        if (!dialogResult.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                StateHasChanged();
+
+                var success = await MedicamentClient.DeleteAsync(item.MedicamentID);
+
+                if (success)
+                {
+                    Snackbar.Add("Medicament sters cuSucces", Severity.Success);
+                    
+                    if (_groupAcrossAll)
+                    {
+                        await LoadAllItems();
+                    }
+                    else
+                    {
+                        _serverGrid?.ReloadServerData();
+                    }
+                }
+                else
+                {
+                    Snackbar.Add("Stergerea medicamentului a esuat", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Eroare la stergerea medicamentului: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+                StateHasChanged();
+            }
+        }
+    }
 }

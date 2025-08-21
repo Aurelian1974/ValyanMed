@@ -57,7 +57,8 @@ namespace Shared.DTOs
         public bool? PrescriptieMedicala { get; set; } = false;
         public int Stoc { get; set; } = 0;
         public int StocSiguranta { get; set; } = 0;
-        public string UtilizatorActualizare { get; set; }
+        // Make this optional for requests; it is set server-side from the current user
+        public string? UtilizatorActualizare { get; set; }
         public string Observatii { get; set; }
         public bool Activ { get; set; } = true;
     }

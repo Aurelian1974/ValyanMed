@@ -24,8 +24,45 @@ namespace Client.Services
 
         public async Task<bool> UpdateAsync(UpdateMedicamentDTO dto)
         {
-            var resp = await _http.PutAsJsonAsync("api/medicamente", dto);
-            return resp.IsSuccessStatusCode;
+            try
+            {
+                var medicamentId = dto.MedicamentID;
+                var url = $"api/medicamente/{medicamentId}";
+                
+                Console.WriteLine($"MedicamentClient.UpdateAsync: About to PUT to {url}");
+                Console.WriteLine($"DTO: ID={dto.MedicamentID}, Nume={dto.Nume}");
+                Console.WriteLine($"Base address: {_http.BaseAddress}");
+                Console.WriteLine($"Full URL: {_http.BaseAddress}{url}");
+                
+                var resp = await _http.PutAsJsonAsync(url, dto);
+                
+                Console.WriteLine($"Response status: {resp.StatusCode} ({(int)resp.StatusCode})");
+                
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var errorContent = await resp.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error response content: {errorContent}");
+                    
+                    // If it's a service-level failure (404 with success:false), it might still be a logical success
+                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound && errorContent.Contains("\"success\":false"))
+                    {
+                        Console.WriteLine("Treating service-level NotFound as update failure");
+                        return false;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Success response received");
+                }
+                
+                return resp.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in UpdateAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)

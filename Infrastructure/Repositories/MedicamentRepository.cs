@@ -35,9 +35,20 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> UpdateAsync(UpdateMedicamentDTO dto)
         {
-            var p = new DynamicParameters(dto);
-            var rows = await _db.ExecuteAsync("dbo.sp_Medicament_Update", p, commandType: CommandType.StoredProcedure);
-            return rows > 0;
+            try
+            {
+                var p = new DynamicParameters(dto);
+                var rows = await _db.ExecuteAsync("dbo.sp_Medicament_Update", p, commandType: CommandType.StoredProcedure);
+                
+                // Handle stored procedures that return -1 (common when SP has multiple operations)
+                // If SP executes without exception, consider it successful
+                return rows != 0; // -1 or positive numbers indicate success
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in Repository.UpdateAsync: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -73,11 +84,20 @@ namespace Infrastructure.Repositories
                 var sql = new StringBuilder();
                 sql.AppendLine("SELECT MedicamentID, MedicamentGUID, Nume, DenumireComunaInternationala, Concentratie, FormaFarmaceutica, Producator, CodATC, Status, DataInregistrare, NumarAutorizatie, DataAutorizatie, DataExpirare, Ambalaj, Prospect, Contraindicatii, Interactiuni, Pret, PretProducator, TVA, Compensat, PrescriptieMedicala, Stoc, StocSiguranta, DataActualizare, UtilizatorActualizare, Observatii, Activ");
                 sql.AppendLine("FROM dbo.Medicament WITH (NOLOCK)");
-                sql.AppendLine("WHERE ( @Search IS NULL OR @Search = '' OR Nume LIKE '%' + @Search + '%' OR DenumireComunaInternationala LIKE '%' + @Search + '%' OR Producator LIKE '%' + @Search + '%' OR CodATC LIKE '%' + @Search + '%' )");
+                sql.AppendLine("WHERE ( @Search IS NULL OR @Search = '' OR ");
+                sql.AppendLine("        UPPER(Nume) LIKE '%' + UPPER(@Search) + '%' OR ");
+                sql.AppendLine("        UPPER(DenumireComunaInternationala) LIKE '%' + UPPER(@Search) + '%' OR ");
+                sql.AppendLine("        UPPER(Producator) LIKE '%' + UPPER(@Search) + '%' OR ");
+                sql.AppendLine("        UPPER(CodATC) LIKE '%' + UPPER(@Search) + '%' )");
                 sql.AppendLine("AND ( @Status IS NULL OR @Status = '' OR @Status = 'toate' OR Status = @Status )");
                 sql.AppendLine($"ORDER BY {orderBy}");
                 sql.AppendLine("OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;");
-                sql.AppendLine("SELECT COUNT(1) FROM dbo.Medicament WITH (NOLOCK) WHERE ( @Search IS NULL OR @Search = '' OR Nume LIKE '%' + @Search + '%' OR DenumireComunaInternationala LIKE '%' + @Search + '%' OR Producator LIKE '%' + @Search + '%' OR CodATC LIKE '%' + @Search + '%' ) AND ( @Status IS NULL OR @Status = '' OR @Status = 'toate' OR Status = @Status );");
+                sql.AppendLine("SELECT COUNT(1) FROM dbo.Medicament WITH (NOLOCK) WHERE ( @Search IS NULL OR @Search = '' OR ");
+                sql.AppendLine("        UPPER(Nume) LIKE '%' + UPPER(@Search) + '%' OR ");
+                sql.AppendLine("        UPPER(DenumireComunaInternationala) LIKE '%' + UPPER(@Search) + '%' OR ");
+                sql.AppendLine("        UPPER(Producator) LIKE '%' + UPPER(@Search) + '%' OR ");
+                sql.AppendLine("        UPPER(CodATC) LIKE '%' + UPPER(@Search) + '%' ) ");
+                sql.AppendLine("AND ( @Status IS NULL OR @Status = '' OR @Status = 'toate' OR Status = @Status );");
 
                 using var multi = await _db.QueryMultipleAsync(sql.ToString(), new { Search = search, Status = status, Offset = offset, PageSize = pageSize });
                 var list = (await multi.ReadAsync<MedicamentDTO>()).AsList();
@@ -128,6 +148,7 @@ namespace Infrastructure.Repositories
             "Status" => "Status",
             "Stoc" => "Stoc",
             "StocSiguranta" => "StocSiguranta",
+            "UtilizatorActualizare" => "UtilizatorActualizare",
             _ => string.Empty
         };
     }
