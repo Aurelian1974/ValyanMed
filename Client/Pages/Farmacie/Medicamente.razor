@@ -124,13 +124,7 @@
                     <PropertyColumn Property="x => x.FormaFarmaceutica" Title="Forma" Groupable="true" Hidden="@(!showForma)" />
                     <PropertyColumn Property="x => x.Producator" Title="Producator" Groupable="true" Hidden="@(!showProducator)" />
                     <PropertyColumn Property="x => x.CodATC" Title="ATC" Hidden="@(!showATC)" />
-                    <PropertyColumn Property="x => x.Status" Title="Status (grp)" Hidden="true" Groupable="true" />
-
-                    <TemplateColumn Title="Status" Hidden="@(!showStatus)">
-                        <CellTemplate>
-                            <MudChip Size="Size.Small" Color="@GetStatusColor(@context.Item.Status)" Variant="Variant.Filled" Dense="true">@context.Item.Status</MudChip>
-                        </CellTemplate>
-                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Status" Title="Status" Groupable="true" Hidden="@(!showStatus)" />
 
                     <TemplateColumn Title="Stoc" Hidden="@(!showStoc)">
                         <CellTemplate>
@@ -271,13 +265,7 @@
                     <PropertyColumn Property="x => x.FormaFarmaceutica" Title="Forma" Groupable="true" Hidden="@(!showForma)" />
                     <PropertyColumn Property="x => x.Producator" Title="Producator" Groupable="true" Hidden="@(!showProducator)" />
                     <PropertyColumn Property="x => x.CodATC" Title="ATC" Hidden="@(!showATC)" />
-                    <PropertyColumn Property="x => x.Status" Title="Status (grp)" Hidden="true" Groupable="true" />
-
-                    <TemplateColumn Title="Status" Hidden="@(!showStatus)">
-                        <CellTemplate>
-                            <MudChip Size="Size.Small" Color="@GetStatusColor(@context.Item.Status)" Variant="Variant.Filled" Dense="true">@context.Item.Status</MudChip>
-                        </CellTemplate>
-                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.Status" Title="Status" Groupable="true" Hidden="@(!showStatus)" />
 
                     <TemplateColumn Title="Stoc" Hidden="@(!showStoc)">
                         <CellTemplate>

@@ -12,6 +12,26 @@
 
 <MudText Typo="Typo.h4" Class="mb-4">Farmacie - Dispozitive Medicale</MudText>
 
+<style>
+    /* Hide only drag&drop handles - keep grouping functionality */
+    .mud-data-grid .mud-table-cell .mud-button-root[aria-label*="drag"] {
+        display: none !important;
+    }
+    
+    /* Hide the drag handle columns specifically */
+    .mud-data-grid .mud-table-head .mud-table-cell:first-child,
+    .mud-data-grid .mud-table-body .mud-table-cell:first-child {
+        width: 0px !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+    
+    /* Hide drag handle icons */
+    .mud-data-grid .mud-icon-button[title*="Drag"] {
+        display: none !important;
+    }
+</style>
+
 <MudPaper Elevation="3" Class="pa-4">
     <MudToolBar Dense="true" DisableGutters="true" Class="mb-2">
         <MudText Typo="Typo.h6">Lista dispozitivelor medicale (@_totalItems)</MudText>
@@ -19,42 +39,7 @@
         <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync" Disabled="@_loading">Adauga</MudButton>
     </MudToolBar>
 
-    <!-- GROUPING AREA -->
-    @if (_hasGrouping)
-    {
-        <MudPaper Elevation="1" Class="pa-2 mb-2" Style="min-height: 48px; border: 2px dashed #ccc;">
-            <MudText Typo="Typo.body2" Class="text-center mud-text-secondary">
-                @if (_groupedColumns.Any())
-                {
-                    <div class="d-flex flex-wrap gap-2 align-center justify-center">
-                        <MudText Typo="Typo.caption">Grupat dup?:</MudText>
-                        @foreach (var column in _groupedColumns)
-                        {
-                            <MudChip T="string"
-                                     Size="Size.Small" 
-                                     Color="Color.Primary" 
-                                     OnClose="@(() => RemoveGrouping(column))" 
-                                     CloseIcon="@Icons.Material.Filled.Close">
-                                @column
-                            </MudChip>
-                        }
-                        <MudButton Size="Size.Small" 
-                                   Variant="Variant.Text" 
-                                   StartIcon="@Icons.Material.Filled.Clear" 
-                                   OnClick="ClearAllGrouping">
-                            ?terge toate
-                        </MudButton>
-                    </div>
-                }
-                else
-                {
-                    <span>Trage?i o coloan? aici pentru a grupa datele</span>
-                }
-            </MudText>
-        </MudPaper>
-    }
-
-    <!-- SERVER-SIDE GRID WITH PAGINATION AND NATIVE GROUPING -->
+    <!-- SERVER-SIDE GRID WITH PAGINATION -->
     <MudDataGrid @ref="_serverGrid"
                  @key="@($"server-{_gridKey}")"
                  T="DispozitivMedicalDTO"
@@ -72,7 +57,8 @@
                  ExpandMode="DataGridExpandMode.Single"
                  Groupable="true"
                  GroupExpanded="true"
-                 DragDropColumnReordering="true"
+                 ShowMenuIcon="false"
+                 DragDropColumnReordering="false"
                  ShowColumnOptions="true"
                  ColumnResizeMode="ResizeMode.Column">
 
@@ -169,24 +155,12 @@
             <PropertyColumn Property="x => x.Denumire" Title="Denumire" Groupable="true" Sortable="true" Resizable="true" Hidden="@(!showDenumire)" />
             <PropertyColumn Property="x => x.Categorie" Title="Categorie" Groupable="true" Sortable="true" Resizable="true" Hidden="@(!showCategorie)" />
             
-            <TemplateColumn Title="Clasa Risc" Groupable="true" Sortable="true" Resizable="true" SortBy="@(x => x.ClasaRisc)" GroupBy="@(x => string.IsNullOrEmpty(x.ClasaRisc) ? "Nespecificat" : $"Clasa {x.ClasaRisc}")" Hidden="@(!showClasaRisc)">
-                <CellTemplate>
-                    <MudChip Size="Size.Small" Color="@GetClasaRiscColor(context.Item.ClasaRisc)" Variant="Variant.Filled" Dense="true">
-                        @(string.IsNullOrEmpty(context.Item.ClasaRisc) ? "N/A" : $"Clasa {context.Item.ClasaRisc}")
-                    </MudChip>
-                </CellTemplate>
-            </TemplateColumn>
+            <PropertyColumn Property="@(x => string.IsNullOrEmpty(x.ClasaRisc) ? "N/A" : $"Clasa {x.ClasaRisc}")" Title="Clasa Risc" Groupable="true" Sortable="true" Resizable="true" SortBy="@(x => x.ClasaRisc)" Hidden="@(!showClasaRisc)" />
 
             <PropertyColumn Property="x => x.Producator" Title="Producator" Groupable="true" Sortable="true" Resizable="true" Hidden="@(!showProducator)" />
             <PropertyColumn Property="x => x.ModelTip" Title="Model/Tip" Groupable="true" Sortable="true" Resizable="true" Hidden="@(!showModelTip)" />
 
-            <TemplateColumn Title="CE" Groupable="true" Sortable="true" Resizable="true" SortBy="@(x => x.CertificareCE)" GroupBy="@(x => x.CertificareCE ? "Cu Certificare CE" : "Fara Certificare CE")" Hidden="@(!showCertificareCE)">
-                <CellTemplate>
-                    <MudChip Size="Size.Small" Color="@(context.Item.CertificareCE ? Color.Success : Color.Error)" Variant="Variant.Filled" Dense="true">
-                        @(context.Item.CertificareCE ? "DA" : "NU")
-                    </MudChip>
-                </CellTemplate>
-            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.CertificareCE ? "DA" : "NU")" Title="CE" Groupable="true" Sortable="true" Resizable="true" SortBy="@(x => x.CertificareCE)" Hidden="@(!showCertificareCE)" />
 
             <PropertyColumn Property="x => x.DataExpirare" Title="Expirare" Format="dd.MM.yyyy" Groupable="true" Sortable="true" Resizable="true" Hidden="@(!showDataExpirare)" />
             <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy" Groupable="true" Sortable="true" Resizable="true" Hidden="@(!showDataCreare)" />
@@ -242,10 +216,6 @@
     private string _search = string.Empty;
     private string _categorieFilter = "toate";
     private string _clasaRiscFilter = "toate";
-
-    // Grouping variables
-    private bool _hasGrouping = true;
-    private List<string> _groupedColumns = new();
 
     private async Task<GridData<DispozitivMedicalDTO>> LoadServerData(GridState<DispozitivMedicalDTO> state)
     {
@@ -345,15 +315,6 @@
             case nameof(showDataCreare): showDataCreare = !showDataCreare; break;
         }
     }
-
-    private Color GetClasaRiscColor(string? clasaRisc) => clasaRisc switch
-    {
-        "I" => Color.Info,
-        "IIa" => Color.Success,
-        "IIb" => Color.Warning,
-        "III" => Color.Error,
-        _ => Color.Default
-    };
 
     private IEnumerable<DetailRow> GetDetails(DispozitivMedicalDTO item)
     {
@@ -533,22 +494,5 @@
                 StateHasChanged();
             }
         }
-    }
-
-    private void RemoveGrouping(string columnName)
-    {
-        _groupedColumns.Remove(columnName);
-        if (!_groupedColumns.Any())
-        {
-            _hasGrouping = false;
-        }
-        StateHasChanged();
-    }
-
-    private void ClearAllGrouping()
-    {
-        _groupedColumns.Clear();
-        _hasGrouping = false;
-        StateHasChanged();
     }
 }
