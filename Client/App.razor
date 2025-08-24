@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject IServiceProvider ServiceProvider
 
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
@@ -46,6 +47,13 @@
         try
         {
             Console.WriteLine("App component with authentication initialized");
+            
+            // Force authentication state initialization
+            var authStateProvider = ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
+            var authState = await authStateProvider.GetAuthenticationStateAsync();
+            
+            Console.WriteLine($"App: Initial auth state - IsAuthenticated: {authState.User?.Identity?.IsAuthenticated}");
+            
             await base.OnInitializedAsync();
         }
         catch (Exception ex)

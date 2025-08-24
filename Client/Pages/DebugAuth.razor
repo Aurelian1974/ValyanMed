@@ -1,0 +1,502 @@
+@page "/debug-auth"
+@inject ITokenStorageService TokenStorage
+@inject IAuthenticationStateService AuthStateService
+@inject IAuthenticationApiService AuthApiService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>Debug Authentication - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">Debug Authentication State</MudText>
+        
+        <MudStack Spacing="3">
+            <!-- API Connectivity Test -->
+            <MudAlert Severity="@(_apiConnected ? MudSeverity.Success : MudSeverity.Error)">
+                <strong>API Status:</strong> 
+                @if (_apiConnected)
+                {
+                    @:? API este accesibil la @_apiUrl
+                }
+                else
+                {
+                    @:? API nu este accesibil. Verifica?i dac? serverul ruleaz? la @_apiUrl
+                }
+            </MudAlert>
+
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Info" 
+                          OnClick="TestApiConnectivity"
+                          StartIcon="@Icons.Material.Filled.NetworkCheck">
+                    Test API Connectivity
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Secondary"
+                          Href="@_apiUrl" 
+                          Target="_blank"
+                          StartIcon="@Icons.Material.Filled.OpenInNew">
+                    Open API in Browser
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Tertiary"
+                          Href="@(_apiUrl + "swagger")" 
+                          Target="_blank"
+                          StartIcon="@Icons.Material.Filled.Api">
+                    Open Swagger
+                </MudButton>
+            </MudStack>
+
+            <!-- API Test Results -->
+            @if (_apiTestResults.Any())
+            {
+                <MudExpansionPanels>
+                    <MudExpansionPanel>
+                        <TitleContent>
+                            <div style="display: flex; align-items: center">
+                                <MudIcon Icon="@Icons.Material.Filled.NetworkCheck" class="mr-3" />
+                                <span>API Test Results</span>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudStack Spacing="1">
+                                @foreach (var result in _apiTestResults)
+                                {
+                                    <MudAlert Severity="@(result.Success ? MudSeverity.Success : MudSeverity.Error)" Dense="true">
+                                        <strong>@result.Endpoint:</strong> @result.Message
+                                    </MudAlert>
+                                }
+                            </MudStack>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+            
+            <!-- Quick Login for Testing -->
+            <MudAlert Severity="MudSeverity.Info">
+                <strong>Quick Test Login:</strong> Testeaz? diferite creden?iale pentru debugging
+            </MudAlert>
+            
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_testUsername" 
+                                 Label="Test Username" 
+                                 Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_testPassword" 
+                                 Label="Test Password" 
+                                 Variant="Variant.Outlined"
+                                 InputType="InputType.Password" />
+                </MudItem>
+            </MudGrid>
+            
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="@(() => TestLogin(_testUsername, _testPassword))"
+                          Disabled="@_isLoading"
+                          StartIcon="@(_isLoading ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.Login)">
+                    @if (_isLoading)
+                    {
+                        @:Testing Login...
+                    }
+                    else
+                    {
+                        @:Test Custom Login
+                    }
+                </MudButton>
+                
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Secondary" 
+                          OnClick="@(() => TestLogin("admin", "admin123"))"
+                          Disabled="@_isLoading">
+                    Test Login (admin/admin123)
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Success" 
+                          Href="/login">
+                    Go to Login Page
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Error" 
+                          OnClick="TestLogout"
+                          Disabled="@_isLoading">
+                    Test Logout
+                </MudButton>
+            </MudStack>
+
+            <!-- Last Login Attempt -->
+            @if (!string.IsNullOrEmpty(_lastLoginError))
+            {
+                <MudAlert Severity="MudSeverity.Error">
+                    <strong>Last Login Error:</strong> @_lastLoginError
+                </MudAlert>
+            }
+            
+            <MudDivider />
+            
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.h6">Token Information:</MudText>
+                    <MudTextField Label="Token" 
+                                 Value="@_token" 
+                                 ReadOnly="true" 
+                                 Variant="Variant.Outlined"
+                                 Lines="3" />
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <MudText Typo="Typo.h6">Authentication State:</MudText>
+                    <MudTextField Label="Is Authenticated" 
+                                 Value="@_isAuthenticated.ToString()" 
+                                 ReadOnly="true" 
+                                 Variant="Variant.Outlined" />
+                    
+                    <MudTextField Label="User Identity Name" 
+                                 Value="@_identityName" 
+                                 ReadOnly="true" 
+                                 Variant="Variant.Outlined" 
+                                 Class="mt-2" />
+                </MudItem>
+            </MudGrid>
+            
+            <MudText Typo="Typo.h6">User Information:</MudText>
+            <MudTextField Label="User Info" 
+                         Value="@_userInfo" 
+                         ReadOnly="true" 
+                         Variant="Variant.Outlined"
+                         Lines="5" />
+            
+            <MudDivider />
+            
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="RefreshData">
+                    Refresh Data
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="ClearStorage">
+                    Clear Storage
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          OnClick="CheckLocalStorage">
+                    Check Local Storage
+                </MudButton>
+            </MudStack>
+            
+            <MudDivider />
+            
+            <MudText Typo="Typo.h6">Local Storage Content:</MudText>
+            <MudTextField Label="Raw Local Storage" 
+                         Value="@_rawStorage" 
+                         ReadOnly="true" 
+                         Variant="Variant.Outlined"
+                         Lines="8" />
+                         
+            <MudDivider />
+            
+            <MudText Typo="Typo.h6">Test Navigation:</MudText>
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          Href="/persoane">
+                    Test Persoane (no auth)
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Warning" 
+                          Href="/authentication/persoane">
+                    Test Persoane (with auth)
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Success" 
+                          Href="/dashboard">
+                    Test Dashboard
+                </MudButton>
+            </MudStack>
+
+            <!-- Instructions for running API -->
+            @if (!_apiConnected)
+            {
+                <MudDivider />
+                <MudAlert Severity="MudSeverity.Warning">
+                    <strong>?? API nu ruleaz?!</strong>
+                    <br /><br />
+                    <strong>Pentru a porni API-ul:</strong>
+                    <br />1. Deschide?i un terminal în folderul proiectului
+                    <br />2. Naviga?i la folderul API: <code>cd API</code>
+                    <br />3. Rula?i comanda: <code>dotnet run</code>
+                    <br />4. API-ul va fi disponibil la: <code>https://localhost:7294</code>
+                    <br /><br />
+                    <strong>SAU din Visual Studio:</strong>
+                    <br />1. Click-dreapta pe proiectul "API" din Solution Explorer
+                    <br />2. Selecta?i "Set as Startup Project"
+                    <br />3. Ap?sa?i F5 sau Ctrl+F5 pentru a porni API-ul
+                </MudAlert>
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private string _token = "Loading...";
+    private string _userInfo = "Loading...";
+    private bool _isAuthenticated = false;
+    private string _identityName = "Loading...";
+    private string _rawStorage = "Loading...";
+    private string _testUsername = "admin";
+    private string _testPassword = "admin123";
+    private bool _isLoading = false;
+    private string _lastLoginError = "";
+    private bool _apiConnected = false;
+    private readonly string _apiUrl = "https://localhost:7294/";
+    private List<ApiTestResult> _apiTestResults = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await TestApiConnectivity();
+        await RefreshData();
+    }
+
+    private async Task TestApiConnectivity()
+    {
+        _apiTestResults.Clear();
+        
+        // Test base URL
+        await TestEndpoint("Base URL", "");
+        
+        // Test health endpoint
+        await TestEndpoint("Health", "api/health");
+        
+        // Test health ping
+        await TestEndpoint("Health Ping", "api/health/ping");
+        
+        // Test auth endpoint (expect 400 for bad credentials)
+        await TestAuthEndpoint();
+        
+        // Test persoane endpoint  
+        await TestEndpoint("Persoane", "api/persoane");
+        
+        _apiConnected = _apiTestResults.Any(r => r.Success);
+        StateHasChanged();
+    }
+
+    private async Task TestEndpoint(string name, string endpoint)
+    {
+        try
+        {
+            var response = await Http.GetAsync(endpoint);
+            _apiTestResults.Add(new ApiTestResult
+            {
+                Endpoint = name,
+                Success = response.IsSuccessStatusCode,
+                Message = $"Status: {(int)response.StatusCode} {response.StatusCode}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _apiTestResults.Add(new ApiTestResult
+            {
+                Endpoint = name,
+                Success = false,
+                Message = $"Error: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task TestAuthEndpoint()
+    {
+        try
+        {
+            var testRequest = new
+            {
+                numeUtilizatorSauEmail = "test",
+                parola = "test"
+            };
+            
+            var response = await Http.PostAsJsonAsync("api/auth/login", testRequest);
+            
+            var success = response.StatusCode == System.Net.HttpStatusCode.BadRequest || 
+                         response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                         response.IsSuccessStatusCode;
+            
+            _apiTestResults.Add(new ApiTestResult
+            {
+                Endpoint = "Auth Login",
+                Success = success,
+                Message = success ? 
+                    $"Endpoint accessible - Status: {(int)response.StatusCode}" : 
+                    $"Unexpected status: {(int)response.StatusCode}"
+            });
+        }
+        catch (Exception ex)
+        {
+            _apiTestResults.Add(new ApiTestResult
+            {
+                Endpoint = "Auth Login",
+                Success = false,
+                Message = $"Error: {ex.Message}"
+            });
+        }
+    }
+
+    private async Task TestLogin(string username, string password)
+    {
+        _isLoading = true;
+        _lastLoginError = "";
+        StateHasChanged();
+        
+        try
+        {
+            var loginRequest = new global::Shared.DTOs.Authentication.LoginRequest(username, password);
+            var result = await AuthApiService.LoginAsync(loginRequest);
+
+            if (result.IsSuccess && result.Value != null)
+            {
+                await TokenStorage.SetTokenAsync(result.Value.Token);
+                await TokenStorage.SetUserInfoAsync(result.Value);
+                await AuthStateService.SetCurrentUserAsync(result.Value);
+                
+                Snackbar.Add("Login successful!", MudSeverity.Success);
+                _lastLoginError = "";
+                await RefreshData();
+            }
+            else
+            {
+                _lastLoginError = $"Login failed: {string.Join(", ", result.Errors)}";
+                Snackbar.Add(_lastLoginError, MudSeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _lastLoginError = $"Login error: {ex.Message}";
+            Snackbar.Add(_lastLoginError, MudSeverity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestLogout()
+    {
+        try
+        {
+            await TokenStorage.RemoveTokenAsync();
+            await TokenStorage.RemoveUserInfoAsync();
+            await AuthStateService.ClearCurrentUserAsync();
+            
+            Snackbar.Add("Logout successful!", MudSeverity.Success);
+            _lastLoginError = "";
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Logout error: {ex.Message}", MudSeverity.Error);
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        try
+        {
+            // Get token
+            var token = await TokenStorage.GetTokenAsync();
+            _token = string.IsNullOrEmpty(token) ? "No token found" : 
+                     token.Length > 100 ? $"{token[..50]}...{token[^20..]}" : token;
+
+            // Get user info
+            var userInfo = await TokenStorage.GetUserInfoAsync();
+            _userInfo = userInfo != null ? 
+                System.Text.Json.JsonSerializer.Serialize(userInfo, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }) : 
+                "No user info found";
+
+            // Get authentication state
+            if (AuthenticationStateTask != null)
+            {
+                var authState = await AuthenticationStateTask;
+                _isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+                _identityName = authState.User.Identity?.Name ?? "No identity name";
+            }
+
+            await CheckLocalStorage();
+        }
+        catch (Exception ex)
+        {
+            _token = $"Error: {ex.Message}";
+            _userInfo = $"Error: {ex.Message}";
+            _isAuthenticated = false;
+            _identityName = $"Error: {ex.Message}";
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ClearStorage()
+    {
+        try
+        {
+            await TokenStorage.RemoveTokenAsync();
+            await TokenStorage.RemoveUserInfoAsync();
+            await AuthStateService.ClearCurrentUserAsync();
+            
+            await JSRuntime.InvokeVoidAsync("localStorage.clear");
+            
+            _lastLoginError = "";
+            await RefreshData();
+            Snackbar.Add("Storage cleared!", MudSeverity.Info);
+        }
+        catch (Exception ex)
+        {
+            _rawStorage = $"Error clearing storage: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task CheckLocalStorage()
+    {
+        try
+        {
+            var keys = await JSRuntime.InvokeAsync<string[]>("eval", "Object.keys(localStorage)");
+            var storageData = new Dictionary<string, string>();
+            
+            foreach (var key in keys)
+            {
+                var value = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
+                storageData[key] = value ?? "null";
+            }
+            
+            _rawStorage = System.Text.Json.JsonSerializer.Serialize(storageData, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            _rawStorage = $"Error reading localStorage: {ex.Message}";
+        }
+    }
+
+    private class ApiTestResult
+    {
+        public string Endpoint { get; set; } = "";
+        public bool Success { get; set; }
+        public string Message { get; set; } = "";
+    }
+}

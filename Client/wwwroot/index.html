@@ -44,8 +44,14 @@
             // Register lifecycle handlers for logout+cache clear on exit
             try {
                 const apiBase = 'https://localhost:7294/';
-                window.appLifecycle?.register({ logoutUrl: apiBase + 'api/auth/logout' });
-            } catch {}
+                window.appLifecycle?.register({ 
+                    logoutUrl: apiBase + 'api/auth/logout',
+                    storageKeys: ['valyanmed_auth_token', 'valyanmed_user_info', 'currentUser', 'auth_token', 'auth_user']
+                });
+                console.log('AppLifecycle registered - will clear auth data on app close/logout');
+            } catch (ex) {
+                console.log('AppLifecycle registration failed:', ex);
+            }
         });
     </script>
 
@@ -150,6 +156,44 @@
                 }
             }
         })();
+    </script>
+
+    <script>
+        // Function to download files from Blazor
+        window.downloadFile = (filename, content) => {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        };
+
+        // Console error monitoring
+        window.consoleErrors = [];
+        
+        // Override console.error to capture errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            window.consoleErrors.push({
+                timestamp: new Date(),
+                message: args.join(' ')
+            });
+            originalError.apply(console, args);
+        };
+
+        // Function to get captured console errors
+        window.getConsoleErrors = () => {
+            return window.consoleErrors;
+        };
+
+        // Function to clear captured errors
+        window.clearConsoleErrors = () => {
+            window.consoleErrors = [];
+        };
     </script>
 
 </body>

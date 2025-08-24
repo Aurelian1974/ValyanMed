@@ -1,0 +1,282 @@
+@page "/test-persoane-data"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IJsonService JsonService
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@using Client.Services
+
+<PageTitle>Test Persoane Data - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">Test Persoane Data Loading</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Aceast? pagin? testeaz? înc?rcarea datelor pentru persoane ?i detecteaz? probleme cu enumer?rile
+        </MudAlert>
+        
+        <MudStack Spacing="3" Class="mt-4">
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="LoadPersonsData"
+                          Disabled="@_isLoading"
+                          StartIcon="@(_isLoading ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.Download)">
+                    @if (_isLoading)
+                    {
+                        @:Loading...
+                    }
+                    else
+                    {
+                        @:Load Persons Data
+                    }
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="ClearResults">
+                    Clear Results
+                </MudButton>
+            </MudStack>
+            
+            @if (_hasResults)
+            {
+                <MudDivider />
+                
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6">Load Summary:</MudText>
+                        <MudAlert Severity="@(_loadSuccess ? MudSeverity.Success : MudSeverity.Error)">
+                            @if (_loadSuccess)
+                            {
+                                @:? Successfully loaded @_personsCount persons
+                            }
+                            else
+                            {
+                                @:? Failed to load data: @_errorMessage
+                            }
+                        </MudAlert>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.h6">Data Statistics:</MudText>
+                        <MudSimpleTable Dense="true">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Total Persons:</strong></td>
+                                    <td>@_personsCount</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>With CNP:</strong></td>
+                                    <td>@_cnpCount</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>With TipActIdentitate:</strong></td>
+                                    <td>@_tipActCount</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>With StareCivila:</strong></td>
+                                    <td>@_stareCivilaCount</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>With Gen:</strong></td>
+                                    <td>@_genCount</td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                </MudGrid>
+                
+                @if (_loadSuccess && _personsData.Any())
+                {
+                    <MudDivider />
+                    
+                    <MudText Typo="Typo.h6">Sample Data (First 10 Records):</MudText>
+                    <MudDataGrid T="PersonSample" 
+                                Items="@_personsData.Take(10)" 
+                                Dense="true"
+                                Hover="true"
+                                ReadOnly="true">
+                        
+                        <Columns>
+                            <PropertyColumn Property="x => x.Id" Title="ID" />
+                            <PropertyColumn Property="x => x.NumeComplet" Title="Nume Complet" />
+                            <PropertyColumn Property="x => x.CNP" Title="CNP" />
+                            <PropertyColumn Property="x => x.TipActIdentitate" Title="Tip Act" />
+                            <PropertyColumn Property="x => x.StareCivila" Title="Stare Civila" />
+                            <PropertyColumn Property="x => x.Gen" Title="Gen" />
+                            <PropertyColumn Property="x => x.DataCreare" Title="Data Creare" Format="dd.MM.yyyy" />
+                        </Columns>
+                    </MudDataGrid>
+                }
+                
+                @if (!string.IsNullOrEmpty(_rawData))
+                {
+                    <MudDivider />
+                    
+                    <MudExpansionPanels>
+                        <MudExpansionPanel>
+                            <TitleContent>
+                                <div style="display: flex; align-items: center">
+                                    <MudIcon Icon="@Icons.Material.Filled.Code" class="mr-3" />
+                                    <span>Raw API Response</span>
+                                </div>
+                            </TitleContent>
+                            <ChildContent>
+                                <MudTextField Label="Raw JSON Data" 
+                                             Value="@_rawData" 
+                                             ReadOnly="true" 
+                                             Variant="Variant.Outlined"
+                                             Lines="20" />
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                }
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isLoading = false;
+    private bool _hasResults = false;
+    private bool _loadSuccess = false;
+    private string _errorMessage = "";
+    private string _rawData = "";
+    
+    private int _personsCount = 0;
+    private int _cnpCount = 0;
+    private int _tipActCount = 0;
+    private int _stareCivilaCount = 0;
+    private int _genCount = 0;
+    
+    private List<PersonSample> _personsData = new();
+
+    private async Task LoadPersonsData()
+    {
+        _isLoading = true;
+        _hasResults = false;
+        StateHasChanged();
+        
+        try
+        {
+            var response = await Http.GetAsync("api/persoane");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _rawData = await response.Content.ReadAsStringAsync();
+                
+                try
+                {
+                    // Try with robust JSON options using JsonService
+                    var persons = JsonService.Deserialize<List<PersonSample>>(_rawData);
+                    
+                    if (persons != null)
+                    {
+                        _loadSuccess = true;
+                        _personsData = persons;
+                        _personsCount = _personsData.Count;
+                        
+                        _cnpCount = _personsData.Count(p => !string.IsNullOrEmpty(p.CNP));
+                        _tipActCount = _personsData.Count(p => !string.IsNullOrEmpty(p.TipActIdentitate));
+                        _stareCivilaCount = _personsData.Count(p => !string.IsNullOrEmpty(p.StareCivila));
+                        _genCount = _personsData.Count(p => !string.IsNullOrEmpty(p.Gen));
+                        
+                        Snackbar.Add($"Successfully loaded {_personsCount} persons!", MudSeverity.Success);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Deserialization returned null");
+                    }
+                }
+                catch (Exception jsonEx)
+                {
+                    _loadSuccess = false;
+                    _errorMessage = $"JSON Parsing Error: {jsonEx.Message}";
+                    
+                    // Try to parse as raw objects to see the actual data structure
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(_rawData);
+                        var root = doc.RootElement;
+                        
+                        if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+                        {
+                            var firstElement = root[0];
+                            _errorMessage += $"\n\nFirst element structure:";
+                            
+                            foreach (var property in firstElement.EnumerateObject())
+                            {
+                                _errorMessage += $"\n  {property.Name}: {property.Value} ({property.Value.ValueKind})";
+                                
+                                // Look specifically at enum fields
+                                if (property.Name.Equals("tipActIdentitate", StringComparison.OrdinalIgnoreCase) ||
+                                    property.Name.Equals("stareCivila", StringComparison.OrdinalIgnoreCase) ||
+                                    property.Name.Equals("gen", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    _errorMessage += $" ?? ENUM FIELD";
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception parseEx)
+                    {
+                        _errorMessage += $"\n\nAdditional parsing error: {parseEx.Message}";
+                    }
+                    
+                    Snackbar.Add($"JSON Error: {jsonEx.Message}", MudSeverity.Error);
+                }
+            }
+            else
+            {
+                _loadSuccess = false;
+                _errorMessage = $"HTTP {(int)response.StatusCode}: {response.ReasonPhrase}";
+                _rawData = await response.Content.ReadAsStringAsync();
+                
+                Snackbar.Add($"Failed to load data: {_errorMessage}", MudSeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _loadSuccess = false;
+            _errorMessage = ex.Message;
+            Snackbar.Add($"Error: {ex.Message}", MudSeverity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            _hasResults = true;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearResults()
+    {
+        _hasResults = false;
+        _loadSuccess = false;
+        _errorMessage = "";
+        _rawData = "";
+        _personsData.Clear();
+        _personsCount = 0;
+        _cnpCount = 0;
+        _tipActCount = 0;
+        _stareCivilaCount = 0;
+        _genCount = 0;
+        
+        StateHasChanged();
+    }
+
+    public class PersonSample
+    {
+        public int Id { get; set; }
+        public string Nume { get; set; } = "";
+        public string Prenume { get; set; } = "";
+        public string NumeComplet => $"{Nume} {Prenume}";
+        public string? CNP { get; set; }
+        public string? TipActIdentitate { get; set; }
+        public string? StareCivila { get; set; }
+        public string? Gen { get; set; }
+        public DateTime? DataCreare { get; set; }
+    }
+}

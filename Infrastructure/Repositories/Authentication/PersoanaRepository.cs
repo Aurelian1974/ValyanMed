@@ -191,11 +191,109 @@ public class PersoanaRepository : IPersoanaRepository
             DataCreare = item.DataCreare,
             DataModificare = item.DataModificare,
             CNP = item.CNP,
-            TipActIdentitate = !string.IsNullOrEmpty(item.TipActIdentitate) ? Enum.Parse<TipActIdentitate>(item.TipActIdentitate) : null,
+            TipActIdentitate = SafeParseEnum<TipActIdentitate>(item.TipActIdentitate),
             SerieActIdentitate = item.SerieActIdentitate,
             NumarActIdentitate = item.NumarActIdentitate,
-            StareCivila = !string.IsNullOrEmpty(item.StareCivila) ? Enum.Parse<StareCivila>(item.StareCivila) : null,
-            Gen = !string.IsNullOrEmpty(item.Gen) ? Enum.Parse<Gen>(item.Gen) : null
+            StareCivila = SafeParseEnum<StareCivila>(item.StareCivila),
+            Gen = SafeParseEnum<Gen>(item.Gen)
         };
+    }
+
+    /// <summary>
+    /// Safe enum parsing that handles legacy values and unknown enum values
+    /// Updated to handle both short and long enum values for maximum compatibility
+    /// </summary>
+    private static T? SafeParseEnum<T>(dynamic value) where T : struct, Enum
+    {
+        if (value == null)
+            return null;
+
+        var stringValue = value.ToString();
+        if (string.IsNullOrEmpty(stringValue))
+            return null;
+
+        // Handle legacy mappings for specific enums
+        if (typeof(T) == typeof(TipActIdentitate))
+        {
+            return stringValue.ToUpper() switch
+            {
+                // Short values (for DB compatibility)
+                "CI" => (T)(object)TipActIdentitate.CI,
+                "PASAPORT" => (T)(object)TipActIdentitate.Pasaport,
+                "PERMIS" => (T)(object)TipActIdentitate.Permis,
+                "CERTIFICAT" => (T)(object)TipActIdentitate.Certificat,
+                "ALTUL" => (T)(object)TipActIdentitate.Altul,
+                
+                // Long values (for completeness)
+                "CARTEIDENTITATE" => (T)(object)TipActIdentitate.CarteIdentitate,
+                "CARTE IDENTITATE" => (T)(object)TipActIdentitate.CarteIdentitate,
+                "CARTE DE IDENTITATE" => (T)(object)TipActIdentitate.CarteIdentitate,
+                "PERMISCONDUCERE" => (T)(object)TipActIdentitate.PermisConducere,
+                "PERMIS CONDUCERE" => (T)(object)TipActIdentitate.PermisConducere,
+                "PERMIS DE CONDUCERE" => (T)(object)TipActIdentitate.PermisConducere,
+                "CERTIFICATNASTERE" => (T)(object)TipActIdentitate.CertificatNastere,
+                "CERTIFICAT NASTERE" => (T)(object)TipActIdentitate.CertificatNastere,
+                "CERTIFICAT DE NASTERE" => (T)(object)TipActIdentitate.CertificatNastere,
+                
+                // Truncated values (from previous errors)
+                "CARTE" => (T)(object)TipActIdentitate.CI,
+                "PASAP" => (T)(object)TipActIdentitate.Pasaport,
+                "PERMI" => (T)(object)TipActIdentitate.Permis,
+                "CERTI" => (T)(object)TipActIdentitate.Certificat,
+                
+                _ => Enum.TryParse<T>(stringValue, true, out T result) ? result : null
+            };
+        }
+
+        if (typeof(T) == typeof(StareCivila))
+        {
+            return stringValue.ToUpper() switch
+            {
+                // Short values for compatibility
+                "CELIBATAR" => (T)(object)StareCivila.Necasatorit,
+                "CASATORIT" => (T)(object)StareCivila.Casatorit,
+                "DIVORTIT" => (T)(object)StareCivila.Divortit,
+                "VADUV" => (T)(object)StareCivila.Vaduv,
+                "PARTENER" => (T)(object)StareCivila.Concubinaj,
+                
+                // Standard long values
+                "NECASATORIT" => (T)(object)StareCivila.Necasatorit,
+                "NEMARITAT" => (T)(object)StareCivila.Necasatorit,
+                "MARIAJ" => (T)(object)StareCivila.Casatorit,
+                "MARITAT" => (T)(object)StareCivila.Casatorit,
+                "DIVORTAT" => (T)(object)StareCivila.Divortit,
+                "VADOVA" => (T)(object)StareCivila.Vaduv,
+                "VADUVE" => (T)(object)StareCivila.Vaduv,
+                "CONCUBINAJ" => (T)(object)StareCivila.Concubinaj,
+                "PARTENERIAT" => (T)(object)StareCivila.Concubinaj,
+                
+                _ => Enum.TryParse<T>(stringValue, true, out T result) ? result : null
+            };
+        }
+
+        if (typeof(T) == typeof(Gen))
+        {
+            return stringValue.ToUpper() switch
+            {
+                // Short values for compatibility
+                "M" => (T)(object)Gen.Masculin,
+                "F" => (T)(object)Gen.Feminin,
+                "N" => (T)(object)Gen.Neprecizat,
+                
+                // Standard long values
+                "MASCULIN" => (T)(object)Gen.Masculin,
+                "BARBAT" => (T)(object)Gen.Masculin,
+                "MALE" => (T)(object)Gen.Masculin,
+                "FEMININ" => (T)(object)Gen.Feminin,
+                "FEMEIE" => (T)(object)Gen.Feminin,
+                "FEMALE" => (T)(object)Gen.Feminin,
+                "NEPRECIZAT" => (T)(object)Gen.Neprecizat,
+                
+                _ => Enum.TryParse<T>(stringValue, true, out T result) ? result : null
+            };
+        }
+
+        // Default fallback for standard enum parsing
+        return Enum.TryParse<T>(stringValue, true, out T defaultResult) ? defaultResult : null;
     }
 }

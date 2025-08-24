@@ -1,0 +1,386 @@
+@page "/json-enum-test"
+@inject IJsonService JsonService
+@inject ISnackbar Snackbar
+@using Client.Services
+@using System.Text.Json
+
+<PageTitle>JSON Enum Test - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">?? JSON Enum Conversion Test</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Aceast? pagin? testeaz? conversiile JSON pentru enum-urile problematice din aplica?ie.
+        </MudAlert>
+        
+        <MudStack Spacing="4" Class="mt-4">
+            
+            <!-- Test Controls -->
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="RunAllTests"
+                          Disabled="@_isRunning"
+                          StartIcon="@(_isRunning ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.PlayArrow)">
+                    @if (_isRunning)
+                    {
+                        @:Running Tests...
+                    }
+                    else
+                    {
+                        @:Run All Tests
+                    }
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="ClearResults">
+                    Clear Results
+                </MudButton>
+            </MudStack>
+            
+            <!-- Test Results -->
+            @if (_testResults.Any())
+            {
+                <MudDivider />
+                
+                <MudText Typo="Typo.h6">?? Test Results</MudText>
+                
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #4caf50, #66bb6a);">
+                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white; font-size: 2rem;" />
+                                <MudText Typo="Typo.h6" Style="color: white;">Passed</MudText>
+                                <MudText Typo="Typo.h4" Style="color: white;">@_testResults.Count(r => r.Success)</MudText>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #f44336, #ef5350);">
+                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Style="color: white; font-size: 2rem;" />
+                                <MudText Typo="Typo.h6" Style="color: white;">Failed</MudText>
+                                <MudText Typo="Typo.h4" Style="color: white;">@_testResults.Count(r => !r.Success)</MudText>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #2196f3, #42a5f5);">
+                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Filled.Assignment" Style="color: white; font-size: 2rem;" />
+                                <MudText Typo="Typo.h6" Style="color: white;">Total</MudText>
+                                <MudText Typo="Typo.h4" Style="color: white;">@_testResults.Count</MudText>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+                
+                <!-- Detailed Results -->
+                <MudExpansionPanels MultiExpansion="true">
+                    <MudExpansionPanel IsInitiallyExpanded="true">
+                        <TitleContent>
+                            <div style="display: flex; align-items: center">
+                                <MudIcon Icon="@Icons.Material.Filled.Assignment" class="mr-3" />
+                                <span>?? Detailed Test Results</span>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudStack Spacing="2">
+                                @foreach (var result in _testResults)
+                                {
+                                    <MudAlert Severity="@(result.Success ? MudSeverity.Success : MudSeverity.Error)" Dense="true">
+                                        <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                                            <MudIcon Icon="@(result.Success ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Error)" />
+                                            <MudText><strong>@result.TestName:</strong> @result.Message</MudText>
+                                        </MudStack>
+                                        @if (!string.IsNullOrEmpty(result.Details))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mt-2">@result.Details</MudText>
+                                        }
+                                    </MudAlert>
+                                }
+                            </MudStack>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                    
+                    <MudExpansionPanel>
+                        <TitleContent>
+                            <div style="display: flex; align-items: center">
+                                <MudIcon Icon="@Icons.Material.Filled.Code" class="mr-3" />
+                                <span>?? Test Data Samples</span>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudTextField Label="Test JSON Samples" 
+                                         Value="@_testJsonSamples" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined"
+                                         Lines="15" />
+                        </ChildContent>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+            
+            <!-- Navigation -->
+            <MudDivider />
+            <MudText Typo="Typo.h6">?? Related Tools</MudText>
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Primary" 
+                          Href="/test-persoane-data"
+                          StartIcon="@Icons.Material.Filled.DataObject">
+                    Test Real Data
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          Href="/status-check"
+                          StartIcon="@Icons.Material.Filled.Monitor">
+                    System Status
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Secondary" 
+                          Href="/test-simple"
+                          StartIcon="@Icons.Material.Filled.Home">
+                    Control Center
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isRunning = false;
+    private List<TestResult> _testResults = new();
+    private string _testJsonSamples = "";
+
+    private async Task RunAllTests()
+    {
+        _isRunning = true;
+        _testResults.Clear();
+        StateHasChanged();
+        
+        try
+        {
+            await TestTipActIdentitateConversions();
+            await TestStareCivilaConversions();
+            await TestGenConversions();
+            await TestComplexObjectConversions();
+            
+            var passedCount = _testResults.Count(r => r.Success);
+            var totalCount = _testResults.Count;
+            
+            if (passedCount == totalCount)
+            {
+                Snackbar.Add($"?? All tests passed! ({passedCount}/{totalCount})", MudSeverity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"?? {totalCount - passedCount} tests failed! ({passedCount}/{totalCount})", MudSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResults.Add(new TestResult("Global Test", $"Unexpected error: {ex.Message}", false));
+            Snackbar.Add("Test execution failed!", MudSeverity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestTipActIdentitateConversions()
+    {
+        var testCases = new[]
+        {
+            ("\"CI\"", TipActIdentitate.CI),
+            ("\"Carte\"", TipActIdentitate.CI),
+            ("\"CarteIdentitate\"", TipActIdentitate.CarteIdentitate),
+            ("\"Pasaport\"", TipActIdentitate.Pasaport),
+            ("\"Pasap\"", TipActIdentitate.Pasaport),
+            ("\"Permis\"", TipActIdentitate.Permis),
+            ("\"Permi\"", TipActIdentitate.Permis),
+            ("\"Certificat\"", TipActIdentitate.Certificat),
+            ("\"Certi\"", TipActIdentitate.Certificat),
+            ("\"Altul\"", TipActIdentitate.Altul),
+            ("null", (TipActIdentitate?)null)
+        };
+
+        foreach (var (json, expected) in testCases)
+        {
+            try
+            {
+                var result = JsonService.Deserialize<TipActIdentitate?>(json);
+                
+                if (result == expected)
+                {
+                    _testResults.Add(new TestResult($"TipActIdentitate {json}", $"? {json} ? {result}", true));
+                }
+                else
+                {
+                    _testResults.Add(new TestResult($"TipActIdentitate {json}", $"? Expected {expected}, got {result}", false));
+                }
+            }
+            catch (Exception ex)
+            {
+                _testResults.Add(new TestResult($"TipActIdentitate {json}", $"? Exception: {ex.Message}", false));
+            }
+            
+            await Task.Delay(10); // Small delay for UI updates
+        }
+    }
+
+    private async Task TestStareCivilaConversions()
+    {
+        var testCases = new[]
+        {
+            ("\"Necasatorit\"", StareCivila.Necasatorit),
+            ("\"Celibatar\"", StareCivila.Necasatorit),
+            ("\"Casatorit\"", StareCivila.Casatorit),
+            ("\"Divortit\"", StareCivila.Divortit),
+            ("\"Vaduv\"", StareCivila.Vaduv),
+            ("\"Concubinaj\"", StareCivila.Concubinaj),
+            ("\"Partener\"", StareCivila.Concubinaj),
+            ("null", (StareCivila?)null)
+        };
+
+        foreach (var (json, expected) in testCases)
+        {
+            try
+            {
+                var result = JsonService.Deserialize<StareCivila?>(json);
+                
+                if (result == expected)
+                {
+                    _testResults.Add(new TestResult($"StareCivila {json}", $"? {json} ? {result}", true));
+                }
+                else
+                {
+                    _testResults.Add(new TestResult($"StareCivila {json}", $"? Expected {expected}, got {result}", false));
+                }
+            }
+            catch (Exception ex)
+            {
+                _testResults.Add(new TestResult($"StareCivila {json}", $"? Exception: {ex.Message}", false));
+            }
+            
+            await Task.Delay(10);
+        }
+    }
+
+    private async Task TestGenConversions()
+    {
+        var testCases = new[]
+        {
+            ("\"M\"", Gen.Masculin),
+            ("\"Masculin\"", Gen.Masculin),
+            ("\"F\"", Gen.Feminin),
+            ("\"Feminin\"", Gen.Feminin),
+            ("\"N\"", Gen.Neprecizat),
+            ("\"Neprecizat\"", Gen.Neprecizat),
+            ("null", (Gen?)null)
+        };
+
+        foreach (var (json, expected) in testCases)
+        {
+            try
+            {
+                var result = JsonService.Deserialize<Gen?>(json);
+                
+                if (result == expected)
+                {
+                    _testResults.Add(new TestResult($"Gen {json}", $"? {json} ? {result}", true));
+                }
+                else
+                {
+                    _testResults.Add(new TestResult($"Gen {json}", $"? Expected {expected}, got {result}", false));
+                }
+            }
+            catch (Exception ex)
+            {
+                _testResults.Add(new TestResult($"Gen {json}", $"? Exception: {ex.Message}", false));
+            }
+            
+            await Task.Delay(10);
+        }
+    }
+
+    private async Task TestComplexObjectConversions()
+    {
+        var testJson = @"{
+            ""id"": 1,
+            ""nume"": ""Test"",
+            ""prenume"": ""Person"",
+            ""tipActIdentitate"": ""CI"",
+            ""stareCivila"": ""Celibatar"",
+            ""gen"": ""M""
+        }";
+
+        _testJsonSamples = testJson;
+
+        try
+        {
+            var result = JsonService.Deserialize<PersonTestObject>(testJson);
+            
+            if (result != null &&
+                result.TipActIdentitate == TipActIdentitate.CI &&
+                result.StareCivila == StareCivila.Necasatorit &&
+                result.Gen == Gen.Masculin)
+            {
+                _testResults.Add(new TestResult("Complex Object", "? Complex object with enums parsed correctly", true, 
+                    $"TipActIdentitate: {result.TipActIdentitate}, StareCivila: {result.StareCivila}, Gen: {result.Gen}"));
+            }
+            else
+            {
+                _testResults.Add(new TestResult("Complex Object", "? Complex object parsing failed", false,
+                    $"Result: {(result == null ? "null" : $"TipActIdentitate: {result.TipActIdentitate}, StareCivila: {result.StareCivila}, Gen: {result.Gen}")}"));
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResults.Add(new TestResult("Complex Object", $"? Exception: {ex.Message}", false));
+        }
+        
+        await Task.Delay(10);
+    }
+
+    private void ClearResults()
+    {
+        _testResults.Clear();
+        _testJsonSamples = "";
+        StateHasChanged();
+    }
+
+    public class TestResult
+    {
+        public string TestName { get; set; }
+        public string Message { get; set; }
+        public bool Success { get; set; }
+        public string Details { get; set; }
+
+        public TestResult(string testName, string message, bool success, string details = "")
+        {
+            TestName = testName;
+            Message = message;
+            Success = success;
+            Details = details;
+        }
+    }
+
+    public class PersonTestObject
+    {
+        public int Id { get; set; }
+        public string Nume { get; set; } = "";
+        public string Prenume { get; set; } = "";
+        public TipActIdentitate? TipActIdentitate { get; set; }
+        public StareCivila? StareCivila { get; set; }
+        public Gen? Gen { get; set; }
+    }
+}

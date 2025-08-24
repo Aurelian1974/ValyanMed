@@ -1,0 +1,1177 @@
+@page "/auth-debug"
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ITokenStorageService TokenStorage
+@inject IAuthenticationStateService AuthStateService
+@inject IAuthenticationApiService AuthApiService
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject IJsonService JsonService
+@using Microsoft.AspNetCore.Components.Authorization
+@using Client.Services.Authentication
+@using Client.Services
+@using global::Shared.DTOs.Authentication
+
+<PageTitle>Authentication Debug - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">?? Authentication Debug</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Aceast? pagin? afi?eaz? starea detaliat? a autentific?rii pentru debugging.
+        </MudAlert>
+        
+        <MudStack Spacing="4" Class="mt-4">
+            
+            <!-- Check Current State -->
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="CheckAuthState"
+                          StartIcon="@Icons.Material.Filled.Refresh">
+                    Check Auth State
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="CheckLocalStorage">
+                    Check LocalStorage
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Warning" 
+                          OnClick="SimulateLogin">
+                    Simulate Login
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Success" 
+                          OnClick="TestRealLogin">
+                    Test Real Login
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Error" 
+                          OnClick="ClearAllAuth">
+                    Clear All Auth Data
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Info" 
+                          OnClick="TestApiConnection">
+                    Test API Connection
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Success" 
+                          OnClick="TestLocalStorageDirect">
+                    Test LocalStorage Direct
+                </MudButton>
+                
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Warning" 
+                          OnClick="CreateTestUser">
+                    Create Test User
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Info" 
+                          OnClick="DebugPassword">
+                    Debug Password
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="CheckExistingUsers">
+                    Check Existing Users
+                </MudButton>
+                
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Error" 
+                          OnClick="RecreateAdmin">
+                    Recreate Admin User
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Tertiary" 
+                          OnClick="TestNavigationToUtilizatori">
+                    Test Navigate to Utilizatori
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Primary" 
+                          OnClick="ForceAuthStateRefresh">
+                    Force Auth Refresh
+                </MudButton>
+            </MudStack>
+            
+            <!-- Results -->
+            @if (!string.IsNullOrEmpty(_debugInfo))
+            {
+                <MudExpansionPanels MultiExpansion="true">
+                    <MudExpansionPanel IsInitiallyExpanded="true">
+                        <TitleContent>
+                            <div style="display: flex; align-items: center">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" class="mr-3" />
+                                <span>?? Debug Information</span>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudTextField Label="Debug Results" 
+                                         Value="@_debugInfo" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined"
+                                         Lines="20" />
+                        </ChildContent>
+                    </MudExpansionPanel>
+                    
+                    <MudExpansionPanel>
+                        <TitleContent>
+                            <div style="display: flex; align-items: center">
+                                <MudIcon Icon="@Icons.Material.Filled.Storage" class="mr-3" />
+                                <span>?? Storage Information</span>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudTextField Label="Storage Content" 
+                                         Value="@_storageInfo" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined"
+                                         Lines="15" />
+                        </ChildContent>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+            
+            <!-- Test Authorize -->
+            <MudDivider />
+            <MudText Typo="Typo.h6">?? Test Authorization</MudText>
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Primary" 
+                          Href="/utilizatori"
+                          StartIcon="@Icons.Material.Filled.People">
+                    Test Utilizatori (with [Authorize])
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Success" 
+                          Href="/persoane"
+                          StartIcon="@Icons.Material.Filled.Person">
+                    Test Persoane (without [Authorize])
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _debugInfo = "";
+    private string _storageInfo = "";
+
+    private async Task CheckAuthState()
+    {
+        try
+        {
+            _debugInfo = $"=== AUTHENTICATION STATE DEBUG ===\n";
+            _debugInfo += $"Timestamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}\n\n";
+            
+            // Check AuthenticationStateProvider
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            
+            _debugInfo += "1. AuthenticationStateProvider Check:\n";
+            _debugInfo += $"   - User.Identity.IsAuthenticated: {user.Identity?.IsAuthenticated}\n";
+            _debugInfo += $"   - User.Identity.Name: {user.Identity?.Name ?? "null"}\n";
+            _debugInfo += $"   - User.Identity.AuthenticationType: {user.Identity?.AuthenticationType ?? "null"}\n";
+            _debugInfo += $"   - Claims Count: {user.Claims?.Count() ?? 0}\n";
+            
+            if (user.Claims?.Any() == true)
+            {
+                _debugInfo += "   - Claims:\n";
+                foreach (var claim in user.Claims)
+                {
+                    _debugInfo += $"     * {claim.Type}: {claim.Value}\n";
+                }
+            }
+            
+            // Check TokenStorage
+            _debugInfo += "\n2. TokenStorage Check:\n";
+            var token = await TokenStorage.GetTokenAsync();
+            var userInfo = await TokenStorage.GetUserInfoAsync();
+            
+            _debugInfo += $"   - Token exists: {!string.IsNullOrEmpty(token)}\n";
+            _debugInfo += $"   - Token preview: {(string.IsNullOrEmpty(token) ? "null" : token.Substring(0, Math.Min(50, token.Length)) + "...")}\n";
+            _debugInfo += $"   - UserInfo exists: {userInfo != null}\n";
+            
+            if (userInfo != null)
+            {
+                _debugInfo += $"   - UserInfo.Id: {userInfo.Id}\n";
+                _debugInfo += $"   - UserInfo.NumeUtilizator: {userInfo.NumeUtilizator}\n";
+                _debugInfo += $"   - UserInfo.Email: {userInfo.Email}\n";
+                _debugInfo += $"   - UserInfo.Expiration: {userInfo.Expiration:yyyy-MM-dd HH:mm:ss}\n";
+                _debugInfo += $"   - Token Expired: {userInfo.Expiration <= DateTime.UtcNow}\n";
+            }
+            
+            // Check AuthenticationStateService
+            _debugInfo += "\n3. AuthenticationStateService Check:\n";
+            var currentUser = await AuthStateService.GetCurrentUserAsync();
+            _debugInfo += $"   - Current user exists: {currentUser != null}\n";
+            
+            if (currentUser != null)
+            {
+                _debugInfo += $"   - Current user ID: {currentUser.Id}\n";
+                _debugInfo += $"   - Current user name: {currentUser.NumeUtilizator}\n";
+            }
+            
+            // Summary
+            _debugInfo += "\n4. SUMMARY:\n";
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                _debugInfo += "   ? User IS authenticated according to AuthenticationStateProvider\n";
+                _debugInfo += "   ? [Authorize] should ALLOW access\n";
+            }
+            else
+            {
+                _debugInfo += "   ? User is NOT authenticated according to AuthenticationStateProvider\n";
+                _debugInfo += "   ? [Authorize] will BLOCK access and redirect to login\n";
+                
+                if (!string.IsNullOrEmpty(token) && userInfo != null)
+                {
+                    _debugInfo += "   ??  BUT token and userInfo exist - possible CustomAuthenticationStateProvider issue\n";
+                }
+            }
+            
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"ERROR: {ex.Message}\n{ex.StackTrace}";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task CheckLocalStorage()
+    {
+        try
+        {
+            _storageInfo = "=== LOCAL STORAGE CONTENT ===\n\n";
+            
+            // Check specific keys
+            var keys = new[] { "valyanmed_auth_token", "valyanmed_user_info", "currentUser" };
+            
+            foreach (var key in keys)
+            {
+                try
+                {
+                    var value = await JSRuntime.InvokeAsync<string>("localStorage.getItem", key);
+                    _storageInfo += $"{key}:\n";
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        _storageInfo += "   (null or empty)\n\n";
+                    }
+                    else
+                    {
+                        var preview = value.Length > 200 ? value.Substring(0, 200) + "..." : value;
+                        _storageInfo += $"   {preview}\n\n";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _storageInfo += $"   ERROR: {ex.Message}\n\n";
+                }
+            }
+            
+            // Check all localStorage keys
+            _storageInfo += "All localStorage keys:\n";
+            try
+            {
+                var allKeysCount = await JSRuntime.InvokeAsync<int>("eval", "localStorage.length");
+                _storageInfo += $"   Total keys: {allKeysCount}\n";
+                
+                for (int i = 0; i < allKeysCount; i++)
+                {
+                    var key = await JSRuntime.InvokeAsync<string>("localStorage.key", i);
+                    _storageInfo += $"   - {key}\n";
+                }
+            }
+            catch (Exception ex)
+            {
+                _storageInfo += $"   ERROR getting all keys: {ex.Message}\n";
+            }
+        }
+        catch (Exception ex)
+        {
+            _storageInfo = $"ERROR: {ex.Message}";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task SimulateLogin()
+    {
+        try
+        {
+            var fakeUser = new AuthenticationResponse(
+                Id: 999,
+                NumeUtilizator: "test_user",
+                Email: "test@valyanmed.com",
+                NumeComplet: "Test User",
+                Token: "fake_jwt_token_for_testing_" + DateTime.Now.Ticks,
+                Expiration: DateTime.UtcNow.AddHours(24)
+            );
+            
+            await TokenStorage.SetTokenAsync(fakeUser.Token);
+            await TokenStorage.SetUserInfoAsync(fakeUser);
+            await AuthStateService.SetCurrentUserAsync(fakeUser);
+            
+            _debugInfo = "? Simulated login completed!\n\n";
+            _debugInfo += "You should now be able to access [Authorize] pages.\n";
+            _debugInfo += "Try clicking 'Test Utilizatori' button above.\n\n";
+            _debugInfo += "Run 'Check Auth State' to verify the authentication status.";
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _debugInfo = $"? Simulate login failed: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestRealLogin()
+    {
+        try
+        {
+            _debugInfo = "=== TESTING REAL LOGIN ===\n\n";
+            
+            _debugInfo += "0. Testing API connectivity first...\n";
+            try
+            {
+                var healthResponse = await Http.GetAsync("api/health");
+                if (!healthResponse.IsSuccessStatusCode)
+                {
+                    _debugInfo += "? API is not accessible! Make sure API is running.\n";
+                    return;
+                }
+                _debugInfo += "? API is accessible\n\n";
+            }
+            catch (Exception apiEx)
+            {
+                _debugInfo += $"? API connectivity failed: {apiEx.Message}\n";
+                _debugInfo += "Make sure API is running on https://localhost:7294/\n";
+                return;
+            }
+            
+            // ÎNLOCUIE?TE ACESTE CREDENTIALE CU UNELE REALE DIN BAZA TA DE DATE!
+            _debugInfo += "1. Creating login request...\n";
+            var loginRequest = new LoginRequest("admin", "Admin123!");  // Folose?te parola corect? cu valid?ri
+            _debugInfo += $"   Username: {loginRequest.NumeUtilizatorSauEmail}\n";
+            _debugInfo += $"   Password: {loginRequest.Parola}\n";
+            _debugInfo += "   ? Using credentials that meet validation requirements\n\n";
+            
+            _debugInfo += "2. Sending login request to API...\n";
+            var result = await AuthApiService.LoginAsync(loginRequest);
+            
+            _debugInfo += $"3. Login API Response:\n";
+            _debugInfo += $"   - IsSuccess: {result.IsSuccess}\n";
+            _debugInfo += $"   - HasValue: {result.Value != null}\n";
+            _debugInfo += $"   - Errors count: {result.Errors?.Count ?? 0}\n";
+            
+            if (!result.IsSuccess)
+            {
+                var errors = result.Errors ?? new List<string> { "No errors provided" };
+                _debugInfo += $"   - Error details: {string.Join(", ", errors)}\n";
+                _debugInfo += "\n? LOGIN FAILED - API returned error\n";
+                _debugInfo += "\nPOSSIBLE CAUSES:\n";
+                _debugInfo += "- Wrong username/password (most likely)\n";
+                _debugInfo += "- User doesn't exist in database\n";
+                _debugInfo += "- Password doesn't match hashed version in DB\n";
+                _debugInfo += "- Database connection issues\n";
+                _debugInfo += "\nSOLUTIONS:\n";
+                _debugInfo += "1. Run 'Test API Connection' to find working credentials\n";
+                _debugInfo += "2. Check database for existing users\n";
+                _debugInfo += "3. Create a test user manually in database\n";
+            }
+            else if (result.Value == null)
+            {
+                _debugInfo += "\n? LOGIN FAILED - API success but no data returned\n";
+                _debugInfo += "This indicates an API implementation issue.\n";
+            }
+            else
+            {
+                _debugInfo += "\n? LOGIN API SUCCESS! Received user data:\n";
+                _debugInfo += $"   - Token received: {!string.IsNullOrEmpty(result.Value.Token)}\n";
+                _debugInfo += $"   - Token length: {result.Value.Token?.Length ?? 0}\n";
+                _debugInfo += $"   - User ID: {result.Value.Id}\n";
+                _debugInfo += $"   - Username: {result.Value.NumeUtilizator}\n";
+                _debugInfo += $"   - Email: {result.Value.Email}\n";
+                _debugInfo += $"   - Full Name: {result.Value.NumeComplet}\n";
+                _debugInfo += $"   - Expiration: {result.Value.Expiration}\n";
+                _debugInfo += $"   - Is token expired: {result.Value.Expiration <= DateTime.UtcNow}\n";
+                
+                _debugInfo += "\n4. Setting authentication data in storage...\n";
+                
+                try
+                {
+                    _debugInfo += "   Setting token in TokenStorage...\n";
+                    await TokenStorage.SetTokenAsync(result.Value.Token);
+                    _debugInfo += "   ? Token saved to TokenStorage\n";
+                    
+                    _debugInfo += "   Setting user info in TokenStorage...\n";
+                    await TokenStorage.SetUserInfoAsync(result.Value);
+                    _debugInfo += "   ? UserInfo saved to TokenStorage\n";
+                    
+                    _debugInfo += "   Setting user in AuthStateService...\n";
+                    await AuthStateService.SetCurrentUserAsync(result.Value);
+                    _debugInfo += "   ? User set in AuthStateService\n";
+                    
+                    _debugInfo += "   Notifying AuthenticationStateProvider...\n";
+                    var customAuthProvider = (Client.Authentication.CustomAuthenticationStateProvider)AuthStateProvider;
+                    await customAuthProvider.MarkUserAsAuthenticatedAsync(result.Value.Token, result.Value);
+                    _debugInfo += "   ? AuthenticationStateProvider notified\n";
+                }
+                catch (Exception storageEx)
+                {
+                    _debugInfo += $"   ? Failed to save authentication data: {storageEx.Message}\n";
+                    _debugInfo += $"   Stack trace: {storageEx.StackTrace}\n";
+                }
+                
+                _debugInfo += "\n5. Verifying storage was successful...\n";
+                
+                try
+                {
+                    var savedToken = await TokenStorage.GetTokenAsync();
+                    var savedUser = await TokenStorage.GetUserInfoAsync();
+                    
+                    _debugInfo += $"   - Token retrieved: {!string.IsNullOrEmpty(savedToken)}\n";
+                    _debugInfo += $"   - UserInfo retrieved: {savedUser != null}\n";
+                    
+                    if (!string.IsNullOrEmpty(savedToken) && savedUser != null)
+                    {
+                        _debugInfo += "\n?? SUCCESS! Authentication data saved successfully!\n";
+                        _debugInfo += "   ? Login process completed without errors\n";
+                        _debugInfo += "   ? Token and user info stored in localStorage\n";
+                        _debugInfo += "\nNEXT STEPS:\n";
+                        _debugInfo += "1. Run 'Check Auth State' to verify AuthenticationStateProvider\n";
+                        _debugInfo += "2. Run 'Check LocalStorage' to see browser storage\n";
+                        _debugInfo += "3. Try accessing [Authorize] pages like /utilizatori\n";
+                        _debugInfo += "4. If successful, uncomment @attribute [Authorize] in Utilizatori.razor\n";
+                    }
+                    else
+                    {
+                        _debugInfo += "\n? STORAGE FAILED! Data was not saved properly.\n";
+                        _debugInfo += "   This indicates a problem with Blazored.LocalStorage or browser storage.\n";
+                        _debugInfo += "   Try running 'Test LocalStorage Direct' to diagnose.\n";
+                    }
+                }
+                catch (Exception verifyEx)
+                {
+                    _debugInfo += $"\n? VERIFICATION FAILED: {verifyEx.Message}\n";
+                    _debugInfo += $"   Stack trace: {verifyEx.StackTrace}\n";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"\n? CRITICAL ERROR in TestRealLogin: {ex.Message}\n";
+            _debugInfo += $"   Stack trace: {ex.StackTrace}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task ClearAllAuth()
+    {
+        try
+        {
+            await TokenStorage.RemoveTokenAsync();
+            await TokenStorage.RemoveUserInfoAsync();
+            await AuthStateService.ClearCurrentUserAsync();
+            
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "valyanmed_auth_token");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "valyanmed_user_info");
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "currentUser");
+            
+            _debugInfo = "? All authentication data cleared!\n\n";
+            _debugInfo += "You should now be redirected to login when accessing [Authorize] pages.\n";
+            _debugInfo += "Run 'Check Auth State' to verify.";
+        }
+        catch (Exception ex)
+        {
+            _debugInfo = $"? Clear auth failed: {ex.Message}";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task TestApiConnection()
+    {
+        try
+        {
+            _debugInfo = "=== TESTING API CONNECTION ===\n\n";
+            
+            _debugInfo += "1. Testing API health endpoint...\n";
+            
+            try
+            {
+                var response = await Http.GetAsync("api/health");
+                _debugInfo += $"   Health Endpoint Status: {response.StatusCode}\n";
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _debugInfo += $"   Health Response: {content}\n";
+                    _debugInfo += "   ? API is running and accessible!\n";
+                }
+                else
+                {
+                    _debugInfo += $"   Health Error: {response.ReasonPhrase}\n";
+                }
+            }
+            catch (Exception apiEx)
+            {
+                _debugInfo += $"   ? API Connection Error: {apiEx.Message}\n";
+                _debugInfo += "   Make sure API is running on https://localhost:7294/\n";
+                return; // Exit early if API is not accessible
+            }
+            
+            _debugInfo += "\n2. Testing API ping endpoint...\n";
+            
+            try
+            {
+                var pingResponse = await Http.GetAsync("api/health/ping");
+                _debugInfo += $"   Ping Status: {pingResponse.StatusCode}\n";
+                
+                if (pingResponse.IsSuccessStatusCode)
+                {
+                    var pingContent = await pingResponse.Content.ReadAsStringAsync();
+                    _debugInfo += $"   Ping Response: {pingContent}\n";
+                }
+            }
+            catch (Exception pingEx)
+            {
+                _debugInfo += $"   Ping Error: {pingEx.Message}\n";
+            }
+            
+            _debugInfo += "\n3. Testing auth login endpoint with wrong credentials...\n";
+            
+            try
+            {
+                var testLoginData = new { numeUtilizatorSauEmail = "wrong_user", parola = "wrong_password" };
+                var response = await Http.PostAsJsonAsync("api/auth/login", testLoginData);
+                
+                _debugInfo += $"   Login Endpoint Status: {response.StatusCode}\n";
+                
+                var content = await response.Content.ReadAsStringAsync();
+                _debugInfo += $"   Login Response Preview: {content.Substring(0, Math.Min(200, content.Length))}...\n";
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest || 
+                    response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    _debugInfo += "   ? Login endpoint is working (correctly rejected wrong credentials)\n";
+                }
+                else
+                {
+                    _debugInfo += $"   ?? Unexpected response from login endpoint: {response.StatusCode}\n";
+                }
+            }
+            catch (Exception loginEx)
+            {
+                _debugInfo += $"   ? Login Endpoint Error: {loginEx.Message}\n";
+            }
+            
+            _debugInfo += "\n4. Testing with common admin credentials...\n";
+            
+            // Test cu credentiale comune
+            var adminTests = new[] 
+            {
+                new { user = "admin", pass = "admin" },
+                new { user = "admin", pass = "admin123" },
+                new { user = "administrator", pass = "password" },
+                new { user = "test", pass = "test" },
+                new { user = "user", pass = "user" },
+                new { user = "demo", pass = "demo" }
+            };
+            
+            bool foundWorking = false;
+            foreach (var test in adminTests)
+            {
+                try
+                {
+                    var testLoginData = new { numeUtilizatorSauEmail = test.user, parola = test.pass };
+                    var testResponse = await Http.PostAsJsonAsync("api/auth/login", testLoginData);
+                    
+                    _debugInfo += $"   Testing {test.user}/{test.pass}: {testResponse.StatusCode}";
+                    
+                    if (testResponse.IsSuccessStatusCode)
+                    {
+                        var successContent = await testResponse.Content.ReadAsStringAsync();
+                        _debugInfo += " ? SUCCESS!\n";
+                        _debugInfo += $"      Response: {successContent.Substring(0, Math.Min(300, successContent.Length))}...\n";
+                        _debugInfo += $"\n?? WORKING CREDENTIALS FOUND: {test.user}/{test.pass}\n";
+                        _debugInfo += "   Update the TestRealLogin method to use these credentials!\n";
+                        foundWorking = true;
+                        break;
+                    }
+                    else
+                    {
+                        _debugInfo += " ?\n";
+                    }
+                }
+                catch (Exception testEx)
+                {
+                    _debugInfo += $"   {test.user}/{test.pass}: Error - {testEx.Message}\n";
+                }
+                
+                // Small delay to not overwhelm the API
+                await Task.Delay(100);
+            }
+            
+            if (!foundWorking)
+            {
+                _debugInfo += "\n?? NO WORKING CREDENTIALS FOUND!\n";
+                _debugInfo += "   Possible solutions:\n";
+                _debugInfo += "   1. Check if there are users in the database\n";
+                _debugInfo += "   2. Create a test user manually\n";
+                _debugInfo += "   3. Check the database connection\n";
+                _debugInfo += "   4. Verify password hashing is working correctly\n";
+            }
+            
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"? API connection test failed: {ex.Message}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task TestLocalStorageDirect()
+    {
+        try
+        {
+            _debugInfo = "=== TESTING LOCALSTORAGE DIRECT ===\n\n";
+            
+            _debugInfo += "1. Testing JavaScript localStorage write...\n";
+            
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "test_key", "test_value");
+            _debugInfo += "   ? JavaScript localStorage.setItem executed\n";
+            
+            var jsValue = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "test_key");
+            _debugInfo += $"   - Retrieved via JS: {jsValue ?? "null"}\n";
+            
+            _debugInfo += "\n2. Testing TokenStorage service...\n";
+            
+            try
+            {
+                await TokenStorage.SetTokenAsync("test_token_12345");
+                var retrievedToken = await TokenStorage.GetTokenAsync();
+                
+                _debugInfo += $"   - Token set and retrieved: {retrievedToken == "test_token_12345"}\n";
+                _debugInfo += $"   - Retrieved value: {retrievedToken ?? "null"}\n";
+                
+                if (retrievedToken == "test_token_12345")
+                {
+                    _debugInfo += "   ? TokenStorage works correctly!\n";
+                    await TokenStorage.RemoveTokenAsync();
+                    _debugInfo += "   ? Test token cleaned up\n";
+                }
+                else
+                {
+                    _debugInfo += "   ? TokenStorage failed to save/retrieve token\n";
+                }
+            }
+            catch (Exception tokenEx)
+            {
+                _debugInfo += $"   ? TokenStorage test failed: {tokenEx.Message}\n";
+            }
+            
+            _debugInfo += "\n3. Browser localStorage permissions check...\n";
+            
+            try
+            {
+                var storageAvailable = await JSRuntime.InvokeAsync<bool>("eval", 
+                    "typeof(Storage) !== 'undefined' && typeof(localStorage) !== 'undefined'");
+                    
+                _debugInfo += $"   - Storage API available: {storageAvailable}\n";
+                
+                var isPrivateMode = await JSRuntime.InvokeAsync<bool>("eval", @"
+                    (() => {
+                        try {
+                            localStorage.setItem('__test__', 'test');
+                            localStorage.removeItem('__test__');
+                            return false;
+                        } catch(e) {
+                            return true;
+                        }
+                    })()
+                ");
+                
+                _debugInfo += $"   - Private browsing mode: {isPrivateMode}\n";
+                
+                if (isPrivateMode)
+                {
+                    _debugInfo += "\n? PROBLEM FOUND: Browser is in private mode!\n";
+                    _debugInfo += "   LocalStorage is disabled in private browsing.\n";
+                    _debugInfo += "   Solution: Use normal browsing mode.\n";
+                }
+                else
+                {
+                    _debugInfo += "\n? Browser localStorage is available and working.\n";
+                }
+            }
+            catch (Exception browserEx)
+            {
+                _debugInfo += $"   ? Browser check failed: {browserEx.Message}\n";
+            }
+            
+            await JSRuntime.InvokeVoidAsync("localStorage.removeItem", "test_key");
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"\n? LocalStorage test failed: {ex.Message}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task CreateTestUser()
+    {
+        try
+        {
+            _debugInfo = "=== CREATING TEST USER ===\n\n";
+            
+            _debugInfo += "1. Checking API connectivity...\n";
+            try
+            {
+                var healthResponse = await Http.GetAsync("api/health");
+                if (!healthResponse.IsSuccessStatusCode)
+                {
+                    _debugInfo += "? API is not accessible!\n";
+                    return;
+                }
+                _debugInfo += "? API is accessible\n\n";
+            }
+            catch (Exception apiEx)
+            {
+                _debugInfo += $"? API connectivity failed: {apiEx.Message}\n";
+                return;
+            }
+            
+            _debugInfo += "2. Calling create-test-user endpoint...\n";
+            
+            var response = await Http.PostAsync("api/utilizatori/create-test-user", null);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            _debugInfo += $"3. Response Status: {response.StatusCode}\n";
+            _debugInfo += $"4. Response Content:\n{content}\n\n";
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _debugInfo += "? SUCCESS! Test user creation completed!\n\n";
+                _debugInfo += "CREDENTIALS CREATED:\n";
+                _debugInfo += "Username: admin\n";
+                _debugInfo += "Password: admin123\n\n";
+                _debugInfo += "NEXT STEPS:\n";
+                _debugInfo += "1. Click 'Test Real Login' to test the new credentials\n";
+                _debugInfo += "2. The credentials should now work for login\n";
+                _debugInfo += "3. After successful login, you can access [Authorize] pages\n";
+            }
+            else
+            {
+                _debugInfo += "? FAILED to create test user\n";
+                _debugInfo += "Check the response content above for error details.\n\n";
+                
+                if (content.Contains("Utilizatori deja existen?i"))
+                {
+                    _debugInfo += "?? Users already exist in database.\n";
+                    _debugInfo += "Try the 'Test API Connection' to find working credentials.\n";
+                }
+                else if (content.Contains("Nu s-a putut crea"))
+                {
+                    _debugInfo += "?? Database or validation error.\n";
+                    _debugInfo += "Check API logs for more details.\n";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"? CRITICAL ERROR in CreateTestUser: {ex.Message}\n";
+            _debugInfo += $"Stack trace: {ex.StackTrace}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task DebugPassword()
+    {
+        try
+        {
+            _debugInfo = "=== DEBUGGING PASSWORD HASH ===\n\n";
+            
+            _debugInfo += "1. Checking stored password hash for user 'admin'...\n";
+            
+            var debugRequest = new { username = "admin" };
+            var response = await Http.PostAsJsonAsync("api/utilizatori/debug-password", debugRequest);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            _debugInfo += $"2. Response Status: {response.StatusCode}\n";
+            _debugInfo += $"3. Response Content:\n{content}\n\n";
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _debugInfo += "? User found in database!\n";
+                _debugInfo += "Check the hash format and compare with password verification.\n\n";
+                
+                _debugInfo += "NEXT STEPS:\n";
+                _debugInfo += "1. The user exists and has a stored password hash\n";
+                _debugInfo += "2. Try 'Test Real Login' again with admin/admin123\n";
+                _debugInfo += "3. If it still fails, there might be a password verification issue\n";
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _debugInfo += "? User 'admin' not found in database!\n";
+                _debugInfo += "This means 'Create Test User' didn't work properly.\n";
+                _debugInfo += "Try running 'Create Test User' again.\n";
+            }
+            else
+            {
+                _debugInfo += "? Error checking password hash\n";
+                _debugInfo += "Check API logs for more details.\n";
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"? CRITICAL ERROR in DebugPassword: {ex.Message}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task CheckExistingUsers()
+    {
+        try
+        {
+            _debugInfo = "=== CHECKING EXISTING USERS ===\n\n";
+            
+            _debugInfo += "1. Attempting to get all users from API...\n";
+            
+            try
+            {
+                // Încearc? s? accesezi endpoint-ul f?r? autentificare (doar pentru debug)
+                var response = await Http.GetAsync("api/utilizatori");
+                
+                _debugInfo += $"2. Response Status: {response.StatusCode}\n";
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    _debugInfo += "   ?? Endpoint requires authorization - this is expected\n";
+                    _debugInfo += "   Trying alternative method...\n";
+                    
+                    // Încearc? s? creezi un utilizator de test ?i s? vezi ce r?spuns prime?ti
+                    await CreateTestUserDetailed();
+                    return;
+                }
+                else if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _debugInfo += $"3. Response Content:\n{content}\n";
+                    
+                    var users = JsonService.Deserialize<List<object>>(content);
+                    _debugInfo += $"4. Found {users?.Count ?? 0} users in database\n";
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _debugInfo += $"3. Error Response:\n{errorContent}\n";
+                }
+            }
+            catch (Exception apiEx)
+            {
+                _debugInfo += $"? API call failed: {apiEx.Message}\n";
+                await CreateTestUserDetailed();
+                return;
+            }
+            
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"? CRITICAL ERROR in CheckExistingUsers: {ex.Message}\n";
+        }
+        
+        StateHasChanged();
+    }
+    
+    private async Task CreateTestUserDetailed()
+    {
+        try
+        {
+            _debugInfo += "\n=== DETAILED TEST USER CREATION ===\n\n";
+            
+            _debugInfo += "1. Calling create-test-user endpoint...\n";
+            
+            var response = await Http.PostAsync("api/utilizatori/create-test-user", null);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            _debugInfo += $"2. Response Status: {response.StatusCode}\n";
+            _debugInfo += $"3. Full Response Content:\n{content}\n\n";
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _debugInfo += "? Test user creation endpoint responded successfully!\n";
+                
+                // Parse JSON pentru a extrage informa?ii specifice
+                try
+                {
+                    var jsonResponse = JsonService.Deserialize<Dictionary<string, object>>(content);
+                    if (jsonResponse?.ContainsKey("message") == true)
+                    {
+                        _debugInfo += $"Message: {jsonResponse["message"]}\n";
+                    }
+                    if (jsonResponse?.ContainsKey("adminExists") == true)
+                    {
+                        _debugInfo += $"Admin exists: {jsonResponse["adminExists"]}\n";
+                    }
+                    if (jsonResponse?.ContainsKey("users") == true)
+                    {
+                        _debugInfo += "Users found in database - check response above\n";
+                    }
+                    if (jsonResponse?.ContainsKey("credentials") == true)
+                    {
+                        _debugInfo += "New credentials created - check response above\n";
+                    }
+                }
+                catch (Exception parseEx)
+                {
+                    _debugInfo += $"Could not parse JSON response: {parseEx.Message}\n";
+                }
+                
+                _debugInfo += "\nNEXT STEPS:\n";
+                _debugInfo += "1. If admin user was created, try 'Test Real Login'\n";
+                _debugInfo += "2. If admin already existed, try 'Test Real Login' with admin/admin123\n";
+                _debugInfo += "3. If there were errors, check the response details above\n";
+            }
+            else
+            {
+                _debugInfo += "? Test user creation failed\n";
+                _debugInfo += "Check the response content above for detailed error information.\n";
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"? Error in CreateTestUserDetailed: {ex.Message}\n";
+        }
+    }
+    
+    private async Task RecreateAdmin()
+    {
+        try
+        {
+            _debugInfo = "=== RECREATING ADMIN USER ===\n\n";
+            
+            _debugInfo += "1. Checking API connectivity...\n";
+            try
+            {
+                var healthResponse = await Http.GetAsync("api/health");
+                if (!healthResponse.IsSuccessStatusCode)
+                {
+                    _debugInfo += "? API is not accessible!\n";
+                    return;
+                }
+                _debugInfo += "? API is accessible\n\n";
+            }
+            catch (Exception apiEx)
+            {
+                _debugInfo += $"? API connectivity failed: {apiEx.Message}\n";
+                return;
+            }
+            
+            _debugInfo += "2. Calling recreate-admin endpoint...\n";
+            _debugInfo += "   This will DELETE the existing admin user and create a new one\n";
+            _debugInfo += "   with the correct password hash for 'Admin123!'\n\n";
+            
+            var response = await Http.PostAsync("api/utilizatori/recreate-admin", null);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            _debugInfo += $"3. Response Status: {response.StatusCode}\n";
+            _debugInfo += $"4. Response Content:\n{content}\n\n";
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _debugInfo += "? SUCCESS! Admin user recreated successfully!\n\n";
+                _debugInfo += "NEW CREDENTIALS:\n";
+                _debugInfo += "Username: admin\n";
+                _debugInfo += "Password: Admin123!\n\n";
+                _debugInfo += "NEXT STEPS:\n";
+                _debugInfo += "1. Click 'Test Real Login' to test the recreated admin\n";
+                _debugInfo += "2. The login should work now with admin/Admin123!\n";
+                _debugInfo += "3. After successful login, test [Authorize] pages\n";
+                _debugInfo += "\n?? This should fix the password verification issue!\n";
+            }
+            else
+            {
+                _debugInfo += "? FAILED to recreate admin user\n";
+                _debugInfo += "Check the response content above for error details.\n\n";
+                
+                if (content.Contains("errors"))
+                {
+                    _debugInfo += "?? Validation or database error occurred.\n";
+                    _debugInfo += "Check API logs for more details.\n";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"? CRITICAL ERROR in RecreateAdmin: {ex.Message}\n";
+            _debugInfo += $"Stack trace: {ex.StackTrace}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task TestNavigationToUtilizatori()
+    {
+        try
+        {
+            _debugInfo = "=== TESTING NAVIGATION TO UTILIZATORI ===\n\n";
+            
+            _debugInfo += "1. Checking current authentication state...\n";
+            
+            // Verify authentication state BEFORE navigation
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            
+            _debugInfo += $"   - IsAuthenticated: {user.Identity?.IsAuthenticated}\n";
+            _debugInfo += $"   - Identity.Name: {user.Identity?.Name ?? "null"}\n";
+            _debugInfo += $"   - Claims count: {user.Claims?.Count() ?? 0}\n";
+            
+            if (user.Claims?.Any() == true)
+            {
+                _debugInfo += "   - Claims present:\n";
+                foreach (var claim in user.Claims.Take(5))
+                {
+                    _debugInfo += $"     * {claim.Type}: {claim.Value}\n";
+                }
+            }
+            
+            _debugInfo += "\n2. Checking token storage...\n";
+            var token = await TokenStorage.GetTokenAsync();
+            var userInfo = await TokenStorage.GetUserInfoAsync();
+            
+            _debugInfo += $"   - Token exists: {!string.IsNullOrEmpty(token)}\n";
+            _debugInfo += $"   - UserInfo exists: {userInfo != null}\n";
+            
+            if (userInfo != null)
+            {
+                _debugInfo += $"   - Token expiration: {userInfo.Expiration:yyyy-MM-dd HH:mm:ss}\n";
+                _debugInfo += $"   - Is expired: {userInfo.Expiration <= DateTime.UtcNow}\n";
+            }
+            
+            _debugInfo += "\n3. Testing navigation...\n";
+            
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                _debugInfo += "   ? User is authenticated - attempting navigation\n";
+                _debugInfo += "   Navigating to /utilizatori...\n";
+                
+                // Use JavaScript to navigate and check if redirect happens
+                await JSRuntime.InvokeVoidAsync("eval", @"
+                    console.log('Before navigation to /utilizatori');
+                    window.location.href = '/utilizatori';
+                ");
+                
+                _debugInfo += "   Navigation command sent. Check if redirect occurs.\n";
+            }
+            else
+            {
+                _debugInfo += "   ? User is NOT authenticated\n";
+                _debugInfo += "   This is why navigation to /utilizatori redirects to login!\n\n";
+                
+                _debugInfo += "PROBLEM DIAGNOSIS:\n";
+                if (string.IsNullOrEmpty(token))
+                {
+                    _debugInfo += "   - No token found in storage\n";
+                }
+                else if (userInfo == null)
+                {
+                    _debugInfo += "   - Token exists but no user info\n";
+                }
+                else if (userInfo.Expiration <= DateTime.UtcNow)
+                {
+                    _debugInfo += "   - Token expired\n";
+                }
+                else
+                {
+                    _debugInfo += "   - Token and userInfo exist but CustomAuthenticationStateProvider failed\n";
+                    _debugInfo += "   - Check browser console for errors\n";
+                }
+                
+                _debugInfo += "\nSOLUTIONS:\n";
+                _debugInfo += "1. Run 'Test Real Login' to login again\n";
+                _debugInfo += "2. Run 'Check Auth State' to see detailed auth status\n";
+                _debugInfo += "3. Check browser console (F12) for JavaScript errors\n";
+            }
+            
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"\n? CRITICAL ERROR in TestNavigationToUtilizatori: {ex.Message}\n";
+            _debugInfo += $"Stack trace: {ex.StackTrace}\n";
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task ForceAuthStateRefresh()
+    {
+        try
+        {
+            _debugInfo = "=== FORCING AUTHENTICATION STATE REFRESH ===\n\n";
+            
+            _debugInfo += "1. Getting current authentication state...\n";
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _debugInfo += $"   Current IsAuthenticated: {authState.User?.Identity?.IsAuthenticated}\n\n";
+            
+            _debugInfo += "2. Checking token storage directly...\n";
+            var token = await TokenStorage.GetTokenAsync();
+            var userInfo = await TokenStorage.GetUserInfoAsync();
+            _debugInfo += $"   Token exists: {!string.IsNullOrEmpty(token)}\n";
+            _debugInfo += $"   UserInfo exists: {userInfo != null}\n";
+            
+            if (!string.IsNullOrEmpty(token) && userInfo != null)
+            {
+                _debugInfo += "\n3. Token found! Re-authenticating user...\n";
+                _debugInfo += $"   User: {userInfo.NumeUtilizator}\n";
+                _debugInfo += $"   Expiration: {userInfo.Expiration}\n";
+                _debugInfo += $"   Is expired: {userInfo.Expiration <= DateTime.UtcNow}\n\n";
+                
+                if (userInfo.Expiration > DateTime.UtcNow)
+                {
+                    var customAuthProvider = (Client.Authentication.CustomAuthenticationStateProvider)AuthStateProvider;
+                    await customAuthProvider.MarkUserAsAuthenticatedAsync(token, userInfo);
+                    
+                    _debugInfo += "4. Authentication state refreshed!\n";
+                    _debugInfo += "   Try 'Check Auth State' or navigate to /utilizatori now.\n";
+                }
+                else
+                {
+                    _debugInfo += "4. Token is expired - clearing auth data\n";
+                    await AuthStateService.ClearCurrentUserAsync();
+                }
+            }
+            else
+            {
+                _debugInfo += "\n3. No valid token found in storage\n";
+                _debugInfo += "   User needs to login again.\n";
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugInfo += $"\n? CRITICAL ERROR in ForceAuthStateRefresh: {ex.Message}\n";
+            _debugInfo += $"Stack trace: {ex.StackTrace}\n";
+        }
+        
+        StateHasChanged();
+    }
+}

@@ -1,20 +1,29 @@
+@page "/authentication/persoane"
 @page "/persoane"
-@inject HttpClient Http
-@inject IJSRuntime JSRuntime
-@inject ISnackbar Snackbar
-@inject IDialogService DialogService
+@page "/test-persoane"
+@inherits PersoaneBase
+@*@attribute [Authorize]*@
 
 <PageTitle>Gestionare Persoane - ValyanMed</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <!-- Header Section -->
     <MudStack Spacing="3">
+        <!-- Debug Info -->
+        <MudAlert Severity="MudSeverity.Info">
+            <strong>Debug Info:</strong> Pagina Persoane s-a incarcat cu succes! 
+            <br />Ruta accesata: @GetCurrentRoute()
+            <br />Total persoane: @State.Persons.Count
+            <br />Persoane filtrate: @State.FilteredPersons.Count
+            <br />Status loading: @State.IsLoading
+        </MudAlert>
+
+        <!-- Header Section -->
         <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
             <MudText Typo="Typo.h4">Gestionare Persoane</MudText>
             <MudButton StartIcon="@Icons.Material.Filled.Add" 
                       Color="Color.Primary" 
                       Variant="Variant.Filled"
-                      OnClick="@(() => OpenPersonDialog())">
+                      OnClick="@OpenCreatePersonDialog">
                 Adauga Persoana
             </MudButton>
         </MudStack>
@@ -22,62 +31,37 @@
         <!-- Search and Filters -->
         <MudPaper Class="pa-4">
             <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
-                <MudTextField @bind-Value="searchTerm" 
+                <MudTextField @bind-Value="State.SearchTerm" 
                              Label="Cauta persoane..." 
                              Variant="Variant.Outlined" 
                              Adornment="Adornment.End" 
                              AdornmentIcon="@Icons.Material.Filled.Search"
-                             OnAdornmentClick="@(() => FilterPersonsAsync())"
+                             OnAdornmentClick="@FilterPersons"
                              OnKeyUp="@OnSearchKeyUp"
                              Immediate="false"
                              Class="flex-grow-1" />
 
-                <MudSelect T="string" @bind-Value="selectedJudet" 
-                          Label="Filtru Judet" 
-                          Variant="Variant.Outlined"
-                          OnSelectionChanged="@((string value) => OnFilterChanged())"
-                          Style="min-width: 200px;">
-                    <MudSelectItem Value="@string.Empty">Toate judetele</MudSelectItem>
-                    @if (availableJudete != null)
-                    {
-                        @foreach (var judet in availableJudete)
-                        {
-                            <MudSelectItem Value="@judet">@judet</MudSelectItem>
-                        }
-                    }
-                </MudSelect>
-
-                <MudSelect T="Gen?" @bind-Value="selectedGen" 
-                          Label="Filtru Gen" 
-                          Variant="Variant.Outlined"
-                          OnSelectionChanged="@(() => OnFilterChanged())"
-                          Style="min-width: 150px;">
-                    <MudSelectItem T="Gen?" Value="@((Gen?)null)">Toate genurile</MudSelectItem>
-                    <MudSelectItem T="Gen?" Value="@Gen.Masculin">Masculin</MudSelectItem>
-                    <MudSelectItem T="Gen?" Value="@Gen.Feminin">Feminin</MudSelectItem>
-                </MudSelect>
-
                 <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
                           Color="Color.Secondary" 
                           Variant="Variant.Outlined"
-                          OnClick="@ResetFiltersAsync">
+                          OnClick="@ResetFilters">
                     Reset
                 </MudButton>
             </MudStack>
         </MudPaper>
 
         <!-- Results Summary -->
-        @if (!loading && persoane != null)
+        @if (!State.IsLoading && State.Persons.Any())
         {
-            <MudAlert Severity="Severity.Info" Dense="true">
-                Afisate: @filteredPersons.Count() din @persoane.Count() persoane totale
+            <MudAlert Severity="MudSeverity.Info" Dense="true">
+                Afisati: @State.FilteredPersons.Count() din @State.Persons.Count() persoane totale
             </MudAlert>
         }
 
         <!-- Data Grid -->
         <MudDataGrid T="Persoana" 
-                    Items="@filteredPersons" 
-                    Loading="@loading"
+                    Items="@State.FilteredPersons" 
+                    Loading="@State.IsLoading"
                     Dense="true"
                     Hover="true"
                     ReadOnly="true"
@@ -88,9 +72,20 @@
             
             <Columns>
                 <PropertyColumn Property="x => x.Id" Title="ID" Sortable="true" />
-                <PropertyColumn Property="x => x.Nume" Title="Nume" Sortable="true" />
-                <PropertyColumn Property="x => x.Prenume" Title="Prenume" Sortable="true" />
-                <PropertyColumn Property="x => x.CNP" Title="CNP" Sortable="true" />
+                <PropertyColumn Property="x => x.NumeComplet" Title="Nume Complet" Sortable="true" />
+                
+                <TemplateColumn Title="CNP" Sortable="true" SortBy="@(x => x.CNP)">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.CNP))
+                        {
+                            @context.Item.CNP
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
                 
                 <TemplateColumn Title="Data Nasterii" Sortable="true" SortBy="@(x => x.DataNasterii)">
                     <CellTemplate>
@@ -105,16 +100,24 @@
                     </CellTemplate>
                 </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Localitate" Title="Localitate" Sortable="true" />
-                <PropertyColumn Property="x => x.Judet" Title="Judet" Sortable="true" />
-                
-                <TemplateColumn Title="Gen" Sortable="true" SortBy="@(x => x.Gen)">
+                <TemplateColumn Title="Locatie" Sortable="true" SortBy="@(x => x.Localitate)">
                     <CellTemplate>
-                        @if (context.Item.Gen.HasValue)
+                        @if (!string.IsNullOrEmpty(context.Item.Localitate) || !string.IsNullOrEmpty(context.Item.Judet))
                         {
-                            <MudChip Size="Size.Small" Color="@GetGenColor(context.Item.Gen.Value)" Variant="Variant.Text">
-                                @GetGenDisplay(context.Item.Gen.Value)
-                            </MudChip>
+                            <MudText>
+                                @if (!string.IsNullOrEmpty(context.Item.Localitate))
+                                {
+                                    @context.Item.Localitate
+                                }
+                                @if (!string.IsNullOrEmpty(context.Item.Judet) && !string.IsNullOrEmpty(context.Item.Localitate))
+                                {
+                                    @:, 
+                                }
+                                @if (!string.IsNullOrEmpty(context.Item.Judet))
+                                {
+                                    @context.Item.Judet
+                                }
+                            </MudText>
                         }
                         else
                         {
@@ -135,6 +138,19 @@
                         }
                     </CellTemplate>
                 </TemplateColumn>
+                
+                <TemplateColumn Title="Data Creare" Sortable="true" SortBy="@(x => x.DataCreare)">
+                    <CellTemplate>
+                        @if (context.Item.DataCreare.HasValue)
+                        {
+                            @context.Item.DataCreare.Value.ToString("dd.MM.yyyy HH:mm")
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
 
                 <TemplateColumn Title="Actiuni" Sortable="false" Filterable="false">
                     <CellTemplate>
@@ -143,13 +159,13 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                               Size="Size.Small" 
                                               Color="Color.Primary"
-                                              OnClick="@(() => OpenPersonDialog(context.Item))" />
+                                              OnClick="@(() => OpenEditPersonDialog(context.Item))" />
                             </MudTooltip>
                             <MudTooltip Text="Sterge persoana">
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                               Size="Size.Small" 
                                               Color="Color.Error"
-                                              OnClick="@(() => DeletePersonAsync(context.Item))" />
+                                              OnClick="@(() => DeletePerson(context.Item))" />
                             </MudTooltip>
                         </MudStack>
                     </CellTemplate>
@@ -160,7 +176,7 @@
                 <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
                     <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Surface" />
                     <MudText Typo="Typo.body1" Color="Color.Surface">
-                        @if (string.IsNullOrEmpty(searchTerm) && string.IsNullOrEmpty(selectedJudet) && !selectedGen.HasValue)
+                        @if (string.IsNullOrEmpty(State.SearchTerm))
                         {
                             @:Nu au fost gasite persoane
                         }
@@ -169,9 +185,9 @@
                             @:Nu au fost gasite persoane care sa corespunda criteriilor de cautare
                         }
                     </MudText>
-                    @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(selectedJudet) || selectedGen.HasValue)
+                    @if (!string.IsNullOrEmpty(State.SearchTerm))
                     {
-                        <MudButton StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ResetFiltersAsync">
+                        <MudButton StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ResetFilters">
                             Reseteaza filtrele
                         </MudButton>
                     }
@@ -189,272 +205,10 @@
 </MudContainer>
 
 @code {
-    private List<Persoana> persoane = new();
-    private List<string> availableJudete = new();
-    private string searchTerm = string.Empty;
-    private string selectedJudet = string.Empty;
-    private Gen? selectedGen = null;
-    private bool loading = false;
-    private Timer? searchTimer;
-    
-    private IEnumerable<Persoana> filteredPersons => FilterPersons();
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadPersonsAsync();
-    }
+    [Inject] NavigationManager Navigation { get; set; } = null!;
 
-    public void Dispose()
+    private string GetCurrentRoute()
     {
-        searchTimer?.Dispose();
+        return Navigation.Uri;
     }
-    
-    private async Task LoadPersonsAsync()
-    {
-        loading = true;
-        StateHasChanged();
-        
-        try
-        {
-            var response = await Http.GetAsync("api/persoane");
-            
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<List<Persoana>>();
-                persoane = result ?? new List<Persoana>();
-                
-                availableJudete = persoane
-                    .Where(p => !string.IsNullOrEmpty(p.Judet))
-                    .Select(p => p.Judet!)
-                    .Distinct()
-                    .OrderBy(j => j)
-                    .ToList();
-                
-                ShowSuccess("Persoanele au fost incarcate cu succes");
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ErrorResponse>(errorContent);
-                ShowError($"Eroare la incarcarea persoanelor: {errorResponse?.Message ?? response.ReasonPhrase}");
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            ShowError($"Eroare de conectare: {ex.Message}");
-        }
-        catch (TaskCanceledException)
-        {
-            ShowError("Cererea a expirat. Va rugam incercati din nou.");
-        }
-        catch (System.Text.Json.JsonException ex)
-        {
-            ShowError($"Eroare la procesarea datelor: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            ShowError($"Eroare neasteptata: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
-    }
-    
-    private IEnumerable<Persoana> FilterPersons()
-    {
-        var filtered = persoane.AsEnumerable();
-        
-        if (!string.IsNullOrWhiteSpace(searchTerm))
-        {
-            var search = searchTerm.ToLowerInvariant();
-            filtered = filtered.Where(p => 
-                p.Nume.ToLowerInvariant().Contains(search) ||
-                p.Prenume.ToLowerInvariant().Contains(search) ||
-                p.NumeComplet.ToLowerInvariant().Contains(search) ||
-                (p.CNP?.ToLowerInvariant().Contains(search) ?? false) ||
-                (p.Localitate?.ToLowerInvariant().Contains(search) ?? false) ||
-                (p.Judet?.ToLowerInvariant().Contains(search) ?? false) ||
-                (p.PozitieOrganizatie?.ToLowerInvariant().Contains(search) ?? false));
-        }
-        
-        if (!string.IsNullOrEmpty(selectedJudet))
-        {
-            filtered = filtered.Where(p => p.Judet == selectedJudet);
-        }
-        
-        if (selectedGen.HasValue)
-        {
-            filtered = filtered.Where(p => p.Gen == selectedGen.Value);
-        }
-        
-        return filtered.OrderBy(p => p.Nume).ThenBy(p => p.Prenume);
-    }
-    
-    private async Task FilterPersonsAsync()
-    {
-        await InvokeAsync(StateHasChanged);
-    }
-    
-    private async Task OnFilterChanged()
-    {
-        await FilterPersonsAsync();
-    }
-    
-    private async Task ResetFiltersAsync()
-    {
-        searchTerm = string.Empty;
-        selectedJudet = string.Empty;
-        selectedGen = null;
-        await FilterPersonsAsync();
-    }
-    
-    private void OnSearchKeyUp(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            _ = FilterPersonsAsync();
-            return;
-        }
-        
-        searchTimer?.Dispose();
-        searchTimer = new Timer(async _ => 
-        {
-            await InvokeAsync(async () =>
-            {
-                await FilterPersonsAsync();
-            });
-        }, null, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(-1));
-    }
-    
-    private async Task OpenPersonDialog(Persoana? persoana = null)
-    {
-        var parameters = new DialogParameters<PersonDialog>();
-        if (persoana != null)
-        {
-            parameters.Add(x => x.Persoana, persoana);
-            parameters.Add(x => x.IsEditMode, true);
-        }
-        else
-        {
-            parameters.Add(x => x.IsEditMode, false);
-        }
-
-        var options = new DialogOptions 
-        { 
-            MaxWidth = MaxWidth.Medium, 
-            FullWidth = true,
-            BackdropClick = false,
-            CloseOnEscapeKey = false
-        };
-
-        var dialog = await DialogService.ShowAsync<PersonDialog>(
-            persoana == null ? "Adauga Persoana Noua" : $"Editeaza Persoana: {persoana.NumeComplet}",
-            parameters,
-            options);
-
-        var result = await dialog.Result;
-        if (result is not null && !result.Canceled)
-        {
-            await LoadPersonsAsync();
-        }
-    }
-    
-    private async Task DeletePersonAsync(Persoana persoana)
-    {
-        var confirmed = await ShowConfirmDialog(
-            "Confirmare Stergere",
-            $"Sunteti sigur ca doriti sa stergeti persoana '{persoana.NumeComplet}'?",
-            "Aceasta actiune nu poate fi anulata.");
-
-        if (!confirmed) return;
-
-        loading = true;
-        StateHasChanged();
-
-        try
-        {
-            var response = await Http.DeleteAsync($"api/persoane/{persoana.Id}");
-            
-            if (response.IsSuccessStatusCode)
-            {
-                ShowSuccess($"Persoana '{persoana.NumeComplet}' a fost stearsa cu succes");
-                await LoadPersonsAsync();
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ErrorResponse>(errorContent);
-                ShowError($"Eroare la stergerea persoanei: {errorResponse?.Message ?? response.ReasonPhrase}");
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            ShowError($"Eroare de conectare: {ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            ShowError($"Eroare neasteptata: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
-            StateHasChanged();
-        }
-    }
-    
-    private Color GetGenColor(Gen gen) => gen switch
-    {
-        Gen.Masculin => Color.Primary,
-        Gen.Feminin => Color.Secondary,
-        _ => Color.Default
-    };
-    
-    private string GetGenDisplay(Gen gen) => gen switch
-    {
-        Gen.Masculin => "M",
-        Gen.Feminin => "F",
-        _ => "?"
-    };
-    
-    private void ShowSuccess(string message)
-    {
-        Snackbar.Add(message, Severity.Success, configure => {
-            configure.VisibleStateDuration = 3000;
-            configure.ShowTransitionDuration = 200;
-            configure.HideTransitionDuration = 200;
-        });
-    }
-    
-    private void ShowError(string message)
-    {
-        Snackbar.Add(message, Severity.Error, configure => {
-            configure.VisibleStateDuration = 5000;
-            configure.ShowTransitionDuration = 200;
-            configure.HideTransitionDuration = 200;
-            configure.RequireInteraction = true;
-        });
-    }
-    
-    private async Task<bool> ShowConfirmDialog(string title, string message, string? subText = null)
-    {
-        var parameters = new DialogParameters<ConfirmDialog>();
-        parameters.Add(x => x.Title, title);
-        parameters.Add(x => x.ContentText, message);
-        if (!string.IsNullOrEmpty(subText))
-        {
-            parameters.Add(x => x.SubText, subText);
-        }
-        parameters.Add(x => x.ButtonText, "Sterge");
-        parameters.Add(x => x.Color, Color.Error);
-
-        var options = new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>(title, parameters, options);
-        var result = await dialog.Result;
-        
-        return result is not null && !result.Canceled;
-    }
-    
-    private record ErrorResponse(string Message, List<string>? Errors = null);
 }

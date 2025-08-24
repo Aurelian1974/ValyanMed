@@ -61,12 +61,12 @@
         _ => Icons.Material.Filled.HelpOutline
     };
 
-    private Severity GetSeverity() => Color switch
+    private MudBlazor.Severity GetSeverity() => Color switch
     {
-        Color.Error => Severity.Error,
-        Color.Warning => Severity.Warning,
-        Color.Info => Severity.Info,
-        Color.Success => Severity.Success,
-        _ => Severity.Normal
+        Color.Error => MudBlazor.Severity.Error,
+        Color.Warning => MudBlazor.Severity.Warning,  
+        Color.Info => MudBlazor.Severity.Info,
+        Color.Success => MudBlazor.Severity.Success,
+        _ => MudBlazor.Severity.Normal
     };
 }

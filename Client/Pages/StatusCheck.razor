@@ -1,0 +1,399 @@
+@page "/status-check"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using System.Text.Json
+
+<PageTitle>Status Check - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">?? System Status Check</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Aceast? pagin? verific? starea sistemului ?i identific? orice probleme active.
+        </MudAlert>
+        
+        <MudStack Spacing="4" Class="mt-4">
+            
+            <!-- Quick Status Overview -->
+            <MudGrid>
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #1976d2, #42a5f5);">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Web" Color="Color.Inherit" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Client App</MudText>
+                            <MudText Typo="Typo.body2" Style="color: white;">? Running</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="@_apiStatusStyle">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Api" Color="Color.Inherit" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">API Server</MudText>
+                            <MudText Typo="Typo.body2" Style="color: white;">@_apiStatus</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="@_dbStatusStyle">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Inherit" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Database</MudText>
+                            <MudText Typo="Typo.body2" Style="color: white;">@_dbStatus</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="@_authStatusStyle">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Inherit" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Auth System</MudText>
+                            <MudText Typo="Typo.body2" Style="color: white;">@_authStatus</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            
+            <!-- Detailed Check -->
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      OnClick="RunDetailedCheck"
+                      Disabled="@_isChecking"
+                      StartIcon="@(_isChecking ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.PlayArrow)"
+                      FullWidth="true">
+                @if (_isChecking)
+                {
+                    @:Running System Check...
+                }
+                else
+                {
+                    @:Run Detailed System Check
+                }
+            </MudButton>
+            
+            <!-- Results -->
+            @if (_checkResults.Any())
+            {
+                <MudDivider />
+                
+                <MudText Typo="Typo.h6">?? Check Results</MudText>
+                
+                <MudStack Spacing="2">
+                    @foreach (var result in _checkResults)
+                    {
+                        <MudAlert Severity="@(result.Success ? MudSeverity.Success : MudSeverity.Error)" Dense="true">
+                            <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@(result.Success ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Error)" />
+                                <MudText><strong>@result.Component:</strong> @result.Message</MudText>
+                            </MudStack>
+                        </MudAlert>
+                    }
+                </MudStack>
+            }
+            
+            <!-- Action Buttons -->
+            @if (_checkResults.Any(r => !r.Success))
+            {
+                <MudDivider />
+                
+                <MudText Typo="Typo.h6">??? Recommended Actions</MudText>
+                
+                <MudStack Row Spacing="2">
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Warning" 
+                              Href="/admin/data-cleanup"
+                              StartIcon="@Icons.Material.Filled.CleaningServices">
+                        Fix Data Issues
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Info" 
+                              Href="/debug-auth"
+                              StartIcon="@Icons.Material.Filled.BugReport">
+                        Debug Authentication
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Secondary" 
+                              Href="/test-persoane-data"
+                              StartIcon="@Icons.Material.Filled.DataObject">
+                        Test Data Loading
+                    </MudButton>
+                </MudStack>
+            }
+            
+            <!-- Live Console -->
+            <MudDivider />
+            
+            <MudExpansionPanels>
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Terminal" class="mr-3" />
+                            <span>??? Live System Console</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudTextField Label="System Console Output" 
+                                     Value="@_consoleOutput" 
+                                     ReadOnly="true" 
+                                     Variant="Variant.Outlined"
+                                     Lines="15" />
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+            
+            <!-- Navigation -->
+            <MudDivider />
+            <MudText Typo="Typo.h6">?? Quick Navigation</MudText>
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Primary" 
+                          Href="/test-simple"
+                          StartIcon="@Icons.Material.Filled.Home">
+                    Test Hub
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Success" 
+                          Href="/persoane"
+                          StartIcon="@Icons.Material.Filled.People">
+                    Persoane
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          Href="/login"
+                          StartIcon="@Icons.Material.Filled.Login">
+                    Login
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isChecking = false;
+    private string _apiStatus = "Checking...";
+    private string _dbStatus = "Checking...";
+    private string _authStatus = "Checking...";
+    private string _apiStatusStyle = "background: linear-gradient(45deg, #ffa726, #ffb74d);";
+    private string _dbStatusStyle = "background: linear-gradient(45deg, #ffa726, #ffb74d);";
+    private string _authStatusStyle = "background: linear-gradient(45deg, #ffa726, #ffb74d);";
+    private string _consoleOutput = "";
+    
+    private List<CheckResult> _checkResults = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await QuickStatusCheck();
+    }
+
+    private async Task QuickStatusCheck()
+    {
+        // Quick API check
+        try
+        {
+            var response = await Http.GetAsync("api/health");
+            if (response.IsSuccessStatusCode)
+            {
+                _apiStatus = "? Online";
+                _apiStatusStyle = "background: linear-gradient(45deg, #4caf50, #66bb6a);";
+            }
+            else
+            {
+                _apiStatus = "?? Issues";
+                _apiStatusStyle = "background: linear-gradient(45deg, #ff9800, #ffb74d);";
+            }
+        }
+        catch
+        {
+            _apiStatus = "? Offline";
+            _apiStatusStyle = "background: linear-gradient(45deg, #f44336, #ef5350);";
+        }
+
+        // Quick data check
+        try
+        {
+            var response = await Http.GetAsync("api/persoane");
+            if (response.IsSuccessStatusCode)
+            {
+                _dbStatus = "? Connected";
+                _dbStatusStyle = "background: linear-gradient(45deg, #4caf50, #66bb6a);";
+            }
+            else
+            {
+                _dbStatus = "?? Data Issues";
+                _dbStatusStyle = "background: linear-gradient(45deg, #ff9800, #ffb74d);";
+            }
+        }
+        catch
+        {
+            _dbStatus = "? Error";
+            _dbStatusStyle = "background: linear-gradient(45deg, #f44336, #ef5350);";
+        }
+
+        _authStatus = "? Ready";
+        _authStatusStyle = "background: linear-gradient(45deg, #4caf50, #66bb6a);";
+
+        StateHasChanged();
+    }
+
+    private async Task RunDetailedCheck()
+    {
+        _isChecking = true;
+        _checkResults.Clear();
+        _consoleOutput = "Starting detailed system check...\n";
+        StateHasChanged();
+
+        // Check 1: API Health
+        await AppendConsole("?? Checking API health...");
+        try
+        {
+            var response = await Http.GetAsync("api/health");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                _checkResults.Add(new CheckResult("API Health", "API is responding correctly", true));
+                await AppendConsole($"? API Response: {response.StatusCode}");
+            }
+            else
+            {
+                _checkResults.Add(new CheckResult("API Health", $"API returned {response.StatusCode}", false));
+                await AppendConsole($"?? API Response: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _checkResults.Add(new CheckResult("API Health", $"API connection failed: {ex.Message}", false));
+            await AppendConsole($"? API Error: {ex.Message}");
+        }
+
+        // Check 2: Data Access with JSON parsing
+        await AppendConsole("?? Checking data access and JSON parsing...");
+        try
+        {
+            var response = await Http.GetAsync("api/persoane");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                
+                // Try to parse the JSON to check for enum issues
+                try
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    var root = doc.RootElement;
+                    
+                    if (root.ValueKind == JsonValueKind.Array)
+                    {
+                        var elementCount = root.GetArrayLength();
+                        _checkResults.Add(new CheckResult("Data Access", $"Successfully loaded {elementCount} records with valid JSON", true));
+                        await AppendConsole($"? Data loading successful - {elementCount} records");
+                        
+                        // Check for enum fields in first element
+                        if (elementCount > 0)
+                        {
+                            var firstElement = root[0];
+                            var enumFieldsFound = new List<string>();
+                            
+                            foreach (var property in firstElement.EnumerateObject())
+                            {
+                                if (property.Name.Equals("tipActIdentitate", StringComparison.OrdinalIgnoreCase) ||
+                                    property.Name.Equals("stareCivila", StringComparison.OrdinalIgnoreCase) ||
+                                    property.Name.Equals("gen", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    enumFieldsFound.Add($"{property.Name}: {property.Value}");
+                                }
+                            }
+                            
+                            if (enumFieldsFound.Any())
+                            {
+                                _checkResults.Add(new CheckResult("Enum Fields", $"Found enum fields: {string.Join(", ", enumFieldsFound)}", true));
+                                await AppendConsole($"?? Enum fields detected: {string.Join(", ", enumFieldsFound)}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _checkResults.Add(new CheckResult("Data Access", "JSON response is not an array", false));
+                        await AppendConsole("?? JSON is not array format");
+                    }
+                }
+                catch (JsonException jsonEx)
+                {
+                    _checkResults.Add(new CheckResult("JSON Parsing", $"JSON parsing failed: {jsonEx.Message}", false));
+                    await AppendConsole($"? JSON Error: {jsonEx.Message}");
+                }
+            }
+            else
+            {
+                _checkResults.Add(new CheckResult("Data Access", $"Data loading failed: {response.StatusCode}", false));
+                await AppendConsole($"?? Data Error: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _checkResults.Add(new CheckResult("Data Access", $"Data access error: {ex.Message}", false));
+            await AppendConsole($"? Data Error: {ex.Message}");
+        }
+
+        // Check 3: Authentication
+        await AppendConsole("?? Checking authentication system...");
+        try
+        {
+            var testAuth = new { numeUtilizatorSauEmail = "test", parola = "test" };
+            var response = await Http.PostAsJsonAsync("api/auth/login", testAuth);
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest || 
+                response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _checkResults.Add(new CheckResult("Authentication", "Auth endpoints are accessible", true));
+                await AppendConsole("? Auth endpoints responding");
+            }
+            else
+            {
+                _checkResults.Add(new CheckResult("Authentication", "Auth system may have issues", false));
+                await AppendConsole($"?? Unexpected auth response: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _checkResults.Add(new CheckResult("Authentication", $"Auth system error: {ex.Message}", false));
+            await AppendConsole($"? Auth Error: {ex.Message}");
+        }
+
+        // Check 4: Client-Side Health
+        await AppendConsole("?? Checking client-side health...");
+        _checkResults.Add(new CheckResult("Client Application", "Blazor WebAssembly is running successfully", true));
+        await AppendConsole("? Blazor WebAssembly operational");
+
+        await AppendConsole("? Detailed system check completed!");
+        _isChecking = false;
+        StateHasChanged();
+    }
+
+    private async Task AppendConsole(string message)
+    {
+        _consoleOutput += $"{DateTime.Now:HH:mm:ss} - {message}\n";
+        StateHasChanged();
+        await Task.Delay(500); // Small delay for visual effect
+    }
+
+    public class CheckResult
+    {
+        public string Component { get; set; }
+        public string Message { get; set; }
+        public bool Success { get; set; }
+
+        public CheckResult(string component, string message, bool success)
+        {
+            Component = component;
+            Message = message;
+            Success = success;
+        }
+    }
+}

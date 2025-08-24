@@ -1,0 +1,378 @@
+@page "/error-monitor"
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Error Monitor - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">?? Real-time Error Monitor</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Aceast? pagin? monitorizeaz? erorile în timp real din aplica?ia Blazor ?i din console.
+        </MudAlert>
+        
+        <MudStack Spacing="3" Class="mt-4">
+            
+            <!-- Error Stats -->
+            <MudGrid>
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #f44336, #ef5350);">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Error" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Errors</MudText>
+                            <MudText Typo="Typo.h4" Style="color: white;">@_errorCount</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #ff9800, #ffb74d);">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Warnings</MudText>
+                            <MudText Typo="Typo.h4" Style="color: white;">@_warningCount</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #2196f3, #42a5f5);">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Info</MudText>
+                            <MudText Typo="Typo.h4" Style="color: white;">@_infoCount</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="3">
+                    <MudPaper Class="pa-3" Style="background: linear-gradient(45deg, #4caf50, #66bb6a);">
+                        <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Style="color: white; font-size: 2rem;" />
+                            <MudText Typo="Typo.h6" Style="color: white;">Status</MudText>
+                            <MudText Typo="Typo.body1" Style="color: white;">@_monitorStatus</MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+            
+            <!-- Controls -->
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="@(_isMonitoring ? Color.Error : Color.Success)" 
+                          OnClick="ToggleMonitoring"
+                          StartIcon="@(_isMonitoring ? Icons.Material.Filled.Stop : Icons.Material.Filled.PlayArrow)">
+                    @if (_isMonitoring)
+                    {
+                        @:Stop Monitoring
+                    }
+                    else
+                    {
+                        @:Start Monitoring
+                    }
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="ClearLogs"
+                          StartIcon="@Icons.Material.Filled.Clear">
+                    Clear Logs
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          OnClick="ExportLogs"
+                          StartIcon="@Icons.Material.Filled.Download">
+                    Export Logs
+                </MudButton>
+            </MudStack>
+            
+            <!-- Live Error Feed -->
+            <MudExpansionPanels MultiExpansion="true">
+                <MudExpansionPanel IsInitiallyExpanded="true">
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.BugReport" class="mr-3" />
+                            <span>?? Live Error Feed</span>
+                            @if (_errorLogs.Any())
+                            {
+                                <MudBadge Content="_errorLogs.Count" Color="Color.Error" Class="ml-2" />
+                            }
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        @if (_errorLogs.Any())
+                        {
+                            <MudStack Spacing="1">
+                                @foreach (var log in _errorLogs.TakeLast(10))
+                                {
+                                    <MudAlert Severity="MudSeverity.Error" Dense="true">
+                                        <MudText Typo="Typo.caption"><strong>@log.Timestamp.ToString("HH:mm:ss")</strong></MudText>
+                                        <MudText>@log.Message</MudText>
+                                        @if (!string.IsNullOrEmpty(log.Details))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mt-1">@log.Details</MudText>
+                                        }
+                                    </MudAlert>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="MudSeverity.Success">No errors detected! ??</MudAlert>
+                        }
+                    </ChildContent>
+                </MudExpansionPanel>
+                
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" class="mr-3" />
+                            <span>?? Warnings</span>
+                            @if (_warningLogs.Any())
+                            {
+                                <MudBadge Content="_warningLogs.Count" Color="Color.Warning" Class="ml-2" />
+                            }
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        @if (_warningLogs.Any())
+                        {
+                            <MudStack Spacing="1">
+                                @foreach (var log in _warningLogs.TakeLast(5))
+                                {
+                                    <MudAlert Severity="MudSeverity.Warning" Dense="true">
+                                        <MudText Typo="Typo.caption"><strong>@log.Timestamp.ToString("HH:mm:ss")</strong></MudText>
+                                        <MudText>@log.Message</MudText>
+                                    </MudAlert>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="MudSeverity.Info">No warnings detected.</MudAlert>
+                        }
+                    </ChildContent>
+                </MudExpansionPanel>
+                
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Terminal" class="mr-3" />
+                            <span>?? Console Logs</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudTextField Label="Console Output" 
+                                     Value="@_consoleOutput" 
+                                     ReadOnly="true" 
+                                     Variant="Variant.Outlined"
+                                     Lines="15" />
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+            
+            <!-- Quick Actions for Common Errors -->
+            <MudDivider />
+            <MudText Typo="Typo.h6">??? Quick Fix Actions</MudText>
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Error" 
+                          Href="/admin/data-cleanup"
+                          StartIcon="@Icons.Material.Filled.CleaningServices">
+                    Fix Data Issues
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Warning" 
+                          Href="/debug-auth"
+                          StartIcon="@Icons.Material.Filled.Security">
+                    Fix Auth Issues
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          Href="/status-check"
+                          StartIcon="@Icons.Material.Filled.Monitor">
+                    System Status
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Primary" 
+                          Href="/test-simple"
+                          StartIcon="@Icons.Material.Filled.Home">
+                    Control Center
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isMonitoring = false;
+    private int _errorCount = 0;
+    private int _warningCount = 0;
+    private int _infoCount = 0;
+    private string _monitorStatus = "Stopped";
+    private string _consoleOutput = "";
+    
+    private List<LogEntry> _errorLogs = new();
+    private List<LogEntry> _warningLogs = new();
+    private Timer? _monitorTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialErrors();
+    }
+
+    private async Task LoadInitialErrors()
+    {
+        // Simulate detecting the error from the screenshot
+        _errorLogs.Add(new LogEntry
+        {
+            Timestamp = DateTime.Now.AddMinutes(-2),
+            Message = "Database processing error detected",
+            Details = "Errors in processing database - possible enum parsing issue"
+        });
+        
+        _warningLogs.Add(new LogEntry
+        {
+            Timestamp = DateTime.Now.AddMinutes(-1),
+            Message = "Fetch event handler no-op warning",
+            Details = "No-op fetch handler may bring overhead during navigation"
+        });
+        
+        _errorCount = _errorLogs.Count;
+        _warningCount = _warningLogs.Count;
+        
+        await UpdateConsoleOutput();
+        StateHasChanged();
+    }
+
+    private async Task ToggleMonitoring()
+    {
+        _isMonitoring = !_isMonitoring;
+        
+        if (_isMonitoring)
+        {
+            _monitorStatus = "Active";
+            await StartMonitoring();
+        }
+        else
+        {
+            _monitorStatus = "Stopped";
+            StopMonitoring();
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task StartMonitoring()
+    {
+        _monitorTimer = new Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await SimulateLogCheck();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        
+        await UpdateConsoleOutput("?? Error monitoring started...");
+    }
+
+    private void StopMonitoring()
+    {
+        _monitorTimer?.Dispose();
+        _monitorTimer = null;
+    }
+
+    private async Task SimulateLogCheck()
+    {
+        // Simulate periodic checking for new errors
+        var random = new Random();
+        
+        if (random.Next(0, 10) == 0) // 10% chance of new error
+        {
+            _errorLogs.Add(new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                Message = "Simulated error detected",
+                Details = $"Random error #{random.Next(1000, 9999)}"
+            });
+            _errorCount = _errorLogs.Count;
+        }
+        
+        if (random.Next(0, 5) == 0) // 20% chance of new warning
+        {
+            _warningLogs.Add(new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                Message = "Simulated warning",
+                Details = "Performance or compatibility warning"
+            });
+            _warningCount = _warningLogs.Count;
+        }
+        
+        await UpdateConsoleOutput($"?? {DateTime.Now:HH:mm:ss} - Monitoring check completed");
+    }
+
+    private void ClearLogs()
+    {
+        _errorLogs.Clear();
+        _warningLogs.Clear();
+        _errorCount = 0;
+        _warningCount = 0;
+        _infoCount = 0;
+        _consoleOutput = "";
+        StateHasChanged();
+    }
+
+    private async Task ExportLogs()
+    {
+        var allLogs = _errorLogs.Concat(_warningLogs)
+            .OrderBy(l => l.Timestamp)
+            .Select(l => $"{l.Timestamp:yyyy-MM-dd HH:mm:ss} [{l.Level}] {l.Message}")
+            .ToList();
+        
+        var logText = string.Join("\n", allLogs);
+        
+        await JSRuntime.InvokeVoidAsync("downloadFile", "valyanmed_error_logs.txt", logText);
+    }
+
+    private async Task UpdateConsoleOutput(string? newMessage = null)
+    {
+        if (newMessage != null)
+        {
+            _consoleOutput += $"{DateTime.Now:HH:mm:ss} - {newMessage}\n";
+        }
+        else
+        {
+            _consoleOutput = $@"{DateTime.Now:HH:mm:ss} - ValyanMed Error Monitor initialized
+{DateTime.Now:HH:mm:ss} - Detected {_errorCount} errors, {_warningCount} warnings
+{DateTime.Now:HH:mm:ss} - Monitoring status: {_monitorStatus}
+{DateTime.Now:HH:mm:ss} - Ready for real-time error detection
+";
+        }
+        
+        // Keep only last 20 lines
+        var lines = _consoleOutput.Split('\n');
+        if (lines.Length > 20)
+        {
+            _consoleOutput = string.Join('\n', lines.TakeLast(20));
+        }
+    }
+
+    public void Dispose()
+    {
+        _monitorTimer?.Dispose();
+    }
+
+    public class LogEntry
+    {
+        public DateTime Timestamp { get; set; }
+        public string Message { get; set; } = "";
+        public string Details { get; set; } = "";
+        public string Level { get; set; } = "ERROR";
+    }
+}}

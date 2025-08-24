@@ -1,0 +1,390 @@
+@page "/quick-json-fix-test"
+@inject IJsonService JsonService
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using Client.Services
+
+<PageTitle>Quick JSON Fix Test - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">?? Quick JSON Fix Test</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Test rapid pentru verificarea c? eroarea JSON enum este rezolvat?.
+        </MudAlert>
+        
+        <MudStack Spacing="3" Class="mt-4">
+            
+            <!-- Test Status -->
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="TestJsonEnumFix"
+                          Disabled="@_isRunning"
+                          StartIcon="@(_isRunning ? Icons.Material.Filled.HourglassEmpty : Icons.Material.Filled.PlayArrow)">
+                    @if (_isRunning)
+                    {
+                        @:Testing...
+                    }
+                    else
+                    {
+                        @:Test JSON Enum Fix
+                    }
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Info" 
+                          OnClick="TestRealApiData"
+                          Disabled="@_isRunning">
+                    Test Real API Data
+                </MudButton>
+            </MudStack>
+            
+            <!-- Results -->
+            @if (!string.IsNullOrEmpty(_testResults))
+            {
+                <MudDivider />
+                
+                <MudAlert Severity="@(_testSuccess ? MudSeverity.Success : MudSeverity.Error)">
+                    <strong>Test Result:</strong> @(_testSuccess ? "? SUCCESS" : "? FAILED")
+                </MudAlert>
+                
+                <MudTextField Label="Detailed Results" 
+                             Value="@_testResults" 
+                             ReadOnly="true" 
+                             Variant="Variant.Outlined"
+                             Lines="15" />
+            }
+            
+            <!-- Problematic JSON Samples -->
+            <MudExpansionPanels>
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Code" class="mr-3" />
+                            <span>?? Test JSON Samples</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudText Class="mb-2">JSON samples care ar fi cauzat eroarea original?:</MudText>
+                        <MudTextField Value="@_problematicJsonSamples" 
+                                     ReadOnly="true" 
+                                     Variant="Variant.Outlined"
+                                     Lines="12" />
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+            
+            <!-- Navigation -->
+            <MudDivider />
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Primary" 
+                          Href="/test-persoane-data"
+                          StartIcon="@Icons.Material.Filled.DataObject">
+                    Full Data Test
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          Href="/json-enum-test"
+                          StartIcon="@Icons.Material.Filled.Transform">
+                    Comprehensive Enum Test
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Secondary" 
+                          Href="/test-simple"
+                          StartIcon="@Icons.Material.Filled.Home">
+                    Control Center
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isRunning = false;
+    private bool _testSuccess = false;
+    private string _testResults = "";
+    private string _problematicJsonSamples = "";
+
+    protected override void OnInitialized()
+    {
+        _problematicJsonSamples = @"// Original problematic JSON values that caused the error:
+[
+  {
+    ""id"": 1,
+    ""nume"": ""Test"",
+    ""prenume"": ""Person"",
+    ""tipActIdentitate"": ""CI"",          // This caused: could not be converted to TipActIdentitate
+    ""stareCivila"": ""Celibatar"",        // This could cause StareCivila errors  
+    ""gen"": ""M""                         // This could cause Gen errors
+  },
+  {
+    ""id"": 2,
+    ""tipActIdentitate"": ""Carte"",       // Truncated value from database
+    ""stareCivila"": ""NECASATORIT"",      // Legacy uppercase value
+    ""gen"": ""F""                         // Short gender value
+  }
+]";
+    }
+
+    private async Task TestJsonEnumFix()
+    {
+        _isRunning = true;
+        _testResults = "";
+        StateHasChanged();
+        
+        try
+        {
+            _testResults = $"Starting JSON Enum Fix Test at {DateTime.Now:HH:mm:ss}\n\n";
+            
+            // Test 1: Original problematic values
+            _testResults += "Test 1: Original problematic enum values\n";
+            _testResults += "=====================================\n";
+            
+            var problematicCases = new[]
+            {
+                ("\"CI\"", "TipActIdentitate"),
+                ("\"Carte\"", "TipActIdentitate"),  
+                ("\"Pasap\"", "TipActIdentitate"),
+                ("\"Permi\"", "TipActIdentitate"),
+                ("\"Certi\"", "TipActIdentitate"),
+                ("\"M\"", "Gen"),
+                ("\"F\"", "Gen"),
+                ("\"NECASATORIT\"", "StareCivila"),
+                ("\"CELIBATAR\"", "StareCivila")
+            };
+            
+            var passedTests = 0;
+            var totalTests = problematicCases.Length;
+            
+            foreach (var (value, enumType) in problematicCases)
+            {
+                try
+                {
+                    var testJson = $@"{{ ""{enumType.ToLower()}"": {value} }}";
+                    
+                    switch (enumType)
+                    {
+                        case "TipActIdentitate":
+                            var tipResult = JsonService.Deserialize<TestTipAct>(testJson);
+                            if (tipResult?.TipActIdentitate != null)
+                            {
+                                _testResults += $"? {value} ? {tipResult.TipActIdentitate}\n";
+                                passedTests++;
+                            }
+                            else
+                            {
+                                _testResults += $"? {value} ? null\n";
+                            }
+                            break;
+                            
+                        case "Gen":
+                            var genResult = JsonService.Deserialize<TestGen>(testJson);
+                            if (genResult?.Gen != null)
+                            {
+                                _testResults += $"? {value} ? {genResult.Gen}\n";
+                                passedTests++;
+                            }
+                            else
+                            {
+                                _testResults += $"? {value} ? null\n";
+                            }
+                            break;
+                            
+                        case "StareCivila":
+                            var stareResult = JsonService.Deserialize<TestStare>(testJson);
+                            if (stareResult?.StareCivila != null)
+                            {
+                                _testResults += $"? {value} ? {stareResult.StareCivila}\n";
+                                passedTests++;
+                            }
+                            else
+                            {
+                                _testResults += $"? {value} ? null\n";
+                            }
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _testResults += $"? {value} ? Exception: {ex.Message}\n";
+                }
+                
+                await Task.Delay(50); // Small delay for UI
+            }
+            
+            _testResults += $"\nTest Results: {passedTests}/{totalTests} passed\n\n";
+            
+            // Test 2: Complex object like the original error
+            _testResults += "Test 2: Complex object (like original error scenario)\n";
+            _testResults += "================================================\n";
+            
+            var complexJson = @"{
+                ""id"": 1,
+                ""nume"": ""Test"",
+                ""prenume"": ""Person"",  
+                ""tipActIdentitate"": ""CI"",
+                ""stareCivila"": ""Celibatar"",
+                ""gen"": ""M""
+            }";
+            
+            try
+            {
+                var complexResult = JsonService.Deserialize<TestComplexPerson>(complexJson);
+                if (complexResult != null)
+                {
+                    _testResults += $"? Complex object parsed successfully:\n";
+                    _testResults += $"   ID: {complexResult.Id}\n";
+                    _testResults += $"   Nume: {complexResult.Nume} {complexResult.Prenume}\n";
+                    _testResults += $"   TipActIdentitate: {complexResult.TipActIdentitate}\n";
+                    _testResults += $"   StareCivila: {complexResult.StareCivila}\n";
+                    _testResults += $"   Gen: {complexResult.Gen}\n";
+                    passedTests++;
+                }
+                else
+                {
+                    _testResults += "? Complex object parsing returned null\n";
+                }
+            }
+            catch (Exception ex)
+            {
+                _testResults += $"? Complex object parsing failed: {ex.Message}\n";
+            }
+            
+            totalTests++; // Add complex test to total
+            
+            // Final result
+            _testResults += $"\n=== FINAL RESULT ===\n";
+            if (passedTests == totalTests)
+            {
+                _testResults += $"?? ALL TESTS PASSED! ({passedTests}/{totalTests})\n";
+                _testResults += "? JSON Enum conversion error is FIXED!\n";
+                _testSuccess = true;
+                Snackbar.Add("?? JSON Enum fix verified successfully!", MudSeverity.Success);
+            }
+            else
+            {
+                _testResults += $"??  Some tests failed ({passedTests}/{totalTests})\n";
+                _testResults += "? JSON Enum conversion may still have issues\n";
+                _testSuccess = false;
+                Snackbar.Add("?? Some enum conversion tests failed", MudSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResults += $"\n? CRITICAL ERROR: {ex.Message}\n";
+            _testSuccess = false;
+            Snackbar.Add("? Test execution failed!", MudSeverity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TestRealApiData()
+    {
+        _isRunning = true;
+        _testResults = "";
+        StateHasChanged();
+        
+        try
+        {
+            _testResults = $"Testing Real API Data at {DateTime.Now:HH:mm:ss}\n\n";
+            
+            var response = await Http.GetAsync("api/persoane");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                _testResults += $"? API Response received ({content.Length} characters)\n\n";
+                
+                try
+                {
+                    // Try to parse using JsonService
+                    var persons = JsonService.Deserialize<List<TestComplexPerson>>(content);
+                    
+                    if (persons != null)
+                    {
+                        _testResults += $"? Successfully parsed {persons.Count} persons from API\n";
+                        
+                        var enumStats = new
+                        {
+                            WithTipAct = persons.Count(p => p.TipActIdentitate != null),
+                            WithStare = persons.Count(p => p.StareCivila != null), 
+                            WithGen = persons.Count(p => p.Gen != null)
+                        };
+                        
+                        _testResults += $"   - {enumStats.WithTipAct} have TipActIdentitate\n";
+                        _testResults += $"   - {enumStats.WithStare} have StareCivila\n";
+                        _testResults += $"   - {enumStats.WithGen} have Gen\n\n";
+                        
+                        if (persons.Any())
+                        {
+                            var firstPerson = persons.First();
+                            _testResults += $"Sample person:\n";
+                            _testResults += $"   ID: {firstPerson.Id}\n";
+                            _testResults += $"   Name: {firstPerson.Nume} {firstPerson.Prenume}\n";
+                            _testResults += $"   TipActIdentitate: {firstPerson.TipActIdentitate}\n";
+                            _testResults += $"   StareCivila: {firstPerson.StareCivila}\n";
+                            _testResults += $"   Gen: {firstPerson.Gen}\n";
+                        }
+                        
+                        _testSuccess = true;
+                        _testResults += "\n?? REAL API DATA TEST PASSED!\n";
+                        _testResults += "? No JSON enum conversion errors!\n";
+                        
+                        Snackbar.Add($"? Successfully loaded {persons.Count} persons from API!", MudSeverity.Success);
+                    }
+                    else
+                    {
+                        _testResults += "? JsonService.Deserialize returned null\n";
+                        _testSuccess = false;
+                    }
+                }
+                catch (Exception parseEx)
+                {
+                    _testResults += $"? JSON parsing failed: {parseEx.Message}\n";
+                    _testResults += $"Raw content preview: {content.Substring(0, Math.Min(500, content.Length))}...\n";
+                    _testSuccess = false;
+                }
+            }
+            else
+            {
+                _testResults += $"? API request failed: {response.StatusCode}\n";
+                _testSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResults += $"? API test failed: {ex.Message}\n";
+            _testSuccess = false;
+            Snackbar.Add("? API test failed!", MudSeverity.Error);
+        }
+        finally
+        {
+            _isRunning = false;
+            StateHasChanged();
+        }
+    }
+
+    // Test classes
+    public class TestTipAct { public TipActIdentitate? TipActIdentitate { get; set; } }
+    public class TestStare { public StareCivila? StareCivila { get; set; } }
+    public class TestGen { public Gen? Gen { get; set; } }
+    
+    public class TestComplexPerson
+    {
+        public int Id { get; set; }
+        public string? Nume { get; set; }
+        public string? Prenume { get; set; }
+        public TipActIdentitate? TipActIdentitate { get; set; }
+        public StareCivila? StareCivila { get; set; }
+        public Gen? Gen { get; set; }
+    }
+}

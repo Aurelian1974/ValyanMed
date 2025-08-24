@@ -10,7 +10,7 @@
     
     @if (_currentUser != null)
     {
-        <MudAlert Severity="Severity.Success" Class="mb-4">
+        <MudAlert Severity="MudSeverity.Success" Class="mb-4">
             Bun venit, @_currentUser.NumeComplet! Sunteti conectat cu succes in sistemul ValyanMed.
         </MudAlert>
     }
@@ -131,6 +131,30 @@
                                    Href="/rapoarte">
                             Vezi Rapoarte
                         </MudButton>
+                        
+                        <MudDivider />
+                        
+                        <!-- Debug Tools pentru dezvoltare -->
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Debug Tools:</MudText>
+                        
+                        <MudStack Row Spacing="1">
+                            <MudButton Variant="Variant.Text" 
+                                       Color="Color.Info" 
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.BugReport"
+                                       Href="/auth-debug">
+                                Auth Debug
+                            </MudButton>
+                            
+                            <MudButton Variant="Variant.Text" 
+                                       Color="Color.Warning" 
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Science"
+                                       Href="/test-simple">
+                                Debug Suite
+                            </MudButton>
+                        </MudStack>
+                        
                         <MudDivider />
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Error"

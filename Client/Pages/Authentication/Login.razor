@@ -5,6 +5,9 @@
 @inject ITokenStorageService TokenStorage
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+@using Client.Authentication
 
 <PageTitle>Login - ValyanMed</PageTitle>
 
@@ -117,29 +120,69 @@
 
         try
         {
+            Console.WriteLine($"HandleLogin: Starting login for user {_formModel.NumeUtilizatorSauEmail}");
+            
             var loginRequest = new LoginRequest(_formModel.NumeUtilizatorSauEmail, _formModel.Parola);
             var result = await AuthApiService.LoginAsync(loginRequest);
 
+            Console.WriteLine($"Login API result: IsSuccess={result.IsSuccess}");
+
             if (result.IsSuccess && result.Value != null)
             {
-                // Persist token and user info for the AuthenticationStateProvider
-                await TokenStorage.SetTokenAsync(result.Value.Token);
-                await TokenStorage.SetUserInfoAsync(result.Value);
-
-                await AuthStateService.SetCurrentUserAsync(result.Value);
-                Snackbar.Add(result.SuccessMessage ?? "Conectare reusita!", Severity.Success);
-                Navigation.NavigateTo("/dashboard", forceLoad: true);
+                Console.WriteLine($"Login successful for user: {result.Value.NumeUtilizator}");
+                
+                // DIRECT localStorage save - bypass all services for testing
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "valyanmed_auth_token", result.Value.Token);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "valyanmed_user_info", System.Text.Json.JsonSerializer.Serialize(result.Value));
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentUser", System.Text.Json.JsonSerializer.Serialize(result.Value));
+                
+                Console.WriteLine("Direct localStorage save completed");
+                
+                // Also try service-based save
+                try
+                {
+                    await TokenStorage.SetTokenAsync(result.Value.Token);
+                    await TokenStorage.SetUserInfoAsync(result.Value);
+                    await AuthStateService.SetCurrentUserAsync(result.Value);
+                    Console.WriteLine("Service-based save also completed");
+                }
+                catch (Exception serviceEx)
+                {
+                    Console.WriteLine($"Service save failed but direct save succeeded: {serviceEx.Message}");
+                }
+                
+                // Use the enhanced authentication state provider
+                var customAuthProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+                await customAuthProvider.MarkUserAsAuthenticatedAsync(result.Value.Token, result.Value);
+                
+                Console.WriteLine("User marked as authenticated");
+                
+                Snackbar.Add(result.SuccessMessage ?? "Conectare reusita!", MudSeverity.Success);
+                
+                // Verify the save worked
+                var savedToken = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "valyanmed_auth_token");
+                Console.WriteLine($"Verification: Token saved = {!string.IsNullOrEmpty(savedToken)}");
+                
+                // Small delay to ensure state is updated
+                await Task.Delay(200);
+                
+                Console.WriteLine("Navigating to dashboard");
+                // IMPORTANT: do NOT forceLoad here; a full reload triggers beforeunload and clears storage via appLifecycle
+                Navigation.NavigateTo("/dashboard");
             }
             else
             {
-                _errors = result.Errors;
-                Snackbar.Add("Eroare la conectare", Severity.Error);
+                Console.WriteLine($"Login failed: {string.Join(", ", result.Errors ?? new List<string>())}");
+                _errors = result.Errors ?? new List<string> { "Login failed" };
+                Snackbar.Add("Eroare la conectare", MudSeverity.Error);
             }
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Login exception: {ex.Message}");
+            Console.WriteLine($"StackTrace: {ex.StackTrace}");
             _errors = new List<string> { $"Eroare neasteptata: {ex.Message}" };
-            Snackbar.Add("Eroare de conexiune", Severity.Error);
+            Snackbar.Add("Eroare de conexiune", MudSeverity.Error);
         }
         finally
         {
@@ -155,6 +198,6 @@
 
     private void HandleForgotPassword()
     {
-        Snackbar.Add("Functionalitatea de resetare parola va fi implementata in curand", Severity.Info);
+        Snackbar.Add("Functionalitatea de resetare parola va fi implementata in curand", MudSeverity.Info);
     }
 }

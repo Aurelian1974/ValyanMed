@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Shared.Common;
 using Shared.DTOs.Authentication;
+using Client.Services;
 
 namespace Client.Services.Authentication;
 
@@ -15,27 +16,24 @@ public interface IAuthenticationApiService
 public class AuthenticationApiService : IAuthenticationApiService
 {
     private readonly HttpClient _httpClient;
-    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IJsonService _jsonService;
 
-    public AuthenticationApiService(HttpClient httpClient)
+    public AuthenticationApiService(HttpClient httpClient, IJsonService jsonService)
     {
         _httpClient = httpClient;
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+        _jsonService = jsonService;
     }
 
     public async Task<Result<AuthenticationResponse>> LoginAsync(LoginRequest request)
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/auth/login", request, _jsonOptions);
+            var response = await _httpClient.PostAsJsonAsync("api/auth/login", request, _jsonService.Options);
             
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<ApiResponse<AuthenticationResponse>>(content, _jsonOptions);
+                var result = _jsonService.Deserialize<ApiResponse<AuthenticationResponse>>(content);
                 
                 if (result?.Data != null)
                 {
@@ -46,7 +44,7 @@ public class AuthenticationApiService : IAuthenticationApiService
             }
             
             var errorContent = await response.Content.ReadAsStringAsync();
-            var errorResult = JsonSerializer.Deserialize<ApiErrorResponse>(errorContent, _jsonOptions);
+            var errorResult = _jsonService.Deserialize<ApiErrorResponse>(errorContent);
             
             return Result<AuthenticationResponse>.Failure(errorResult?.Errors ?? new[] { "Eroare la autentificare" });
         }
@@ -87,12 +85,12 @@ public class AuthenticationApiService : IAuthenticationApiService
     {
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("api/auth/validate-token", token, _jsonOptions);
+            var response = await _httpClient.PostAsJsonAsync("api/auth/validate-token", token, _jsonService.Options);
             
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<ApiResponse<bool>>(content, _jsonOptions);
+                var result = _jsonService.Deserialize<ApiResponse<bool>>(content);
                 
                 return Result<bool>.Success(result?.Data ?? false);
             }

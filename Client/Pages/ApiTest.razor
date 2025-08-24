@@ -1,0 +1,199 @@
+@page "/api-test"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<PageTitle>API Test - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h4" GutterBottom="true">API Connectivity Test</MudText>
+        
+        <MudAlert Severity="MudSeverity.Info">
+            Aceast? pagin? testeaz? conexiunea cu API-ul backend
+        </MudAlert>
+        
+        <MudStack Spacing="3" Class="mt-4">
+            <MudTextField Label="API Base URL" 
+                         @bind-Value="_apiUrl" 
+                         Variant="Variant.Outlined" />
+            
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          OnClick="TestBaseUrl"
+                          StartIcon="@Icons.Material.Filled.NetworkCheck">
+                    Test Base URL
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          OnClick="TestHealthEndpoint"
+                          StartIcon="@Icons.Material.Filled.HealthAndSafety">
+                    Test Health Endpoint
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          OnClick="TestAuthEndpoint"
+                          StartIcon="@Icons.Material.Filled.Security">
+                    Test Auth Endpoint
+                </MudButton>
+            </MudStack>
+            
+            <MudDivider />
+            
+            <MudText Typo="Typo.h6">Test Results:</MudText>
+            <MudTextField Label="Results" 
+                         Value="@_results" 
+                         ReadOnly="true" 
+                         Variant="Variant.Outlined"
+                         Lines="15" />
+                         
+            <MudDivider />
+            
+            <MudText Typo="Typo.h6">Quick Actions:</MudText>
+            <MudStack Row Spacing="2">
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Success" 
+                          Href="/debug-auth">
+                    Go to Debug Auth
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Warning" 
+                          Href="/login">
+                    Go to Login
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Info" 
+                          OnClick="ClearResults">
+                    Clear Results
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _apiUrl = "https://localhost:7294/";
+    private string _results = "Click a test button to start...";
+
+    private async Task TestBaseUrl()
+    {
+        await AppendResult("=== Testing Base URL ===");
+        await AppendResult($"URL: {_apiUrl}");
+        
+        try
+        {
+            var response = await Http.GetAsync("");
+            await AppendResult($"Status: {(int)response.StatusCode} {response.StatusCode}");
+            await AppendResult($"Success: {response.IsSuccessStatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                await AppendResult($"Content: {content[..Math.Min(200, content.Length)]}...");
+                Snackbar.Add("Base URL test successful!", MudSeverity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Base URL test failed: {response.StatusCode}", MudSeverity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            await AppendResult($"ERROR: {ex.Message}");
+            Snackbar.Add($"Connection error: {ex.Message}", MudSeverity.Error);
+        }
+        
+        await AppendResult("");
+    }
+
+    private async Task TestHealthEndpoint()
+    {
+        await AppendResult("=== Testing Health Endpoint ===");
+        await AppendResult($"URL: {_apiUrl}api/health");
+        
+        try
+        {
+            var response = await Http.GetAsync("api/health");
+            await AppendResult($"Status: {(int)response.StatusCode} {response.StatusCode}");
+            await AppendResult($"Success: {response.IsSuccessStatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                await AppendResult($"Content: {content}");
+                Snackbar.Add("Health endpoint test successful!", MudSeverity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Health endpoint test failed: {response.StatusCode}", MudSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            await AppendResult($"ERROR: {ex.Message}");
+            Snackbar.Add($"Health endpoint error: {ex.Message}", MudSeverity.Error);
+        }
+        
+        await AppendResult("");
+    }
+
+    private async Task TestAuthEndpoint()
+    {
+        await AppendResult("=== Testing Auth Endpoint ===");
+        await AppendResult($"URL: {_apiUrl}api/auth/login");
+        
+        try
+        {
+            // Test with invalid credentials to see if endpoint exists
+            var testRequest = new
+            {
+                numeUtilizatorSauEmail = "test",
+                parola = "test"
+            };
+            
+            var response = await Http.PostAsJsonAsync("api/auth/login", testRequest);
+            await AppendResult($"Status: {(int)response.StatusCode} {response.StatusCode}");
+            
+            var content = await response.Content.ReadAsStringAsync();
+            await AppendResult($"Response: {content}");
+            
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest || 
+                response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Snackbar.Add("Auth endpoint is available (returned expected error)", MudSeverity.Success);
+            }
+            else if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Auth endpoint test successful!", MudSeverity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Auth endpoint test failed: {response.StatusCode}", MudSeverity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            await AppendResult($"ERROR: {ex.Message}");
+            Snackbar.Add($"Auth endpoint error: {ex.Message}", MudSeverity.Error);
+        }
+        
+        await AppendResult("");
+    }
+
+    private async Task AppendResult(string message)
+    {
+        _results += $"{DateTime.Now:HH:mm:ss} - {message}\n";
+        StateHasChanged();
+        await Task.Delay(10); // Small delay for UI update
+    }
+
+    private void ClearResults()
+    {
+        _results = "Results cleared.\n";
+        StateHasChanged();
+    }
+}

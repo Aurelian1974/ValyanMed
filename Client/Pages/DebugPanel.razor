@@ -1,0 +1,237 @@
+@page "/debug-panel"
+@page "/debug"
+@page "/dev"
+@inject NavigationManager Navigation
+
+<PageTitle>Developer Debug Panel - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudPaper Class="pa-4" Elevation="2">
+        <MudStack Spacing="3">
+            
+            <!-- Header -->
+            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.h4" Color="Color.Primary">??? Developer Debug Panel</MudText>
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Secondary" 
+                          Href="/dashboard"
+                          StartIcon="@Icons.Material.Filled.Home">
+                    Back to Dashboard
+                </MudButton>
+            </MudStack>
+            
+            <MudAlert Severity="MudSeverity.Info">
+                <strong>Quick Access Panel</strong> pentru toate instrumentele de debugging ?i testare
+            </MudAlert>
+            
+            <!-- Authentication & Security -->
+            <MudExpansionPanels MultiExpansion="true">
+                <MudExpansionPanel IsInitiallyExpanded="true">
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Security" class="mr-3" />
+                            <span>?? Authentication & Security</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Error" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.BugReport"
+                                          Href="/auth-debug">
+                                    Authentication State Debug
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Verific? starea de autentificare, token-uri, localStorage
+                                </MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Warning" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.Login"
+                                          Href="/login">
+                                    Go to Login Page
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Testeaz? procesul de login
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+                
+                <!-- Data & API Testing -->
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.DataObject" class="mr-3" />
+                            <span>?? Data & API Testing</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.People"
+                                          Href="/test-persoane-data">
+                                    Test Persoane Data
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Testeaz? înc?rcarea datelor pentru persoane
+                                </MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Success" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.Transform"
+                                          Href="/json-enum-test">
+                                    JSON Enum Test
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Testeaz? conversiile JSON pentru enum-uri
+                                </MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Tertiary" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.CheckCircle"
+                                          Href="/quick-json-fix-test">
+                                    Quick JSON Fix Test
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Verificare rapid? a repara?iilor JSON enum
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+                
+                <!-- System Monitoring -->
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Monitor" class="mr-3" />
+                            <span>??? System Monitoring</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Info" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.Monitor"
+                                          Href="/status-check">
+                                    System Status Check
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Verific? starea general? a sistemului
+                                </MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Error" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.Error"
+                                          Href="/error-monitor">
+                                    Error Monitor
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Monitorizeaz? erorile din aplica?ie
+                                </MudText>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Warning" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.CleaningServices"
+                                          Href="/admin/data-cleanup">
+                                    Data Cleanup
+                                </MudButton>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Tools pentru cur??area datelor legacy
+                                </MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+                
+                <!-- Application Pages -->
+                <MudExpansionPanel>
+                    <TitleContent>
+                        <div style="display: flex; align-items: center">
+                            <MudIcon Icon="@Icons.Material.Filled.Apps" class="mr-3" />
+                            <span>?? Application Pages</span>
+                        </div>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.People"
+                                          Href="/persoane">
+                                    Gestionare Persoane
+                                </MudButton>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Secondary" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.ManageAccounts"
+                                          Href="/utilizatori">
+                                    Gestionare Utilizatori
+                                </MudButton>
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="4">
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Tertiary" 
+                                          FullWidth="true"
+                                          StartIcon="@Icons.Material.Filled.Dashboard"
+                                          Href="/dashboard">
+                                    Dashboard Principal
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+            
+            <!-- Quick Access URLs -->
+            <MudDivider />
+            <MudText Typo="Typo.h6" Color="Color.Info">?? Quick Access URLs</MudText>
+            <MudAlert Severity="MudSeverity.Info" Dense="true">
+                <MudText Typo="Typo.body2">
+                    <strong>Pentru acces rapid, po?i folosi ?i aceste URL-uri:</strong><br/>
+                    • <MudLink Href="/debug">/debug</MudLink> sau <MudLink Href="/dev">/dev</MudLink> - aceast? pagin?<br/>
+                    • <MudLink Href="/auth-debug">/auth-debug</MudLink> - debug autentificare<br/>
+                    • <MudLink Href="/test-simple">/test-simple</MudLink> - suite complet debug tools
+                </MudText>
+            </MudAlert>
+            
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Log access for debugging
+        Console.WriteLine($"Debug panel accessed at {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+    }
+}
