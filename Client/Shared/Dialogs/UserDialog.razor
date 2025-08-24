@@ -1,0 +1,450 @@
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model" Validation="@validator.ValidateValue">
+            <MudContainer Style="max-height: 70vh; overflow-y: auto;">
+                <MudStack Spacing="3">
+                    <!-- User Credentials Section -->
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Credentiale Utilizator</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.NumeUtilizator"
+                                            For="@(() => model.NumeUtilizator)"
+                                            Label="Nume Utilizator *"
+                                            Variant="Variant.Outlined"
+                                            Required="true"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.Email"
+                                            For="@(() => model.Email)"
+                                            Label="Email *"
+                                            Variant="Variant.Outlined"
+                                            InputType="InputType.Email"
+                                            Required="true"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudTextField @bind-Value="model.Telefon"
+                                    For="@(() => model.Telefon)"
+                                    Label="Telefon"
+                                    Variant="Variant.Outlined"
+                                    Immediate="true" />
+                    </MudStack>
+
+                    <!-- Password Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">
+                            @if (IsEditMode)
+                            {
+                                @:Schimbare Parola
+                            }
+                            else
+                            {
+                                @:Parola
+                            }
+                        </MudText>
+                        
+                        @if (!IsEditMode)
+                        {
+                            <MudTextField @bind-Value="model.Parola"
+                                        For="@(() => model.Parola)"
+                                        Label="Parola *"
+                                        Variant="Variant.Outlined"
+                                        InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                        Adornment="Adornment.End"
+                                        AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                        OnAdornmentClick="@(() => showPassword = !showPassword)"
+                                        Required="true"
+                                        Immediate="true" />
+                        }
+                        else
+                        {
+                            <MudTextField @bind-Value="model.NovaParola"
+                                        For="@(() => model.NovaParola)"
+                                        Label="Parola Noua (optional)"
+                                        Variant="Variant.Outlined"
+                                        InputType="@(showPassword ? InputType.Text : InputType.Password)"
+                                        Adornment="Adornment.End"
+                                        AdornmentIcon="@(showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                        OnAdornmentClick="@(() => showPassword = !showPassword)"
+                                        HelperText="Lasati gol pentru a pastra parola actuala"
+                                        Immediate="true" />
+                        }
+                    </MudStack>
+
+                    <!-- Person Association Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Asociere Persoana</MudText>
+                        
+                        <MudSelect T="int?" @bind-Value="model.SelectedPersoanaId"
+                                 For="@(() => model.SelectedPersoanaId)"
+                                 Label="Persoana Asociata *"
+                                 Variant="Variant.Outlined"
+                                 Required="true"
+                                 AnchorOrigin="Origin.BottomCenter"
+                                 ToStringFunc="@(id => GetPersonDisplayName(id))">
+                            <MudSelectItem T="int?" Value="@((int?)null)">Selectati o persoana</MudSelectItem>
+                            @foreach (var persoana in availablePersons)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)persoana.Id)">
+                                    @persoana.NumeComplet
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        @if (model.SelectedPersoanaId.HasValue)
+                        {
+                            var selectedPerson = availablePersons.FirstOrDefault(p => p.Id == model.SelectedPersoanaId.Value);
+                            if (selectedPerson != null)
+                            {
+                                <MudAlert Severity="Severity.Info" Dense="true">
+                                    <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                                        <MudIcon Icon="@Icons.Material.Filled.Person" />
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2"><strong>@selectedPerson.NumeComplet</strong></MudText>
+                                            @if (!string.IsNullOrEmpty(selectedPerson.CNP))
+                                            {
+                                                <MudText Typo="Typo.caption">CNP: @selectedPerson.CNP</MudText>
+                                            }
+                                            @if (!string.IsNullOrEmpty(selectedPerson.PozitieOrganizatie))
+                                            {
+                                                <MudText Typo="Typo.caption">Pozitie: @selectedPerson.PozitieOrganizatie</MudText>
+                                            }
+                                        </MudStack>
+                                    </MudStack>
+                                </MudAlert>
+                            }
+                        }
+                    </MudStack>
+                </MudStack>
+            </MudContainer>
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Secondary">Anuleaza</MudButton>
+        <MudButton OnClick="Submit" 
+                  Color="Color.Primary" 
+                  Variant="Variant.Filled"
+                  Disabled="@isSubmitting"
+                  StartIcon="@(isSubmitting ? Icons.Material.Filled.HourglassEmpty : (IsEditMode ? Icons.Material.Filled.Save : Icons.Material.Filled.Add))">
+            @if (isSubmitting)
+            {
+                @:Se proceseaza...
+            }
+            else if (IsEditMode)
+            {
+                @:Actualizeaza
+            }
+            else
+            {
+                @:Adauga
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    public IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] 
+    public Utilizator? Utilizator { get; set; }
+
+    [Parameter]
+    public bool IsEditMode { get; set; }
+
+    private MudForm form = null!;
+    private UserFormModel model = new();
+    private UserFormValidator validator = new();
+    private bool isSubmitting = false;
+    private bool showPassword = false;
+    
+    private List<Persoana> availablePersons = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPersonsAsync();
+        InitializeModel();
+    }
+
+    private async Task LoadPersonsAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/persoane");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<Persoana>>();
+                availablePersons = result ?? new List<Persoana>();
+            }
+            else
+            {
+                ShowError("Eroare la incarcarea persoanelor");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Eroare la incarcarea persoanelor: {ex.Message}");
+        }
+    }
+
+    private void InitializeModel()
+    {
+        if (IsEditMode && Utilizator != null)
+        {
+            model = new UserFormModel
+            {
+                NumeUtilizator = Utilizator.NumeUtilizator,
+                Email = Utilizator.Email,
+                Telefon = Utilizator.Telefon,
+                SelectedPersoanaId = Utilizator.PersoanaId
+            };
+        }
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        
+        if (!form.IsValid)
+        {
+            ShowError("Va rugam sa corectati erorile din formular");
+            return;
+        }
+
+        if (!model.SelectedPersoanaId.HasValue)
+        {
+            ShowError("Trebuie sa selectati o persoana");
+            return;
+        }
+
+        if (!IsEditMode && string.IsNullOrWhiteSpace(model.Parola))
+        {
+            ShowError("Parola este obligatorie pentru utilizatori noi");
+            return;
+        }
+
+        isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            if (IsEditMode)
+            {
+                await UpdateUserAsync();
+            }
+            else
+            {
+                await CreateUserAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Eroare neasteptata: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreateUserAsync()
+    {
+        var request = new CreateUtilizatorRequest(
+            model.NumeUtilizator,
+            model.Parola,
+            model.Email,
+            model.Telefon,
+            model.SelectedPersoanaId!.Value
+        );
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/utilizatori", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                ShowSuccess("Utilizatorul a fost adaugat cu succes");
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                await HandleErrorResponse(response);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ShowError($"Eroare de conectare: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            ShowError("Cererea a expirat. Va rugam incercati din nou.");
+        }
+    }
+
+    private async Task UpdateUserAsync()
+    {
+        if (Utilizator == null) return;
+
+        var request = new UpdateUtilizatorRequest(
+            Utilizator.Id,
+            model.NumeUtilizator,
+            model.Email,
+            model.Telefon,
+            model.SelectedPersoanaId!.Value,
+            string.IsNullOrWhiteSpace(model.NovaParola) ? null : model.NovaParola
+        );
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/utilizatori/{Utilizator.Id}", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                ShowSuccess("Utilizatorul a fost actualizat cu succes");
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                await HandleErrorResponse(response);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ShowError($"Eroare de conectare: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            ShowError("Cererea a expirat. Va rugam incercati din nou.");
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task HandleErrorResponse(HttpResponseMessage response)
+    {
+        try
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ErrorResponse>(errorContent, new System.Text.Json.JsonSerializerOptions 
+            { 
+                PropertyNameCaseInsensitive = true 
+            });
+
+            if (errorResponse?.Errors != null && errorResponse.Errors.Any())
+            {
+                foreach (var error in errorResponse.Errors)
+                {
+                    ShowError(error);
+                }
+            }
+            else if (!string.IsNullOrEmpty(errorResponse?.Message))
+            {
+                ShowError(errorResponse.Message);
+            }
+            else
+            {
+                ShowError($"Eroare HTTP: {response.StatusCode} - {response.ReasonPhrase}");
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            ShowError($"Eroare HTTP: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+    }
+
+    private string GetPersonDisplayName(int? personId)
+    {
+        if (!personId.HasValue) return string.Empty;
+        return availablePersons.FirstOrDefault(p => p.Id == personId.Value)?.NumeComplet ?? string.Empty;
+    }
+
+    private void ShowSuccess(string message)
+    {
+        Snackbar.Add(message, Severity.Success, configure => {
+            configure.VisibleStateDuration = 3000;
+            configure.ShowTransitionDuration = 200;
+            configure.HideTransitionDuration = 200;
+        });
+    }
+    
+    private void ShowError(string message)
+    {
+        Snackbar.Add(message, Severity.Error, configure => {
+            configure.VisibleStateDuration = 5000;
+            configure.ShowTransitionDuration = 200;
+            configure.HideTransitionDuration = 200;
+            configure.RequireInteraction = true;
+        });
+    }
+
+    public class UserFormModel
+    {
+        public string NumeUtilizator { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Telefon { get; set; }
+        public int? SelectedPersoanaId { get; set; }
+        public string Parola { get; set; } = string.Empty;
+        public string? NovaParola { get; set; }
+    }
+
+    public class UserFormValidator : FluentValidation.AbstractValidator<UserFormModel>
+    {
+        public UserFormValidator()
+        {
+            RuleFor(x => x.NumeUtilizator)
+                .NotEmpty().WithMessage("Numele de utilizator este obligatoriu")
+                .MinimumLength(3).WithMessage("Numele de utilizator trebuie sa aiba minim 3 caractere")
+                .MaximumLength(50).WithMessage("Numele de utilizator nu poate depasi 50 de caractere")
+                .Matches("^[a-zA-Z0-9._-]+$").WithMessage("Numele de utilizator poate contine doar litere, cifre, punct, linie si underscore");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email-ul este obligatoriu")
+                .EmailAddress().WithMessage("Format email invalid")
+                .MaximumLength(150).WithMessage("Email-ul nu poate depasi 150 de caractere");
+
+            RuleFor(x => x.Telefon)
+                .Matches(@"^[+]?[0-9\s\-\(\)]+$").WithMessage("Format telefon invalid")
+                .MinimumLength(10).WithMessage("Numarul de telefon trebuie sa aiba minim 10 cifre")
+                .MaximumLength(20).WithMessage("Numarul de telefon nu poate depasi 20 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.Telefon));
+
+            RuleFor(x => x.SelectedPersoanaId)
+                .NotNull().WithMessage("Trebuie sa selectati o persoana");
+
+            RuleFor(x => x.Parola)
+                .MinimumLength(6).WithMessage("Parola trebuie sa aiba minim 6 caractere")
+                .MaximumLength(100).WithMessage("Parola nu poate depasi 100 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.Parola));
+
+            RuleFor(x => x.NovaParola)
+                .MinimumLength(6).WithMessage("Parola noua trebuie sa aiba minim 6 caractere")
+                .MaximumLength(100).WithMessage("Parola noua nu poate depasi 100 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.NovaParola));
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(FluentValidation.ValidationContext<UserFormModel>.CreateWithOptions((UserFormModel)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    private record ErrorResponse(string Message, List<string>? Errors = null);
+}

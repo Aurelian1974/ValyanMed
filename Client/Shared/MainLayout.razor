@@ -1,9 +1,7 @@
 ﻿@inherits LayoutComponentBase
-@using Client.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-@inject IAuthService AuthService
-@inject JsInteropService JsInteropService
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -15,41 +13,38 @@
     <MudAppBar Elevation="1" Color="Color.Primary" Dense="true">
         <div class="app-logo">
             <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" />
-            <MudText Typo="Typo.h6">CMS</MudText>
+            <MudText Typo="Typo.h6">ValyanMed</MudText>
         </div>
         <MudSpacer />
         
-        @if (IsLoggedIn && !IsAuthenticationPage)
-        {
-            <!-- Informatii utilizator și delogare - vizibile doar când utilizatorul este autentificat și nu e pe pagina de autentificare -->
-            <div class="user-profile">
-                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
-                <MudText>@(UserFullName ?? "Utilizator")</MudText>
-            </div>
-            
-            <MudButton 
-                OnClick="Logout" 
-                StartIcon="@Icons.Material.Filled.Logout" 
-                Color="Color.Inherit" 
-                Class="ml-2" 
-                Variant="Variant.Text">
-                Deconectare
-            </MudButton>
-        }
+        <!-- User menu and logout -->
+        <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+            <MudMenuItem Href="/profil" Icon="@Icons.Material.Filled.ManageAccounts">Profil</MudMenuItem>
+            <MudMenuItem OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Delogare</MudMenuItem>
+        </MudMenu>
+
+        <MudButton 
+            OnClick="Logout" 
+            StartIcon="@Icons.Material.Filled.Logout" 
+            Color="Color.Inherit" 
+            Class="ml-2" 
+            Variant="Variant.Text">
+            Delogare
+        </MudButton>
     </MudAppBar>
 
     <!-- Left Sidebar -->
-    <MudDrawer Open="@(IsLoggedIn)" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Persistent" Disabled="@(!IsLoggedIn)">
+    <MudDrawer Open="true" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Persistent">
         <MudDrawerHeader>
             <MudText Typo="Typo.h6">ValyanMed</MudText>
         </MudDrawerHeader>
-        <MudNavMenu Disabled="@(!IsLoggedIn)">
-            <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" Disabled="@(!IsLoggedIn)">Dashboard</MudNavLink>
-            <MudNavLink Href="/pacienti" Icon="@Icons.Material.Filled.People" Disabled="@(!IsLoggedIn)">Pacienti</MudNavLink>
-            <MudNavLink Href="/rapoarte" Icon="@Icons.Material.Filled.Assessment" Disabled="@(!IsLoggedIn)">Rapoarte</MudNavLink>
-            <MudNavLink Href="/facturare" Icon="@Icons.Material.Filled.Receipt" Disabled="@(!IsLoggedIn)">Facturare</MudNavLink>
+        <MudNavMenu>
+            <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/pacienti" Icon="@Icons.Material.Filled.People">Pacienti</MudNavLink>
+            <MudNavLink Href="/rapoarte" Icon="@Icons.Material.Filled.Assessment">Rapoarte</MudNavLink>
+            <MudNavLink Href="/facturare" Icon="@Icons.Material.Filled.Receipt">Facturare</MudNavLink>
 
-            <!-- Farmacie submenu under Facturare -->
+            <!-- Farmacie submenu -->
             <MudNavLink Icon="@Icons.Material.Filled.LocalPharmacy" @onclick="@ToggleFarmacieMenu" Class="admin-nav-link">
                 Farmacie
             </MudNavLink>
@@ -60,13 +55,13 @@
                     <MudNavLink Href="/farmacie/materiale-sanitare" Icon="@Icons.Material.Filled.MedicalServices">Materiale sanitare</MudNavLink>
                     <MudNavLink Href="/farmacie/dispozitive-medicale" Icon="@Icons.Material.Filled.MedicalInformation">Dispozitive medicale</MudNavLink>
                     <MudNavLink Href="/farmacie/documente-intrare" Icon="@Icons.Material.Filled.Input">Documente intrare</MudNavLink>
-                    <MudNavLink Href="/farmacie/documente-iesire" Icon="@Icons.Material.Filled.Output">Documente ieșire</MudNavLink>
+                    <MudNavLink Href="/farmacie/documente-iesire" Icon="@Icons.Material.Filled.Output">Documente iesire</MudNavLink>
                 </div>
             }
 
-            <MudNavLink Href="/setari" Icon="@Icons.Material.Filled.Settings" Disabled="@(!IsLoggedIn)">Setari</MudNavLink>
+            <MudNavLink Href="/setari" Icon="@Icons.Material.Filled.Settings">Setari</MudNavLink>
 
-            <!-- Buton Administrare cu structura arborescenta -->
+            <!-- Admin menu -->
             <MudNavLink Icon="@Icons.Material.Filled.AdminPanelSettings"
                         @onclick="@ToggleAdminMenu"
                         Class="admin-nav-link">
@@ -75,8 +70,8 @@
             @if (_adminExpanded)
             {
                 <div style="margin-left:32px;">
-                    <MudNavLink Href="/administrare/personal" Icon="@Icons.Material.Filled.People">Personal</MudNavLink>
-                    <MudNavLink Href="/administrare/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">Utilizatori</MudNavLink>
+                    <MudNavLink Href="/persoane" Icon="@Icons.Material.Filled.People">Persoane</MudNavLink>
+                    <MudNavLink Href="/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">Utilizatori</MudNavLink>
                     <MudNavLink Href="/administrare/parteneri" Icon="@Icons.Material.Filled.Business">Parteneri</MudNavLink>
                     <MudNavLink Href="/administrare/roluri" Icon="@Icons.Material.Filled.GroupWork">Roluri</MudNavLink>
                 </div>
@@ -89,91 +84,29 @@
         <MudContainer MaxWidth="MaxWidth.ExtraLarge">
             @Body
         </MudContainer>
-        
-        <!-- Footer -->
-@*         <MudAppBar Bottom="true" Dense="true" Elevation="1" Color="Color.Transparent" Class="border-top app-footer">
-            <MudText Typo="Typo.body2">Versiunea 1.0</MudText>
-            <MudSpacer />
-            <MudText Typo="Typo.body2">contact@exemplu.ro</MudText>
-        </MudAppBar> *@
     </MudMainContent>
 </MudLayout>
 
 @code {
-    private bool IsLoggedIn { get; set; }
-    private string UserName { get; set; }
-    private string UserFullName { get; set; }
     private bool _adminExpanded = false;
     private bool _farmacieExpanded = false;
-    private bool IsAuthenticationPage => 
-        NavigationManager.Uri.EndsWith("/") || 
-        NavigationManager.Uri.EndsWith("/autentificare");
-
-    protected override async Task OnInitializedAsync()
-    {
-        // Încarca CSS-ul specific pentru acest layout
-        await JSRuntime.InvokeVoidAsync("loadCSS", "css/mainlayout.css");
-        
-        // Verifica daca utilizatorul este autentificat
-        await CheckAuthenticationStatus();
-        
-        await base.OnInitializedAsync();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            // Verifica din nou starea de autentificare dupa primul render
-            await CheckAuthenticationStatus();
-            StateHasChanged();
-        }
-    }
-
-    private async Task CheckAuthenticationStatus()
-    {
-        try
-        {
-            // Obtine token-ul din localStorage
-            var token = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
-            
-            // Seteaza starea de autentificare pe baza existentei token-ului
-            IsLoggedIn = !string.IsNullOrEmpty(token);
-            
-            if (IsLoggedIn)
-            {
-                // Obtine informatiile utilizatorului din localStorage
-                UserName = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userName") ?? "Utilizator";
-                UserFullName = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "userFullName") ?? UserName;
-                
-                // Daca suntem pe pagina de autentificare și utilizatorul e autentificat, redirectioneaza catre dashboard
-                if (IsAuthenticationPage)
-                {
-                    NavigationManager.NavigateTo("/dashboard");
-                }
-            }
-            else 
-            {
-                // Daca nu este autentificat și încearca sa acceseze o pagina protejata
-                if (!IsAuthenticationPage && !NavigationManager.Uri.EndsWith("/inregistrare"))
-                {
-                    NavigationManager.NavigateTo("/");
-                }
-            }
-            
-            StateHasChanged(); // Asigura-te ca UI-ul se actualizeaza
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Eroare la verificarea autentificarii: {ex.Message}");
-        }
-    }
 
     private async Task Logout()
     {
-        await AuthService.Logout();
-        IsLoggedIn = false;
-        NavigationManager.NavigateTo("/");
+        try
+        {
+            // Call API logout + clear storage via JS helper (uses sendBeacon on unload)
+            await JSRuntime.InvokeVoidAsync("appLifecycle.logoutNow", "https://localhost:7294/api/auth/logout", 
+                new[] { "valyanmed_auth_token", "valyanmed_user_info", "currentUser" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout error: {ex.Message}");
+        }
+        finally
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+        }
     }
 
     void ToggleAdminMenu() => _adminExpanded = !_adminExpanded;

@@ -4,7 +4,7 @@
 
 <div class="redirect-container">
     <div class="redirect-spinner"></div>
-    <p>Se incarca aplicatia...</p>
+    <p>Se încarc? aplica?ia...</p>
 </div>
 
 <style>
@@ -24,6 +24,7 @@
         animation: spin 1s linear infinite;
         margin-bottom: 16px;
     }
+    
     @@keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
@@ -31,26 +32,33 @@
 </style>
 
 @code {
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        try
+        if (firstRender)
         {
-            // Verifica rapid daca exista token in localStorage
-            var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
-            
-            if (string.IsNullOrEmpty(token))
+            try
             {
-                Navigation.NavigateTo("/autentificare", forceLoad: true);
+                // Wait a bit for everything to initialize
+                await Task.Delay(500);
+                
+                // Check if there's a token in localStorage
+                var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+                
+                if (string.IsNullOrEmpty(token))
+                {
+                    Navigation.NavigateTo("/login");
+                }
+                else
+                {
+                    Navigation.NavigateTo("/dashboard");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Navigation.NavigateTo("/dashboard", forceLoad: true);
+                Console.WriteLine($"Index redirect error: {ex.Message}");
+                // In case of error, redirect to login
+                Navigation.NavigateTo("/login");
             }
-        }
-        catch
-        {
-            // In caz de eroare, redirectioneaza la autentificare
-            Navigation.NavigateTo("/autentificare", forceLoad: true);
         }
     }
 }

@@ -1,0 +1,513 @@
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="form" Model="@model" Validation="@validator.ValidateValue">
+            <MudContainer Style="max-height: 70vh; overflow-y: auto;">
+                <MudStack Spacing="3">
+                    <!-- Personal Information Section -->
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Informatii Personale</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.Nume"
+                                            For="@(() => model.Nume)"
+                                            Label="Nume *"
+                                            Variant="Variant.Outlined"
+                                            Required="true"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.Prenume"
+                                            For="@(() => model.Prenume)"
+                                            Label="Prenume *"
+                                            Variant="Variant.Outlined"
+                                            Required="true"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.CNP"
+                                            For="@(() => model.CNP)"
+                                            Label="CNP"
+                                            Variant="Variant.Outlined"
+                                            Mask="@cnpMask"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="model.DataNasterii"
+                                             Label="Data Nasterii"
+                                             Variant="Variant.Outlined"
+                                             DateFormat="dd.MM.yyyy"
+                                             MaxDate="DateTime.Today"
+                                             Editable="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Gen?" @bind-Value="model.Gen"
+                                         Label="Gen"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem T="Gen?" Value="@((Gen?)null)">Nu este specificat</MudSelectItem>
+                                    <MudSelectItem T="Gen?" Value="@Gen.Masculin">Masculin</MudSelectItem>
+                                    <MudSelectItem T="Gen?" Value="@Gen.Feminin">Feminin</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="StareCivila?" @bind-Value="model.StareCivila"
+                                         Label="Stare Civila"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem T="StareCivila?" Value="@((StareCivila?)null)">Nu este specificata</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Necasatorit">Necasatorit(a)</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Casatorit">Casatorit(a)</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Divortit">Divortat(a)</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Vaduv">Vaduv(a)</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+
+                    <!-- Identity Document Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Act de Identitate</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="TipActIdentitate?" @bind-Value="model.TipActIdentitate"
+                                         Label="Tip Act"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem T="TipActIdentitate?" Value="@((TipActIdentitate?)null)">Nu este specificat</MudSelectItem>
+                                    <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.CarteIdentitate">Carte de Identitate</MudSelectItem>
+                                    <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.Pasaport">Pasaport</MudSelectItem>
+                                    <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.PermisConducere">Permis de Conducere</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="model.SerieActIdentitate"
+                                            For="@(() => model.SerieActIdentitate)"
+                                            Label="Serie"
+                                            Variant="Variant.Outlined"
+                                            MaxLength="2"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="model.NumarActIdentitate"
+                                            For="@(() => model.NumarActIdentitate)"
+                                            Label="Numar"
+                                            Variant="Variant.Outlined"
+                                            MaxLength="6"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+
+                    <!-- Address Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Adresa</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.Judet"
+                                            For="@(() => model.Judet)"
+                                            Label="Judet"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="model.Localitate"
+                                            For="@(() => model.Localitate)"
+                                            Label="Localitate"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid>
+                            <MudItem xs="12" md="8">
+                                <MudTextField @bind-Value="model.Strada"
+                                            For="@(() => model.Strada)"
+                                            Label="Strada"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="model.NumarStrada"
+                                            For="@(() => model.NumarStrada)"
+                                            Label="Numar"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudTextField @bind-Value="model.CodPostal"
+                                    For="@(() => model.CodPostal)"
+                                    Label="Cod Postal"
+                                    Variant="Variant.Outlined"
+                                    Immediate="true" />
+                    </MudStack>
+
+                    <!-- Professional Information Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Informatii Profesionale</MudText>
+                        
+                        <MudTextField @bind-Value="model.PozitieOrganizatie"
+                                    For="@(() => model.PozitieOrganizatie)"
+                                    Label="Pozitie in Organizatie"
+                                    Variant="Variant.Outlined"
+                                    Immediate="true" />
+                    </MudStack>
+                </MudStack>
+            </MudContainer>
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Secondary">Anuleaza</MudButton>
+        <MudButton OnClick="Submit" 
+                  Color="Color.Primary" 
+                  Variant="Variant.Filled"
+                  Disabled="@isSubmitting"
+                  StartIcon="@(isSubmitting ? Icons.Material.Filled.HourglassEmpty : (IsEditMode ? Icons.Material.Filled.Save : Icons.Material.Filled.Add))">
+            @if (isSubmitting)
+            {
+                @:Se proceseaza...
+            }
+            else if (IsEditMode)
+            {
+                @:Actualizeaza
+            }
+            else
+            {
+                @:Adauga
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    public IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] 
+    public Persoana? Persoana { get; set; }
+
+    [Parameter]
+    public bool IsEditMode { get; set; }
+
+    private MudForm form = null!;
+    private PersonFormModel model = new();
+    private PersonFormValidator validator = new();
+    private bool isSubmitting = false;
+    
+    // Masks
+    private readonly IMask cnpMask = new PatternMask("0000000000000");
+
+    protected override void OnInitialized()
+    {
+        InitializeModel();
+    }
+
+    private void InitializeModel()
+    {
+        if (IsEditMode && Persoana != null)
+        {
+            model = new PersonFormModel
+            {
+                Nume = Persoana.Nume,
+                Prenume = Persoana.Prenume,
+                Judet = Persoana.Judet,
+                Localitate = Persoana.Localitate,
+                Strada = Persoana.Strada,
+                NumarStrada = Persoana.NumarStrada,
+                CodPostal = Persoana.CodPostal,
+                PozitieOrganizatie = Persoana.PozitieOrganizatie,
+                DataNasterii = Persoana.DataNasterii,
+                CNP = Persoana.CNP,
+                TipActIdentitate = Persoana.TipActIdentitate,
+                SerieActIdentitate = Persoana.SerieActIdentitate,
+                NumarActIdentitate = Persoana.NumarActIdentitate,
+                StareCivila = Persoana.StareCivila,
+                Gen = Persoana.Gen
+            };
+        }
+    }
+
+    private async Task Submit()
+    {
+        await form.Validate();
+        
+        if (!form.IsValid)
+        {
+            ShowError("Va rugam sa corectati erorile din formular");
+            return;
+        }
+
+        isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            if (IsEditMode)
+            {
+                await UpdatePersonAsync();
+            }
+            else
+            {
+                await CreatePersonAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Eroare neasteptata: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CreatePersonAsync()
+    {
+        var request = new CreatePersoanaRequest(
+            model.Nume,
+            model.Prenume,
+            model.Judet,
+            model.Localitate,
+            model.Strada,
+            model.NumarStrada,
+            model.CodPostal,
+            model.PozitieOrganizatie,
+            model.DataNasterii,
+            model.CNP,
+            model.TipActIdentitate,
+            model.SerieActIdentitate,
+            model.NumarActIdentitate,
+            model.StareCivila,
+            model.Gen
+        );
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/persoane", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                ShowSuccess("Persoana a fost adaugata cu succes");
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                await HandleErrorResponse(response);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ShowError($"Eroare de conectare: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            ShowError("Cererea a expirat. Va rugam incercati din nou.");
+        }
+    }
+
+    private async Task UpdatePersonAsync()
+    {
+        if (Persoana == null) return;
+
+        var request = new UpdatePersoanaRequest(
+            Persoana.Id,
+            model.Nume,
+            model.Prenume,
+            model.Judet,
+            model.Localitate,
+            model.Strada,
+            model.NumarStrada,
+            model.CodPostal,
+            model.PozitieOrganizatie,
+            model.DataNasterii,
+            model.CNP,
+            model.TipActIdentitate,
+            model.SerieActIdentitate,
+            model.NumarActIdentitate,
+            model.StareCivila,
+            model.Gen
+        );
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"api/persoane/{Persoana.Id}", request);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                ShowSuccess("Persoana a fost actualizata cu succes");
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                await HandleErrorResponse(response);
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ShowError($"Eroare de conectare: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            ShowError("Cererea a expirat. Va rugam incercati din nou.");
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task HandleErrorResponse(HttpResponseMessage response)
+    {
+        try
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            var errorResponse = System.Text.Json.JsonSerializer.Deserialize<ErrorResponse>(errorContent, new System.Text.Json.JsonSerializerOptions 
+            { 
+                PropertyNameCaseInsensitive = true 
+            });
+
+            if (errorResponse?.Errors != null && errorResponse.Errors.Any())
+            {
+                foreach (var error in errorResponse.Errors)
+                {
+                    ShowError(error);
+                }
+            }
+            else if (!string.IsNullOrEmpty(errorResponse?.Message))
+            {
+                ShowError(errorResponse.Message);
+            }
+            else
+            {
+                ShowError($"Eroare HTTP: {response.StatusCode} - {response.ReasonPhrase}");
+            }
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            ShowError($"Eroare HTTP: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+    }
+
+    private void ShowSuccess(string message)
+    {
+        Snackbar.Add(message, Severity.Success, configure => {
+            configure.VisibleStateDuration = 3000;
+            configure.ShowTransitionDuration = 200;
+            configure.HideTransitionDuration = 200;
+        });
+    }
+    
+    private void ShowError(string message)
+    {
+        Snackbar.Add(message, Severity.Error, configure => {
+            configure.VisibleStateDuration = 5000;
+            configure.ShowTransitionDuration = 200;
+            configure.HideTransitionDuration = 200;
+            configure.RequireInteraction = true;
+        });
+    }
+
+    public class PersonFormModel
+    {
+        public string Nume { get; set; } = string.Empty;
+        public string Prenume { get; set; } = string.Empty;
+        public string? Judet { get; set; }
+        public string? Localitate { get; set; }
+        public string? Strada { get; set; }
+        public string? NumarStrada { get; set; }
+        public string? CodPostal { get; set; }
+        public string? PozitieOrganizatie { get; set; }
+        public DateTime? DataNasterii { get; set; }
+        public string? CNP { get; set; }
+        public TipActIdentitate? TipActIdentitate { get; set; }
+        public string? SerieActIdentitate { get; set; }
+        public string? NumarActIdentitate { get; set; }
+        public StareCivila? StareCivila { get; set; }
+        public Gen? Gen { get; set; }
+    }
+
+    public class PersonFormValidator : FluentValidation.AbstractValidator<PersonFormModel>
+    {
+        public PersonFormValidator()
+        {
+            RuleFor(x => x.Nume)
+                .NotEmpty().WithMessage("Numele este obligatoriu")
+                .MinimumLength(2).WithMessage("Numele trebuie sa aiba minim 2 caractere")
+                .MaximumLength(100).WithMessage("Numele nu poate depasi 100 de caractere");
+
+            RuleFor(x => x.Prenume)
+                .NotEmpty().WithMessage("Prenumele este obligatoriu")
+                .MinimumLength(2).WithMessage("Prenumele trebuie sa aiba minim 2 caractere")
+                .MaximumLength(100).WithMessage("Prenumele nu poate depasi 100 de caractere");
+
+            RuleFor(x => x.CNP)
+                .Length(13).WithMessage("CNP-ul trebuie sa aiba exact 13 cifre")
+                .When(x => !string.IsNullOrEmpty(x.CNP));
+
+            RuleFor(x => x.DataNasterii)
+                .LessThanOrEqualTo(DateTime.Today).WithMessage("Data nasterii nu poate fi in viitor")
+                .GreaterThan(DateTime.Today.AddYears(-150)).WithMessage("Data nasterii nu poate fi mai mult de 150 de ani in urma")
+                .When(x => x.DataNasterii.HasValue);
+
+            RuleFor(x => x.Judet)
+                .MaximumLength(100).WithMessage("Judetul nu poate depasi 100 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.Judet));
+
+            RuleFor(x => x.Localitate)
+                .MaximumLength(100).WithMessage("Localitatea nu poate depasi 100 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.Localitate));
+
+            RuleFor(x => x.Strada)
+                .MaximumLength(150).WithMessage("Strada nu poate depasi 150 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.Strada));
+
+            RuleFor(x => x.NumarStrada)
+                .MaximumLength(50).WithMessage("Numarul strazii nu poate depasi 50 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.NumarStrada));
+
+            RuleFor(x => x.CodPostal)
+                .MaximumLength(20).WithMessage("Codul postal nu poate depasi 20 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.CodPostal));
+
+            RuleFor(x => x.PozitieOrganizatie)
+                .MaximumLength(100).WithMessage("Pozitia in organizatie nu poate depasi 100 de caractere")
+                .When(x => !string.IsNullOrEmpty(x.PozitieOrganizatie));
+
+            RuleFor(x => x.SerieActIdentitate)
+                .MaximumLength(2).WithMessage("Seria actului de identitate nu poate depasi 2 caractere")
+                .When(x => !string.IsNullOrEmpty(x.SerieActIdentitate));
+
+            RuleFor(x => x.NumarActIdentitate)
+                .MaximumLength(6).WithMessage("Numarul actului de identitate nu poate depasi 6 caractere")
+                .When(x => !string.IsNullOrEmpty(x.NumarActIdentitate));
+        }
+
+        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
+        {
+            var result = await ValidateAsync(FluentValidation.ValidationContext<PersonFormModel>.CreateWithOptions((PersonFormModel)model, x => x.IncludeProperties(propertyName)));
+            if (result.IsValid)
+                return Array.Empty<string>();
+            return result.Errors.Select(e => e.ErrorMessage);
+        };
+    }
+
+    private record ErrorResponse(string Message, List<string>? Errors = null);
+}

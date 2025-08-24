@@ -1,69 +1,55 @@
 ﻿using Client;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.JSInterop;
 using MudBlazor.Services;
-using Client.Models;
-using Client.Services;
+using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 
+// Authentication services
+using Client.Services.Authentication;
+using Client.Authentication;
+
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
-builder.RootComponents.Add<App>("#app");
-builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddMudServices();
-
-// Register authentication services
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ILogoutService, AuthService>();
-
-// Bridge between namespaces using adapter
-builder.Services.AddScoped<Client.Services.ILogoutService>(sp => 
-    new Client.Services.LogoutServiceAdapter(
-        sp.GetRequiredService<ILogoutService>()));
-
-builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
-    sp.GetRequiredService<IAuthService>() as AuthService);
-builder.Services.AddAuthorizationCore();
-
-builder.Services.AddSingleton<IExceptionHandler>(_ => new LoggingExceptionHandler());
-builder.Services.AddScoped<IPersoanaService, PersoanaService>();
-builder.Services.AddScoped<IUtilizatorService, Client.Services.UtilizatorService>();
-
-builder.Services.AddScoped<Client.Services.JsInteropService>();
-builder.Services.AddScoped<JudetService>();
-builder.Services.AddScoped<ILocalitateService, LocalitateService>();
-builder.Services.AddScoped<IPersoanaService, PersoanaService>();
-
-// Partener services
-builder.Services.AddScoped<IPartenerService, PartenerService>();
-
-// Medicament client
-builder.Services.AddScoped<IMedicamentClient, MedicamentClient>();
-
-// Material sanitar client
-builder.Services.AddScoped<IMaterialSanitarClient, MaterialSanitarClient>();
-
-// Dispozitiv medical client
-builder.Services.AddScoped<IDispozitivMedicalClient, DispozitivMedicalClient>();
-
-// Register the authorization message handler
-builder.Services.AddScoped<AuthorizationMessageHandler>();
-
-// Single HttpClient registration with authorization handler
-builder.Services.AddScoped(sp =>
+try
 {
-    var authHandler = sp.GetRequiredService<AuthorizationMessageHandler>();
-    authHandler.InnerHandler = new HttpClientHandler();
-    
-    var httpClient = new HttpClient(authHandler)
+    builder.RootComponents.Add<App>("#app");
+    builder.RootComponents.Add<HeadOutlet>("head::after");
+
+    // Core services
+    builder.Services.AddMudServices();
+    builder.Services.AddBlazoredLocalStorage();
+
+    // Authentication services - add one by one
+    builder.Services.AddScoped<ITokenStorageService, TokenStorageService>();
+    builder.Services.AddScoped<IAuthenticationStateService, AuthenticationStateService>();
+    builder.Services.AddScoped<IAuthenticationApiService, AuthenticationApiService>();
+    builder.Services.AddScoped<AuthenticatedHttpClientHandler>();
+
+    // Authentication state provider and authorization
+    builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+    builder.Services.AddAuthorizationCore();
+
+    // HttpClient configuration
+    var apiUrl = builder.Configuration["ApiUrl"] ?? "https://localhost:7294/";
+    builder.Services.AddHttpClient("authenticated", client =>
     {
-        BaseAddress = new Uri(builder.Configuration["ApiUrl"] ?? "https://localhost:7294/")
-    };
-    
-    return httpClient;
-});
+        client.BaseAddress = new Uri(apiUrl);
+        client.Timeout = TimeSpan.FromMinutes(2);
+    }).AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
 
-builder.Services.AddScoped<JsInteropTestService>();
+    // Default HttpClient
+    builder.Services.AddScoped(sp =>
+    {
+        var factory = sp.GetRequiredService<IHttpClientFactory>();
+        return factory.CreateClient("authenticated");
+    });
 
-await builder.Build().RunAsync();
+    var app = builder.Build();
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Blazor startup error: {ex}");
+    throw;
+}

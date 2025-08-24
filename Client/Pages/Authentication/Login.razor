@@ -1,0 +1,160 @@
+@page "/login"
+@layout EmptyLayout
+@inject IAuthenticationApiService AuthApiService
+@inject IAuthenticationStateService AuthStateService
+@inject ITokenStorageService TokenStorage
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<PageTitle>Login - ValyanMed</PageTitle>
+
+<link href="css/pages/login.css" rel="stylesheet" />
+
+<div class="login-page">
+    <div class="login-container">
+        <!-- Brand Section -->
+        <div class="login-brand">
+            <img src="images/valyanmed-logo.png" alt="ValyanMed Logo" class="login-brand-logo" />
+            <h1 class="login-brand-title">ValyanMed</h1>
+            <p class="login-brand-subtitle">Clinic Management System</p>
+        </div>
+
+        <!-- Login Form Section -->
+        <div class="login-form-container">
+            <h2 class="login-form-title">Bun venit!</h2>
+            <p class="login-form-subtitle">Conectati-va pentru a accesa sistemul</p>
+
+            @if (HasErrors)
+            {
+                <div class="login-error">
+                    @foreach (var error in _errors)
+                    {
+                        <div class="login-error-text">@error</div>
+                    }
+                </div>
+            }
+
+            <EditForm Model="@_formModel" OnValidSubmit="@HandleLogin" class="login-form">
+                <FluentValidationValidator />
+
+                <MudTextField @bind-Value="_formModel.NumeUtilizatorSauEmail"
+                              Label="Nume utilizator sau Email"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              FullWidth="true"
+                              Disabled="@_isLoading"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Person" />
+
+                <MudTextField @bind-Value="_formModel.Parola"
+                              Label="Parola"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              FullWidth="true"
+                              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                              Disabled="@_isLoading"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="@TogglePasswordVisibility" />
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Size="Size.Large"
+                           Class="login-button"
+                           Disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <div class="login-loading">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                            <span>Se conecteaza...</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <span>Conectare</span>
+                    }
+                </MudButton>
+            </EditForm>
+
+            <div class="forgot-password">
+                <a href="#" class="forgot-password-link" @onclick="@HandleForgotPassword" @onclick:preventDefault="true">
+                    Ati uitat parola?
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginFormModel _formModel = new();
+    private bool _isLoading = false;
+    private bool _showPassword = false;
+    private List<string> _errors = new();
+
+    private bool HasErrors => _errors.Any();
+
+    public class LoginFormModel
+    {
+        public string NumeUtilizatorSauEmail { get; set; } = string.Empty;
+        public string Parola { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Verifica daca utilizatorul este deja autentificat
+        var currentUser = await AuthStateService.GetCurrentUserAsync();
+        if (currentUser != null)
+        {
+            Navigation.NavigateTo("/dashboard");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        _isLoading = true;
+        _errors.Clear();
+
+        try
+        {
+            var loginRequest = new LoginRequest(_formModel.NumeUtilizatorSauEmail, _formModel.Parola);
+            var result = await AuthApiService.LoginAsync(loginRequest);
+
+            if (result.IsSuccess && result.Value != null)
+            {
+                // Persist token and user info for the AuthenticationStateProvider
+                await TokenStorage.SetTokenAsync(result.Value.Token);
+                await TokenStorage.SetUserInfoAsync(result.Value);
+
+                await AuthStateService.SetCurrentUserAsync(result.Value);
+                Snackbar.Add(result.SuccessMessage ?? "Conectare reusita!", Severity.Success);
+                Navigation.NavigateTo("/dashboard", forceLoad: true);
+            }
+            else
+            {
+                _errors = result.Errors;
+                Snackbar.Add("Eroare la conectare", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errors = new List<string> { $"Eroare neasteptata: {ex.Message}" };
+            Snackbar.Add("Eroare de conexiune", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private void HandleForgotPassword()
+    {
+        Snackbar.Add("Functionalitatea de resetare parola va fi implementata in curand", Severity.Info);
+    }
+}

@@ -8,8 +8,10 @@
 
   <ItemGroup>
     <Folder Include="Entities\" />
+    <Folder Include="Extensions\" />
     <Folder Include="Interface\" />
     <Folder Include="Common\" />
+    <Folder Include="Services\" />
   </ItemGroup>
 
   <ItemGroup>

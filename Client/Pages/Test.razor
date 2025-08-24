@@ -1,0 +1,28 @@
+@page "/test"
+
+<PageTitle>Test - ValyanMed</PageTitle>
+
+<div style="padding: 40px;">
+    <h2>Test Page</h2>
+    <p>Aceast? pagin? demonstreaz? c? Blazor WebAssembly func?ioneaz? corect.</p>
+    
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/">
+        ? Înapoi la pagina principal?
+    </MudButton>
+    
+    <MudCard style="margin-top: 20px; padding: 20px;">
+        <MudCardContent>
+            <h3>Status</h3>
+            <p>? Blazor WebAssembly: Func?ioneaz?</p>
+            <p>? MudBlazor: Func?ioneaz?</p>
+            <p>? Routing: Func?ioneaz?</p>
+        </MudCardContent>
+    </MudCard>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("Test page loaded successfully!");
+    }
+}

@@ -1,93 +1,157 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ValyanMed</title>
+    <title>ValyanMed - Clinic Management System</title>
     <base href="/" />
+    
+    <!-- MudBlazor CSS -->
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/app.css" />
-    <link href="manifest.webmanifest" rel="manifest" />
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
-    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
-    <link href="css/grid-details.css" rel="stylesheet" />
-
-    <!-- Fonts required by MudBlazor (icons and Roboto) + robust diacritics fallback (Noto Sans) -->
+    <link rel="stylesheet" href="css/loading.css" />
+    
+    <!-- Fonts required by MudBlazor -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
 </head>
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <div class="loading-progress">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Se incarca ValyanMed...</div>
+        </div>
     </div>
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="." class="reload">Reload</a>
-        <span class="dismiss">🗙</span>
+        <div class="dismiss" onclick="document.getElementById('blazor-error-ui').style.display='none'">X</div>
+        <span>A aparut o eroare necontrolata.</span>
+        <a href="" class="reload">Reincarca</a>
     </div>
 
+    <!-- Core helpers -->
+    <script src="js/appLifecycle.js"></script>
+
+    <!-- Essential JavaScript helpers -->
     <script>
-        (function () {
-            function checkSessionStatus() {
-                if (localStorage.getItem('authToken') && !sessionStorage.getItem('sessionActive')) {
-                    console.log("Browser was closed and reopened - clearing auth");
-                    clearAuthData();
-                }
-                sessionStorage.setItem('sessionActive', 'true');
-            }
-            function clearAuthData() {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userFullName');
-                console.log("Authentication data cleared");
-            }
-            checkSessionStatus();
-            window.authManager = { clearAuthData, checkSessionStatus };
-        })();
-
-        window.loadCSS = function (href) {
-            var links = document.getElementsByTagName('link');
-            for (var i = 0; i < links.length; i++) {
-                if (links[i].href.indexOf(href) !== -1) return;
-            }
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = href;
-            document.head.appendChild(link);
-        };
-
-        window.appInterop = {
-            sayHello: function (name) { return "Hello, " + name; },
-            logout: function () { window.authManager.clearAuthData(); return true; }
-        };
-
-        window.appFunctions = {
-            test: function () { return "JS interop is working!"; }
-        };
+        window.addEventListener('DOMContentLoaded', function(){
+            // Register lifecycle handlers for logout+cache clear on exit
+            try {
+                const apiBase = 'https://localhost:7294/';
+                window.appLifecycle?.register({ logoutUrl: apiBase + 'api/auth/logout' });
+            } catch {}
+        });
     </script>
 
-    <!-- MudBlazor -->
+    <!-- MudBlazor JavaScript -->
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    
+    <!-- Blazor WebAssembly - Enhanced startup -->
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    
+    <script>
+        (async function initializeBlazor() {
+            try {
+                console.log('Starting Blazor WebAssembly...');
+                
+                await Blazor.start({
+                    loadBootResource: function (type, name, defaultUri, integrity) {
+                        const skipFiles = [
+                            'bootstrap', 'Client.styles.css', 'site.css', 
+                            'bootstrap.min.css', 'bootstrap.bundle.min.js'
+                        ];
+                        
+                        if (skipFiles.some(skip => name.includes(skip))) {
+                            console.log(`Skipping known missing file: ${name}`);
+                            return null;
+                        }
+                        
+                        return defaultUri;
+                    },
+                    environment: 'Development'
+                });
+                
+                console.log('Blazor WebAssembly started successfully!');
+                
+                setTimeout(() => {
+                    const loadingElement = document.querySelector('.loading-progress');
+                    if (loadingElement) {
+                        loadingElement.style.opacity = '0';
+                        loadingElement.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => {
+                            if (loadingElement.parentNode) {
+                                loadingElement.parentNode.removeChild(loadingElement);
+                            }
+                        }, 500);
+                    }
+                    console.log('Loading UI cleaned up');
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Blazor startup failed:', error);
+                window.blazorErrors.push(error.message || error.toString());
+                
+                document.getElementById('app').innerHTML = `
+                    <div style="padding: 40px; max-width: 800px; margin: 0 auto; font-family: 'Roboto', Arial, sans-serif; background: #f5f5f5; min-height: 100vh;">
+                        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <div style="text-align: center; margin-bottom: 30px;">
+                                <h1 style="color: #d32f2f; margin-bottom: 10px;">Eroare de incarcare</h1>
+                                <p style="color: #666; font-size: 18px;">ValyanMed nu se poate incarca din cauza unei erori.</p>
+                            </div>
+                            
+                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin-top: 0; color: #856404;">Solutii rapide:</h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                                    <button onclick="location.reload()" 
+                                            style="background: #28a745; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                        Reincarcare simpla
+                                    </button>
+                                    <button onclick="window.authHelper.clearStorage(); location.reload()" 
+                                            style="background: #fd7e14; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                        Sterge cache
+                                    </button>
+                                    <button onclick="caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => location.reload())" 
+                                            style="background: #6f42c1; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                        Reset complet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <details style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                                <summary style="cursor: pointer; font-weight: bold; padding: 10px; color: #495057;">
+                                    Detalii tehnice pentru debugging
+                                </summary>
+                                <div style="margin-top: 15px; font-family: 'Courier New', monospace; font-size: 13px; background: white; padding: 15px; border-radius: 4px; overflow: auto;">
+                                    <div><strong>Error:</strong> ${error.message || error}</div>
+                                    <div><strong>URL:</strong> ${window.location.href}</div>
+                                    <div><strong>Time:</strong> ${new Date().toLocaleString()}</div>
+                                    <div><strong>Browser:</strong> ${navigator.userAgent}</div>
+                                </div>
+                            </details>
+                            
+                            <div style="text-align: center; padding: 20px; background: #e8f4fd; border-radius: 8px; color: #0c5460;">
+                                <p style="margin: 0; font-weight: 500;">
+                                    Daca problema persista, verificati ca API-ul ruleaza pe <strong>https://localhost:7294</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const errorUI = document.getElementById('blazor-error-ui');
+                if (errorUI) {
+                    errorUI.style.display = 'block';
+                }
+            }
+        })();
+    </script>
 
-    <!-- Helpers (file utils, localStorage wrappers) -->
-    <script src="js/fileUtils.js"></script>
-
-    <!-- Blazor Framework -->
-    <script src="_framework/blazor.webassembly.js"></script>
-
-    <!-- Service Worker -->
-    <script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
 
 </html>

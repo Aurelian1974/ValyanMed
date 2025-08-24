@@ -1,18 +1,40 @@
-﻿@using Client.Shared
-@using Client.Services
-@using Microsoft.AspNetCore.Components.Authorization
-
+﻿@using Microsoft.AspNetCore.Components.Authorization
 
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User?.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <div style="padding: 20px; text-align: center;">
+                            <h4>Acces interzis</h4>
+                            <p>Nu aveți permisiunea de a accesa această pagină.</p>
+                            <a href="/dashboard">Înapoi la Dashboard</a>
+                        </div>
+                    }
+                </NotAuthorized>
+                <Authorizing>
+                    <div style="padding: 40px; text-align: center;">
+                        <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                        <p>Se verifică autentificarea...</p>
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <PageTitle>Not found</PageTitle>
+            <PageTitle>Pagină negăsită - ValyanMed</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <RedirectToLogin />
+                <div style="padding: 40px; text-align: center;">
+                    <h4>Pagina nu a fost găsită</h4>
+                    <p>Pagina pe care o căutați nu există sau a fost mutată.</p>
+                    <a href="/dashboard" style="color: #1976d2; text-decoration: none;">← Înapoi la Dashboard</a>
+                </div>
             </LayoutView>
         </NotFound>
     </Router>
@@ -21,9 +43,14 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
-        
+        try
+        {
+            Console.WriteLine("App component with authentication initialized");
+            await base.OnInitializedAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"App initialization error: {ex.Message}");
+        }
     }
-
-   
 }
