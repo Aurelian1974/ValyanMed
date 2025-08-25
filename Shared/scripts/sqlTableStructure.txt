@@ -1,0 +1,435 @@
+-- Tabele SQL pentru Managementul Pacienților în Clinică
+
+-- ===== TABELE PRINCIPALE =====
+
+-- Pacienți
+CREATE TABLE Patients (
+    PatientID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    FirstName NVARCHAR(100) NOT NULL,
+    LastName NVARCHAR(100) NOT NULL,
+    CNP NVARCHAR(13) UNIQUE,
+    DateOfBirth DATE NOT NULL,
+    Gender NVARCHAR(1) CHECK (Gender IN ('M', 'F')),
+    Phone NVARCHAR(20),
+    Email NVARCHAR(100),
+    Address NVARCHAR(500),
+    City NVARCHAR(100),
+    County NVARCHAR(100),
+    PostalCode NVARCHAR(10),
+    EmergencyContactName NVARCHAR(200),
+    EmergencyContactPhone NVARCHAR(20),
+    InsuranceProvider NVARCHAR(100),
+    InsuranceNumber NVARCHAR(50),
+    CreatedDate DATETIME2 DEFAULT GETDATE(),
+    LastModified DATETIME2 DEFAULT GETDATE(),
+    IsActive BIT DEFAULT 1
+);
+
+-- Personal medical
+CREATE TABLE MedicalStaff (
+    StaffID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    FirstName NVARCHAR(100) NOT NULL,
+    LastName NVARCHAR(100) NOT NULL,
+    Specialization NVARCHAR(100),
+    LicenseNumber NVARCHAR(50) UNIQUE,
+    Phone NVARCHAR(20),
+    Email NVARCHAR(100),
+    Department NVARCHAR(100),
+    Position NVARCHAR(50), -- Doctor, Nurse, Technician, etc.
+    IsActive BIT DEFAULT 1,
+    CreatedDate DATETIME2 DEFAULT GETDATE()
+);
+
+-- ===== PROGRAMĂRI ȘI ÎNREGISTRARE =====
+
+-- Programări
+CREATE TABLE Appointments (
+    AppointmentID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    PatientID UNIQUEIDENTIFIER NOT NULL,
+    DoctorID UNIQUEIDENTIFIER NOT NULL,
+    AppointmentDate DATETIME2 NOT NULL,
+    AppointmentType NVARCHAR(100), -- Consultation, Follow-up, Procedure
+    Status NVARCHAR(50) DEFAULT 'Scheduled', -- Scheduled, Completed, Cancelled, No-Show
+    Notes NVARCHAR(1000),
+    CreatedDate DATETIME2 DEFAULT GETDATE(),
+    CreatedBy UNIQUEIDENTIFIER,
+    FOREIGN KEY (PatientID) REFERENCES Patients(PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES MedicalStaff(StaffID),
+    FOREIGN KEY (CreatedBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Formulare de consimțământ
+CREATE TABLE ConsentForms (
+    ConsentID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    PatientID UNIQUEIDENTIFIER NOT NULL,
+    FormType NVARCHAR(100) NOT NULL, -- Treatment, Data Processing, Photography, etc.
+    ConsentGiven BIT NOT NULL,
+    ConsentDate DATETIME2 NOT NULL,
+    WitnessID UNIQUEIDENTIFIER,
+    DocumentPath NVARCHAR(500),
+    FOREIGN KEY (PatientID) REFERENCES Patients(PatientID),
+    FOREIGN KEY (WitnessID) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== TRIAJ ȘI EVALUARE =====
+
+-- Triaj pacienți
+CREATE TABLE PatientTriage (
+    TriageID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    AppointmentID UNIQUEIDENTIFIER NOT NULL,
+    TriageLevel INT CHECK (TriageLevel BETWEEN 1 AND 5), -- 1=Critical, 5=Non-urgent
+    ChiefComplaint NVARCHAR(1000),
+    TriageNurseID UNIQUEIDENTIFIER,
+    TriageDate DATETIME2 DEFAULT GETDATE(),
+    Notes NVARCHAR(1000),
+    FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID),
+    FOREIGN KEY (TriageNurseID) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Semne vitale
+CREATE TABLE VitalSigns (
+    VitalSignID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    AppointmentID UNIQUEIDENTIFIER NOT NULL,
+    BloodPressureSystolic INT,
+    BloodPressureDiastolic INT,
+    HeartRate INT,
+    Temperature DECIMAL(4,1),
+    Weight DECIMAL(5,2),
+    Height INT, -- în cm
+    RespiratoryRate INT,
+    OxygenSaturation DECIMAL(5,2),
+    MeasuredBy UNIQUEIDENTIFIER,
+    MeasuredDate DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID),
+    FOREIGN KEY (MeasuredBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== CONSULTAȚII MEDICALE =====
+
+-- Istoric medical
+CREATE TABLE MedicalHistory (
+    HistoryID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    PatientID UNIQUEIDENTIFIER NOT NULL,
+    Condition NVARCHAR(200) NOT NULL,
+    DiagnosisDate DATE,
+    Status NVARCHAR(50), -- Active, Resolved, Chronic
+    Severity NVARCHAR(50), -- Mild, Moderate, Severe
+    Notes NVARCHAR(1000),
+    RecordedBy UNIQUEIDENTIFIER,
+    RecordedDate DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (PatientID) REFERENCES Patients(PatientID),
+    FOREIGN KEY (RecordedBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Consultații
+CREATE TABLE Consultations (
+    ConsultationID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    AppointmentID UNIQUEIDENTIFIER NOT NULL,
+    ChiefComplaint NVARCHAR(1000),
+    HistoryOfPresentIllness NVARCHAR(2000),
+    PhysicalExamination NVARCHAR(2000),
+    Assessment NVARCHAR(1000),
+    Plan NVARCHAR(1000),
+    ConsultationDate DATETIME2 DEFAULT GETDATE(),
+    Duration INT, -- în minute
+    FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID)
+);
+
+-- ===== INVESTIGAȚII ȘI ANALIZE =====
+
+-- Tipuri de teste
+CREATE TABLE TestTypes (
+    TestTypeID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    TestName NVARCHAR(200) NOT NULL,
+    Category NVARCHAR(100), -- Laboratory, Imaging, Functional
+    Department NVARCHAR(100),
+    NormalRange NVARCHAR(200),
+    Unit NVARCHAR(50),
+    IsActive BIT DEFAULT 1
+);
+
+-- Comenzi teste
+CREATE TABLE TestOrders (
+    OrderID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    ConsultationID UNIQUEIDENTIFIER NOT NULL,
+    TestTypeID UNIQUEIDENTIFIER NOT NULL,
+    OrderDate DATETIME2 DEFAULT GETDATE(),
+    Status NVARCHAR(50) DEFAULT 'Ordered', -- Ordered, In Progress, Completed, Cancelled
+    Priority NVARCHAR(50) DEFAULT 'Routine', -- STAT, Urgent, Routine
+    OrderedBy UNIQUEIDENTIFIER NOT NULL,
+    Notes NVARCHAR(500),
+    FOREIGN KEY (ConsultationID) REFERENCES Consultations(ConsultationID),
+    FOREIGN KEY (TestTypeID) REFERENCES TestTypes(TestTypeID),
+    FOREIGN KEY (OrderedBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Rezultate teste
+CREATE TABLE TestResults (
+    ResultID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    OrderID UNIQUEIDENTIFIER NOT NULL,
+    Result NVARCHAR(500),
+    NumericValue DECIMAL(10,3),
+    ReferenceRange NVARCHAR(100),
+    Status NVARCHAR(50), -- Normal, Abnormal, Critical
+    ResultDate DATETIME2,
+    PerformedBy UNIQUEIDENTIFIER,
+    ReviewedBy UNIQUEIDENTIFIER,
+    ReviewDate DATETIME2,
+    Notes NVARCHAR(1000),
+    FOREIGN KEY (OrderID) REFERENCES TestOrders(OrderID),
+    FOREIGN KEY (PerformedBy) REFERENCES MedicalStaff(StaffID),
+    FOREIGN KEY (ReviewedBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== DIAGNOSTIC ȘI TRATAMENT =====
+
+-- Diagnostice
+CREATE TABLE Diagnoses (
+    DiagnosisID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    ConsultationID UNIQUEIDENTIFIER NOT NULL,
+    ICDCode NVARCHAR(10),
+    DiagnosisDescription NVARCHAR(500) NOT NULL,
+    DiagnosisType NVARCHAR(50), -- Primary, Secondary, Differential
+    Severity NVARCHAR(50),
+    Status NVARCHAR(50), -- Active, Resolved, Chronic
+    DiagnosisDate DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (ConsultationID) REFERENCES Consultations(ConsultationID)
+);
+
+-- Medicamente
+CREATE TABLE Medications (
+    MedicationID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    MedicationName NVARCHAR(200) NOT NULL,
+    GenericName NVARCHAR(200),
+    Strength NVARCHAR(50),
+    Form NVARCHAR(50), -- Tablet, Capsule, Syrup, etc.
+    Manufacturer NVARCHAR(100),
+    IsActive BIT DEFAULT 1
+);
+
+-- Prescripții
+CREATE TABLE Prescriptions (
+    PrescriptionID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    ConsultationID UNIQUEIDENTIFIER NOT NULL,
+    MedicationID UNIQUEIDENTIFIER NOT NULL,
+    Dosage NVARCHAR(100),
+    Frequency NVARCHAR(100),
+    Duration NVARCHAR(100),
+    Quantity INT,
+    Refills INT DEFAULT 0,
+    Instructions NVARCHAR(500),
+    PrescribedDate DATETIME2 DEFAULT GETDATE(),
+    PrescribedBy UNIQUEIDENTIFIER NOT NULL,
+    FOREIGN KEY (ConsultationID) REFERENCES Consultations(ConsultationID),
+    FOREIGN KEY (MedicationID) REFERENCES Medications(MedicationID),
+    FOREIGN KEY (PrescribedBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== PROCEDURI ȘI TRATAMENTE =====
+
+-- Tipuri proceduri
+CREATE TABLE ProcedureTypes (
+    ProcedureTypeID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    ProcedureName NVARCHAR(200) NOT NULL,
+    Category NVARCHAR(100),
+    Duration INT, -- în minute
+    RequiresAnesthesia BIT DEFAULT 0,
+    IsActive BIT DEFAULT 1
+);
+
+-- Proceduri programate
+CREATE TABLE ScheduledProcedures (
+    ProcedureID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    ConsultationID UNIQUEIDENTIFIER NOT NULL,
+    ProcedureTypeID UNIQUEIDENTIFIER NOT NULL,
+    ScheduledDate DATETIME2,
+    Status NVARCHAR(50) DEFAULT 'Scheduled', -- Scheduled, In Progress, Completed, Cancelled
+    PerformedBy UNIQUEIDENTIFIER,
+    AssistantID UNIQUEIDENTIFIER,
+    Location NVARCHAR(100),
+    Notes NVARCHAR(1000),
+    FOREIGN KEY (ConsultationID) REFERENCES Consultations(ConsultationID),
+    FOREIGN KEY (ProcedureTypeID) REFERENCES ProcedureTypes(ProcedureTypeID),
+    FOREIGN KEY (PerformedBy) REFERENCES MedicalStaff(StaffID),
+    FOREIGN KEY (AssistantID) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== MONITORIZARE ȘI FOLLOW-UP =====
+
+-- Controale programate
+CREATE TABLE FollowUpAppointments (
+    FollowUpID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    OriginalConsultationID UNIQUEIDENTIFIER NOT NULL,
+    AppointmentID UNIQUEIDENTIFIER,
+    RecommendedDate DATE,
+    ActualDate DATE,
+    Type NVARCHAR(100), -- Routine, Urgent, Test Review
+    Status NVARCHAR(50) DEFAULT 'Scheduled',
+    Notes NVARCHAR(500),
+    FOREIGN KEY (OriginalConsultationID) REFERENCES Consultations(ConsultationID),
+    FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID)
+);
+
+-- Monitorizarea tratamentului
+CREATE TABLE TreatmentMonitoring (
+    MonitoringID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    PrescriptionID UNIQUEIDENTIFIER NOT NULL,
+    CheckDate DATE NOT NULL,
+    Compliance NVARCHAR(50), -- Excellent, Good, Fair, Poor
+    SideEffects NVARCHAR(1000),
+    Effectiveness NVARCHAR(500),
+    Adjustments NVARCHAR(500),
+    MonitoredBy UNIQUEIDENTIFIER,
+    FOREIGN KEY (PrescriptionID) REFERENCES Prescriptions(PrescriptionID),
+    FOREIGN KEY (MonitoredBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== DOCUMENTARE ȘI COMUNICARE =====
+
+-- Documente medicale
+CREATE TABLE MedicalDocuments (
+    DocumentID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    PatientID UNIQUEIDENTIFIER NOT NULL,
+    DocumentType NVARCHAR(100), -- Test Result, Report, Image, Consent, etc.
+    DocumentTitle NVARCHAR(200),
+    FilePath NVARCHAR(500),
+    FileSize BIGINT,
+    MimeType NVARCHAR(100),
+    UploadedBy UNIQUEIDENTIFIER,
+    UploadedDate DATETIME2 DEFAULT GETDATE(),
+    RelatedConsultationID UNIQUEIDENTIFIER,
+    IsConfidential BIT DEFAULT 0,
+    FOREIGN KEY (PatientID) REFERENCES Patients(PatientID),
+    FOREIGN KEY (UploadedBy) REFERENCES MedicalStaff(StaffID),
+    FOREIGN KEY (RelatedConsultationID) REFERENCES Consultations(ConsultationID)
+);
+
+-- Comunicare cu medicul de familie
+CREATE TABLE FamilyDoctorCommunications (
+    CommunicationID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    PatientID UNIQUEIDENTIFIER NOT NULL,
+    ConsultationID UNIQUEIDENTIFIER,
+    FamilyDoctorName NVARCHAR(200),
+    FamilyDoctorEmail NVARCHAR(100),
+    Subject NVARCHAR(200),
+    Message NVARCHAR(2000),
+    SentDate DATETIME2 DEFAULT GETDATE(),
+    SentBy UNIQUEIDENTIFIER,
+    Status NVARCHAR(50) DEFAULT 'Sent', -- Sent, Delivered, Read, Replied
+    FOREIGN KEY (PatientID) REFERENCES Patients(PatientID),
+    FOREIGN KEY (ConsultationID) REFERENCES Consultations(ConsultationID),
+    FOREIGN KEY (SentBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== ADMINISTRARE ȘI NOTIFICĂRI =====
+
+-- Notificări
+CREATE TABLE Notifications (
+    NotificationID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    RecipientID UNIQUEIDENTIFIER NOT NULL,
+    Title NVARCHAR(200) NOT NULL,
+    Message NVARCHAR(1000),
+    Type NVARCHAR(50), -- Appointment, Test Result, Reminder, Alert
+    Priority NVARCHAR(20) DEFAULT 'Normal', -- High, Normal, Low
+    IsRead BIT DEFAULT 0,
+    CreatedDate DATETIME2 DEFAULT GETDATE(),
+    ReadDate DATETIME2,
+    RelatedEntityID UNIQUEIDENTIFIER, -- ID-ul entității relevante (appointment, test, etc.)
+    RelatedEntityType NVARCHAR(50), -- appointment, test_result, prescription, etc.
+    FOREIGN KEY (RecipientID) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Setări clinică
+CREATE TABLE ClinicSettings (
+    SettingID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    SettingKey NVARCHAR(100) NOT NULL UNIQUE,
+    SettingValue NVARCHAR(1000),
+    Description NVARCHAR(500),
+    Category NVARCHAR(100),
+    LastModified DATETIME2 DEFAULT GETDATE(),
+    ModifiedBy UNIQUEIDENTIFIER,
+    FOREIGN KEY (ModifiedBy) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Log activități
+CREATE TABLE ActivityLog (
+    LogID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    UserID UNIQUEIDENTIFIER NOT NULL,
+    ActionType NVARCHAR(50) NOT NULL, -- CREATE, UPDATE, DELETE, VIEW
+    TableName NVARCHAR(100),
+    RecordID UNIQUEIDENTIFIER,
+    OldValues NVARCHAR(MAX),
+    NewValues NVARCHAR(MAX),
+    Timestamp DATETIME2 DEFAULT GETDATE(),
+    IPAddress NVARCHAR(50),
+    FOREIGN KEY (UserID) REFERENCES MedicalStaff(StaffID)
+);
+
+-- ===== TABELE PENTRU AUTENTIFICARE ȘI ROLURI =====
+
+-- Utilizatori sistem (pentru login)
+CREATE TABLE SystemUsers (
+    UserID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    PasswordHash NVARCHAR(255) NOT NULL,
+    Email NVARCHAR(100) NOT NULL,
+    StaffID UNIQUEIDENTIFIER,
+    IsActive BIT DEFAULT 1,
+    LastLoginDate DATETIME2,
+    FailedLoginAttempts INT DEFAULT 0,
+    LockedUntil DATETIME2,
+    CreatedDate DATETIME2 DEFAULT GETDATE(),
+    CreatedBy UNIQUEIDENTIFIER,
+    FOREIGN KEY (StaffID) REFERENCES MedicalStaff(StaffID)
+);
+
+-- Roluri sistem
+CREATE TABLE SystemRoles (
+    RoleID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    RoleName NVARCHAR(50) NOT NULL UNIQUE,
+    Description NVARCHAR(200),
+    IsActive BIT DEFAULT 1,
+    CreatedDate DATETIME2 DEFAULT GETDATE()
+);
+
+-- Asocierea utilizatori-roluri
+CREATE TABLE UserRoles (
+    UserRoleID UNIQUEIDENTIFIER NOT NULL DEFAULT NEWSEQUENTIALID() PRIMARY KEY,
+    UserID UNIQUEIDENTIFIER NOT NULL,
+    RoleID UNIQUEIDENTIFIER NOT NULL,
+    AssignedDate DATETIME2 DEFAULT GETDATE(),
+    AssignedBy UNIQUEIDENTIFIER,
+    FOREIGN KEY (UserID) REFERENCES SystemUsers(UserID),
+    FOREIGN KEY (RoleID) REFERENCES SystemRoles(RoleID),
+    UNIQUE(UserID, RoleID)
+);
+
+-- ===== INDEXURI PENTRU PERFORMANȚĂ =====
+
+-- Indexuri pentru căutări frecvente
+CREATE INDEX IX_Patients_CNP ON Patients(CNP);
+CREATE INDEX IX_Patients_LastName_FirstName ON Patients(LastName, FirstName);
+CREATE INDEX IX_Patients_Email ON Patients(Email);
+CREATE INDEX IX_MedicalStaff_LicenseNumber ON MedicalStaff(LicenseNumber);
+CREATE INDEX IX_MedicalStaff_Email ON MedicalStaff(Email);
+CREATE INDEX IX_Appointments_Date_Doctor ON Appointments(AppointmentDate, DoctorID);
+CREATE INDEX IX_Appointments_Patient_Status ON Appointments(PatientID, Status);
+CREATE INDEX IX_Appointments_Date_Status ON Appointments(AppointmentDate, Status);
+CREATE INDEX IX_TestResults_Order_Date ON TestResults(OrderID, ResultDate);
+CREATE INDEX IX_TestResults_Status ON TestResults(Status);
+CREATE INDEX IX_Prescriptions_Consultation ON Prescriptions(ConsultationID);
+CREATE INDEX IX_Prescriptions_Patient ON Prescriptions(ConsultationID) INCLUDE (PrescribedDate);
+CREATE INDEX IX_MedicalHistory_Patient ON MedicalHistory(PatientID);
+CREATE INDEX IX_Notifications_Recipient_Read ON Notifications(RecipientID, IsRead);
+CREATE INDEX IX_Notifications_Type_Date ON Notifications(Type, CreatedDate);
+CREATE INDEX IX_SystemUsers_Username ON SystemUsers(Username);
+CREATE INDEX IX_SystemUsers_Email ON SystemUsers(Email);
+CREATE INDEX IX_ActivityLog_User_Date ON ActivityLog(UserID, Timestamp);
+CREATE INDEX IX_MedicalDocuments_Patient_Type ON MedicalDocuments(PatientID, DocumentType);
+
+-- Indexuri pentru performanța join-urilor cu GUID-uri
+CREATE INDEX IX_Appointments_PatientID ON Appointments(PatientID);
+CREATE INDEX IX_Appointments_DoctorID ON Appointments(DoctorID);
+CREATE INDEX IX_Consultations_AppointmentID ON Consultations(AppointmentID);
+CREATE INDEX IX_TestOrders_ConsultationID ON TestOrders(ConsultationID);
+CREATE INDEX IX_Prescriptions_MedicationID ON Prescriptions(MedicationID);

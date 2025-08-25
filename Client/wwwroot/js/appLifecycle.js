@@ -24,25 +24,9 @@
     } catch { /* ignore */ }
   }
 
+  // Eliminat handlerul global care ?terge storage la pagehide/beforeunload/visibilitychange
   function register(options) {
-    const cfg = Object.assign({
-      logoutUrl: '',
-      storageKeys: ['valyanmed_auth_token', 'valyanmed_user_info', 'currentUser']
-    }, options || {});
-
-    // Handle pagehide/visibilitychange for mobile Safari reliability
-    const handler = () => {
-      try {
-        clearStorage(cfg.storageKeys);
-        postLogout(cfg.logoutUrl);
-      } catch { /* ignore */ }
-    };
-
-    window.addEventListener('pagehide', handler, { capture: true });
-    window.addEventListener('beforeunload', handler, { capture: true });
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') handler();
-    });
+    // Nu mai ata??m niciun handler automat
   }
 
   async function logoutNow(logoutUrl, storageKeys) {

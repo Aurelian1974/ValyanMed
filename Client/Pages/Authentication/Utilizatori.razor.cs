@@ -59,7 +59,6 @@ public class UtilizatoriBase : ComponentBase, IDisposable
                 var result = JsonService.Deserialize<List<Utilizator>>(content);
                 State.Users = result ?? new List<Utilizator>();
                 State.FilterUsers();
-                
                 ShowSuccess("Utilizatorii au fost incarcati cu succes");
             }
             else
@@ -94,7 +93,8 @@ public class UtilizatoriBase : ComponentBase, IDisposable
     {
         var parameters = new DialogParameters
         {
-            { nameof(UserDialog.IsEditMode), false }
+            { nameof(UserDialog.IsEditMode), false },
+            { nameof(UserDialog.IsReadOnly), false }
         };
 
         var options = new DialogOptions
@@ -115,12 +115,35 @@ public class UtilizatoriBase : ComponentBase, IDisposable
         }
     }
 
+    // Vizualizare utilizator (read-only)
+    protected async Task ViewUser(Utilizator utilizator)
+    {
+        var parameters = new DialogParameters
+        {
+            { nameof(UserDialog.Utilizator), utilizator },
+            { nameof(UserDialog.IsEditMode), false },
+            { nameof(UserDialog.IsReadOnly), true }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseButton = true,
+            BackdropClick = false,
+            Position = DialogPosition.Center
+        };
+
+        await DialogService.ShowAsync<UserDialog>("Vizualizare Utilizator", parameters, options);
+    }
+
     protected async Task OpenEditUserDialog(Utilizator utilizator)
     {
         var parameters = new DialogParameters
         {
             { nameof(UserDialog.Utilizator), utilizator },
-            { nameof(UserDialog.IsEditMode), true }
+            { nameof(UserDialog.IsEditMode), true },
+            { nameof(UserDialog.IsReadOnly), false }
         };
 
         var options = new DialogOptions
@@ -201,6 +224,14 @@ public class UtilizatoriBase : ComponentBase, IDisposable
 
     #region Search and Filtering
 
+    protected Task OnSearchChanged(string text)
+    {
+        State.SearchTerm = text ?? string.Empty;
+        State.FilterUsers();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     protected void FilterUsers()
     {
         State.FilterUsers();
@@ -214,17 +245,23 @@ public class UtilizatoriBase : ComponentBase, IDisposable
         StateHasChanged();
     }
 
-    protected void OnSearchKeyUp(KeyboardEventArgs e)
+    // Noi metode pentru controlul expansiunii conform principiilor PLAN_REFACTORING
+    protected void ToggleRowExpansion(int userId)
     {
-        searchTimer?.Dispose();
-        searchTimer = new Timer(async _ =>
-        {
-            await InvokeAsync(() =>
-            {
-                State.FilterUsers();
-                StateHasChanged();
-            });
-        }, null, 300, Timeout.Infinite);
+        State.ToggleRowExpansion(userId);
+        StateHasChanged();
+    }
+
+    protected void ExpandAllRows()
+    {
+        State.ExpandAllRows();
+        StateHasChanged();
+    }
+
+    protected void CollapseAllRows()
+    {
+        State.CollapseAllRows();
+        StateHasChanged();
     }
 
     #endregion

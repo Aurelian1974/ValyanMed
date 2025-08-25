@@ -5,6 +5,8 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100%;
+    background-color: #fafafa;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 #app {
@@ -12,6 +14,7 @@ html, body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 /* Loading styles */
@@ -51,19 +54,25 @@ html, body {
     100% { transform: rotate(360deg); }
 }
 
-/* Error UI */
+/* Error UI - FIXED TO PREVENT UNWANTED DISPLAY */
 #blazor-error-ui {
     background: #ffebee;
     border-top: 3px solid #f44336;
     bottom: 0;
     box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.2);
-    display: none;
+    display: none !important; /* Force hide */
     left: 0;
     padding: 1rem 1.5rem;
     position: fixed;
     width: 100%;
     z-index: 1000;
     font-family: 'Roboto', sans-serif;
+    visibility: hidden !important; /* Additional hide */
+}
+
+#blazor-error-ui.blazor-error-boundary {
+    display: none !important; /* Force hide error boundary */
+    visibility: hidden !important;
 }
 
 #blazor-error-ui .dismiss {
@@ -217,25 +226,92 @@ html, body {
     border-radius: 20px;
 }
 
+/* Main content with proper margin for sidebar */
 .main-content {
     padding: 24px;
+    margin-left: 280px !important; /* Account for sidebar width */
+    transition: margin-left 0.3s ease;
+    background-color: #fafafa;
+    min-height: calc(100vh - 64px); /* Account for header height */
 }
 
 .admin-nav-link {
     cursor: pointer;
 }
 
-/* MudBlazor overrides */
+/* MudBlazor overrides for navigation */
 .mud-nav-link.active {
     background-color: rgba(25, 118, 210, 0.12) !important;
     color: #1976d2 !important;
 }
 
 .mud-nav-link:hover {
-    background-color: rgba(0, 0, 0, 0.04) !important;
+    background-color: rgba(25, 118, 210, 0.08) !important;
+}
+
+/* ELIMINATE ANY UNWANTED BLACK ELEMENTS */
+.mud-layout,
+.mud-main-content,
+.mud-container,
+.mud-paper {
+    background-color: #fafafa !important;
+}
+
+/* Hide any potential overlay or backdrop elements that might be showing */
+.mud-overlay,
+.mud-backdrop,
+.mud-overlay-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Ensure no weird element is appearing at bottom */
+body::after,
+html::after,
+#app::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Clean up any possible pseudo-elements that might be creating black bars */
+*::before,
+*::after {
+    background-color: transparent !important;
+}
+
+/* Force clean bottom area */
+.mud-layout {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Hide any black elements that might appear */
+[style*="background: black"],
+[style*="background-color: black"],
+[style*="background: rgb(0, 0, 0)"],
+[style*="background-color: rgb(0, 0, 0)"] {
+    display: none !important;
+    visibility: hidden !important;
 }
 
 /* Responsive design */
+@media (max-width: 1280px) {
+    .main-content {
+        margin-left: 240px;
+    }
+}
+
+@media (max-width: 960px) {
+    .main-content {
+        margin-left: 0;
+        padding: 16px;
+    }
+    
+    .user-profile {
+        display: none; /* Hide on mobile */
+    }
+}
+
 @media (max-width: 768px) {
     .login-container {
         margin: 16px;
@@ -245,14 +321,6 @@ html, body {
     .loading-progress {
         margin: 16px;
         padding: 24px;
-    }
-    
-    .main-content {
-        padding: 16px;
-    }
-    
-    .user-profile {
-        display: none; /* Hide on mobile */
     }
 }
 
@@ -268,4 +336,13 @@ html, body {
     .login-container {
         padding: 24px 16px;
     }
+}
+
+/* Override any potential dark theme issues */
+.mud-layout {
+    background-color: #fafafa !important;
+}
+
+.mud-main-content {
+    background-color: #fafafa !important;
 }

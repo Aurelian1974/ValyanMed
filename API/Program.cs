@@ -7,11 +7,15 @@ using System.Text.Json.Serialization;
 using System.Data;
 using FluentValidation;
 
-// New authentication services and repositories
+// Authentication services and repositories
 using Infrastructure.Repositories.Authentication;
 using Infrastructure.Services.Authentication;
 using Application.Services.Authentication;
 using Shared.Validators.Authentication;
+
+// Medical services and repositories
+using Infrastructure.Repositories.Medical;
+using Application.Services.Medical;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,9 +67,12 @@ builder.Services.AddSwaggerGen(c =>
 // DB connection for repositories
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// New Authentication Repositories
+// Authentication Repositories
 builder.Services.AddScoped<IPersoanaRepository, PersoanaRepository>();
 builder.Services.AddScoped<IUtilizatorRepository, UtilizatorRepository>();
+
+// Medical Repositories
+builder.Services.AddScoped<IPacientRepository, PacientRepository>();
 
 // Authentication Services
 builder.Services.AddScoped<IPasswordService, PasswordService>();
@@ -84,6 +91,9 @@ builder.Services.AddScoped<IJwtService>(sp =>
 builder.Services.AddScoped<Application.Services.Authentication.IPersoanaService, Application.Services.Authentication.PersoanaService>();
 builder.Services.AddScoped<Application.Services.Authentication.IUtilizatorService, Application.Services.Authentication.UtilizatorService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+// Medical Services
+builder.Services.AddScoped<IPacientService, PacientService>();
 
 // FluentValidation Validators
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.CreatePersoanaRequest>, CreatePersoanaValidator>();

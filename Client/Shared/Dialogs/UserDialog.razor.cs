@@ -30,6 +30,9 @@ public class UserDialogBase : ComponentBase, IDisposable
     [Parameter]
     public bool IsEditMode { get; set; }
 
+    [Parameter]
+    public bool IsReadOnly { get; set; } = false;
+
     #endregion
 
     #region Properties
@@ -77,7 +80,7 @@ public class UserDialogBase : ComponentBase, IDisposable
 
     private void InitializeModel()
     {
-        if (IsEditMode && Utilizator != null)
+        if (Utilizator != null)
         {
             Model = new UserFormModel
             {

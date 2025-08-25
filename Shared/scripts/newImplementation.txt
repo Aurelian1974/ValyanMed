@@ -1,0 +1,67 @@
+# Structura Pagini Blazor - Managementul Pacienților
+
+## 1. Programare și Înregistrare
+- `AppointmentScheduling.razor` - Programare consultații
+- `PatientRegistration.razor` - Înregistrarea pacienților noi
+- `PatientSearch.razor` - Căutarea pacienților existenți
+- `InsuranceVerification.razor` - Verificarea asigurării medicale
+- `ConsentForms.razor` - Formulare de consimțământ
+
+## 2. Triaj și Evaluare Inițială
+- `PatientTriage.razor` - Triajul pacienților
+- `VitalSigns.razor` - Înregistrarea semnelor vitale
+- `SymptomsQuestionnaire.razor` - Chestionar simptome
+- `PriorityClassification.razor` - Clasificarea priorității
+
+## 3. Consultația Medicală
+- `MedicalConsultation.razor` - Interfața principală pentru consultație
+- `MedicalHistory.razor` - Istoric medical și anamneza
+- `ClinicalExamination.razor` - Examinarea clinică
+- `PreliminaryDiagnosis.razor` - Diagnosticul preliminar
+- `TreatmentPrescription.razor` - Prescrierea tratamentului
+
+## 4. Investigații și Analize
+- `LabTestOrders.razor` - Comanda analize de laborator
+- `ImagingScheduling.razor` - Programarea investigațiilor imagistice
+- `FunctionalTests.razor` - Teste funcționale (EKG, spirometrie)
+- `TestResults.razor` - Vizualizarea și interpretarea rezultatelor
+- `SampleCollection.razor` - Recoltarea probelor
+
+## 5. Diagnostic și Plan Terapeutic
+- `FinalDiagnosis.razor` - Diagnosticul final
+- `MedicationPrescription.razor` - Prescripții medicamentoase
+- `LifestyleRecommendations.razor` - Recomandări stil de viață
+- `TreatmentPlan.razor` - Planul terapeutic complet
+- `ProcedureScheduling.razor` - Programarea procedurilor
+
+## 6. Monitorizare și Follow-up
+- `FollowUpScheduling.razor` - Programarea controalelor
+- `TreatmentMonitoring.razor` - Monitorizarea tratamentului
+- `TherapyAdjustment.razor` - Ajustarea terapiei
+- `FamilyDoctorCommunication.razor` - Comunicarea cu medicul de familie
+- `PatientProgress.razor` - Evoluția pacientului
+
+## 7. Documentare și Arhivare
+- `MedicalRecords.razor` - Fișa medicală electronică
+- `DocumentArchive.razor` - Arhiva documentelor
+- `ReportGeneration.razor` - Generarea rapoartelor
+- `DataPrivacy.razor` - Managementul confidențialității
+
+## 8. Pagini de Administrare și Suport
+- `Dashboard.razor` - Tablou de bord principal
+- `PatientList.razor` - Lista pacienților
+- `AppointmentCalendar.razor` - Calendarul programărilor
+- `StaffManagement.razor` - Managementul personalului
+- `ClinicSettings.razor` - Setări clinică
+- `UserProfile.razor` - Profilul utilizatorului
+- `Login.razor` - Autentificare
+- `Reports.razor` - Rapoarte și statistici
+
+## 9. Pagini Auxiliare
+- `NotificationCenter.razor` - Centrul de notificări
+- `MessageCenter.razor` - Centrul de mesaje
+- `FileUpload.razor` - Încărcarea fișierelor
+- `PrintPreview.razor` - Previzualizarea pentru imprimare
+- `ErrorPage.razor` - Pagina de erori
+- `MainLayout.razor` - Layout-ul principal
+- `NavMenu.razor` - Meniul de navigare

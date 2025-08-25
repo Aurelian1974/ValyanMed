@@ -10,7 +10,10 @@ public class UtilizatoriState
     public List<Utilizator> FilteredUsers { get; private set; } = new();
     public string SearchTerm { get; set; } = string.Empty;
     public bool IsLoading { get; set; } = false;
-
+    
+    // Control pentru expansiunea detaliilor
+    public HashSet<int> ExpandedRows { get; set; } = new();
+    
     #endregion
 
     #region Methods
@@ -32,12 +35,44 @@ public class UtilizatoriState
         FilteredUsers = filtered.OrderBy(u => u.NumeUtilizator).ToList();
     }
 
+    public void ToggleRowExpansion(int userId)
+    {
+        if (ExpandedRows.Contains(userId))
+        {
+            ExpandedRows.Remove(userId);
+        }
+        else
+        {
+            ExpandedRows.Add(userId);
+        }
+    }
+
+    public bool IsRowExpanded(int userId)
+    {
+        return ExpandedRows.Contains(userId);
+    }
+
+    public void CollapseAllRows()
+    {
+        ExpandedRows.Clear();
+    }
+
+    public void ExpandAllRows()
+    {
+        ExpandedRows.Clear();
+        foreach (var user in FilteredUsers)
+        {
+            ExpandedRows.Add(user.Id);
+        }
+    }
+
     public void Reset()
     {
         Users.Clear();
         FilteredUsers.Clear();
         SearchTerm = string.Empty;
         IsLoading = false;
+        ExpandedRows.Clear();
     }
 
     #endregion
