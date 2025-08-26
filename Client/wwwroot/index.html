@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="css/mainlayout.css" />
     <link rel="stylesheet" href="css/loading.css" />
     <link rel="stylesheet" href="css/patient-list.css" />
+    <link rel="stylesheet" href="css/patient-list-override.css" />
+    <link rel="stylesheet" href="css/pages/patient-registration.css" />
     
     <!-- Fonts required by MudBlazor -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -65,6 +67,7 @@
     <!-- Core helpers -->
     <script src="js/appLifecycle.js"></script>
     <script src="js/iconFallback.js"></script>
+    <script src="js/paginationDropdown.js"></script>
 
     <!-- Force hide error UI immediately -->
     <script>
@@ -131,6 +134,16 @@
             } catch (ex) {
                 console.log('AppLifecycle registration failed:', ex);
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', function(){
+            setTimeout(function(){
+                // Initialize for the first pagination select found
+                var anchor = document.querySelector('.pagination-section .mud-select');
+                if(window.paginationDropdown && anchor){
+                    window.paginationDropdown.init(anchor);
+                }
+            }, 500);
         });
     </script>
 

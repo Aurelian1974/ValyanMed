@@ -1,21 +1,10 @@
-using FluentValidation;
-using Infrastructure.Repositories.Authentication;
-using Infrastructure.Services.Authentication;
 using Shared.Common;
-using Shared.DTOs.Authentication;
 using Shared.Models.Authentication;
-using Shared.Validators.Authentication;
+using Shared.DTOs.Authentication;
+using Application.Services.Authentication;
+using FluentValidation;
 
 namespace Application.Services.Authentication;
-
-public interface IUtilizatorService
-{
-    Task<Result<int>> CreateAsync(CreateUtilizatorRequest request);
-    Task<Result<Utilizator?>> GetByIdAsync(int id);
-    Task<Result<IEnumerable<Utilizator>>> GetAllAsync();
-    Task<Result> UpdateAsync(UpdateUtilizatorRequest request);
-    Task<Result> DeleteAsync(int id);
-}
 
 public class UtilizatorService : IUtilizatorService
 {
@@ -49,70 +38,85 @@ public class UtilizatorService : IUtilizatorService
             return Result<int>.Failure(errors);
         }
 
-        // Verificare persoan? existent?
+        // Verificare duplicat nume utilizator
+        var existsUsernameResult = await _utilizatorRepository.ExistsByUsernameAsync(request.NumeUtilizator);
+        if (!existsUsernameResult.IsSuccess)
+        {
+            return Result<int>.Failure(existsUsernameResult.Errors);
+        }
+        if (existsUsernameResult.Value)
+        {
+            return Result<int>.Failure("Numele de utilizator exist? deja");
+        }
+
+        // Verificare duplicat email
+        var existsEmailResult = await _utilizatorRepository.ExistsByEmailAsync(request.Email);
+        if (!existsEmailResult.IsSuccess)
+        {
+            return Result<int>.Failure(existsEmailResult.Errors);
+        }
+        if (existsEmailResult.Value)
+        {
+            return Result<int>.Failure("Email-ul exist? deja");
+        }
+
+        // Verificare existen?? persoan?
         var persoanaResult = await _persoanaRepository.GetByIdAsync(request.PersoanaId);
         if (!persoanaResult.IsSuccess)
         {
             return Result<int>.Failure(persoanaResult.Errors);
         }
-
         if (persoanaResult.Value == null)
         {
-            return Result<int>.Failure("Persoana selectat? nu exist?");
-        }
-
-        // Verificare nume utilizator duplicat
-        var usernameExistsResult = await _utilizatorRepository.ExistsByUsernameAsync(request.NumeUtilizator);
-        if (!usernameExistsResult.IsSuccess)
-        {
-            return Result<int>.Failure(usernameExistsResult.Errors);
-        }
-
-        if (usernameExistsResult.Value)
-        {
-            return Result<int>.Failure("Un utilizator cu acest nume exist? deja");
-        }
-
-        // Verificare email duplicat
-        var emailExistsResult = await _utilizatorRepository.ExistsByEmailAsync(request.Email);
-        if (!emailExistsResult.IsSuccess)
-        {
-            return Result<int>.Failure(emailExistsResult.Errors);
-        }
-
-        if (emailExistsResult.Value)
-        {
-            return Result<int>.Failure("Un utilizator cu acest email exist? deja");
+            return Result<int>.Failure("Persoana specificat? nu exist?");
         }
 
         // Creare utilizator
         var utilizator = new Utilizator
         {
-            Guid = Guid.NewGuid(),
+            PersoanaId = request.PersoanaId,
             NumeUtilizator = request.NumeUtilizator,
             ParolaHash = _passwordService.HashPassword(request.Parola),
             Email = request.Email,
-            Telefon = request.Telefon,
-            PersoanaId = request.PersoanaId,
-            Persoana = persoanaResult.Value
+            Telefon = request.Telefon
         };
 
-        return await _utilizatorRepository.CreateAsync(utilizator);
-    }
-
-    public async Task<Result<Utilizator?>> GetByIdAsync(int id)
-    {
-        if (id <= 0)
+        var createResult = await _utilizatorRepository.CreateAsync(utilizator);
+        if (!createResult.IsSuccess)
         {
-            return Result<Utilizator?>.Failure("ID-ul utilizatorului trebuie s? fie valid");
+            return Result<int>.Failure(createResult.Errors);
         }
 
-        return await _utilizatorRepository.GetByIdAsync(id);
+        return Result<int>.Success(createResult.Value, "Utilizatorul a fost creat cu succes");
     }
 
-    public async Task<Result<IEnumerable<Utilizator>>> GetAllAsync()
+    public async Task<Result<UtilizatorDto?>> GetByIdAsync(int id)
     {
-        return await _utilizatorRepository.GetAllAsync();
+        var result = await _utilizatorRepository.GetByIdAsync(id);
+        if (!result.IsSuccess)
+        {
+            return Result<UtilizatorDto?>.Failure(result.Errors);
+        }
+
+        if (result.Value == null)
+        {
+            return Result<UtilizatorDto?>.Success(null);
+        }
+
+        var dto = MapToDto(result.Value);
+        return Result<UtilizatorDto?>.Success(dto);
+    }
+
+    public async Task<Result<IEnumerable<UtilizatorDto>>> GetAllAsync()
+    {
+        var result = await _utilizatorRepository.GetAllAsync();
+        if (!result.IsSuccess)
+        {
+            return Result<IEnumerable<UtilizatorDto>>.Failure(result.Errors);
+        }
+
+        var dtos = result.Value?.Select(MapToDto) ?? Enumerable.Empty<UtilizatorDto>();
+        return Result<IEnumerable<UtilizatorDto>>.Success(dtos);
     }
 
     public async Task<Result> UpdateAsync(UpdateUtilizatorRequest request)
@@ -131,86 +135,101 @@ public class UtilizatorService : IUtilizatorService
         {
             return Result.Failure(existingResult.Errors);
         }
-
         if (existingResult.Value == null)
         {
             return Result.Failure("Utilizatorul nu a fost g?sit");
         }
 
-        // Verificare persoan? existent?
+        var existingUtilizator = existingResult.Value;
+
+        // Verificare duplicat nume utilizator (exclusiv current)
+        var existsUsernameResult = await _utilizatorRepository.ExistsByUsernameAsync(request.NumeUtilizator, request.Id);
+        if (!existsUsernameResult.IsSuccess)
+        {
+            return Result.Failure(existsUsernameResult.Errors);
+        }
+        if (existsUsernameResult.Value)
+        {
+            return Result.Failure("Numele de utilizator existe deja");
+        }
+
+        // Verificare duplicat email (exclusiv current)
+        var existsEmailResult = await _utilizatorRepository.ExistsByEmailAsync(request.Email, request.Id);
+        if (!existsEmailResult.IsSuccess)
+        {
+            return Result.Failure(existsEmailResult.Errors);
+        }
+        if (existsEmailResult.Value)
+        {
+            return Result.Failure("Email-ul exist? deja");
+        }
+
+        // Verificare existen?? persoan?
         var persoanaResult = await _persoanaRepository.GetByIdAsync(request.PersoanaId);
         if (!persoanaResult.IsSuccess)
         {
             return Result.Failure(persoanaResult.Errors);
         }
-
         if (persoanaResult.Value == null)
         {
-            return Result.Failure("Persoana selectat? nu exist?");
-        }
-
-        // Verificare nume utilizator duplicat (exclusiv pentru acest utilizator)
-        var usernameExistsResult = await _utilizatorRepository.ExistsByUsernameAsync(request.NumeUtilizator, request.Id);
-        if (!usernameExistsResult.IsSuccess)
-        {
-            return Result.Failure(usernameExistsResult.Errors);
-        }
-
-        if (usernameExistsResult.Value)
-        {
-            return Result.Failure("Un alt utilizator cu acest nume exist? deja");
-        }
-
-        // Verificare email duplicat (exclusiv pentru acest utilizator)
-        var emailExistsResult = await _utilizatorRepository.ExistsByEmailAsync(request.Email, request.Id);
-        if (!emailExistsResult.IsSuccess)
-        {
-            return Result.Failure(emailExistsResult.Errors);
-        }
-
-        if (emailExistsResult.Value)
-        {
-            return Result.Failure("Un alt utilizator cu acest email exist? deja");
+            return Result.Failure("Persoana specificat? nu exist?");
         }
 
         // Actualizare utilizator
-        var utilizator = existingResult.Value;
-        utilizator.NumeUtilizator = request.NumeUtilizator;
-        utilizator.Email = request.Email;
-        utilizator.Telefon = request.Telefon;
-        utilizator.PersoanaId = request.PersoanaId;
+        existingUtilizator.PersoanaId = request.PersoanaId;
+        existingUtilizator.NumeUtilizator = request.NumeUtilizator;
+        existingUtilizator.Email = request.Email;
+        existingUtilizator.Telefon = request.Telefon;
 
-        // Actualizare parol? doar dac? este furnizat?
-        if (!string.IsNullOrEmpty(request.NovaParola))
+        // Actualizare parol? doar dac? este specificat?
+        if (!string.IsNullOrWhiteSpace(request.ParolaNoua))
         {
-            utilizator.ParolaHash = _passwordService.HashPassword(request.NovaParola);
+            existingUtilizator.ParolaHash = _passwordService.HashPassword(request.ParolaNoua);
         }
 
-        return await _utilizatorRepository.UpdateAsync(utilizator);
+        var updateResult = await _utilizatorRepository.UpdateAsync(existingUtilizator);
+        if (!updateResult.IsSuccess)
+        {
+            return Result.Failure(updateResult.Errors);
+        }
+
+        return Result.Success("Utilizatorul a fost actualizat cu succes");
     }
 
     public async Task<Result> DeleteAsync(int id)
     {
-        if (id <= 0)
-        {
-            return Result.Failure("ID-ul utilizatorului trebuie s? fie valid");
-        }
-
         // Verificare existen??
         var existingResult = await _utilizatorRepository.GetByIdAsync(id);
         if (!existingResult.IsSuccess)
         {
             return Result.Failure(existingResult.Errors);
         }
-
         if (existingResult.Value == null)
         {
             return Result.Failure("Utilizatorul nu a fost g?sit");
         }
 
-        // TODO: Verificare dependen?e (sesiuni active, etc.)
-        // Aceast? verificare va fi implementat? când vom avea alte entit??i conectate
+        var deleteResult = await _utilizatorRepository.DeleteAsync(id);
+        if (!deleteResult.IsSuccess)
+        {
+            return Result.Failure(deleteResult.Errors);
+        }
 
-        return await _utilizatorRepository.DeleteAsync(id);
+        return Result.Success("Utilizatorul a fost ?ters cu succes");
+    }
+
+    private static UtilizatorDto MapToDto(Utilizator utilizator)
+    {
+        return new UtilizatorDto
+        {
+            Id = utilizator.Id,
+            PersoanaId = utilizator.PersoanaId,
+            NumeUtilizator = utilizator.NumeUtilizator,
+            Email = utilizator.Email,
+            Telefon = utilizator.Telefon,
+            NumeComplet = utilizator.NumeComplet,
+            DataCreare = utilizator.DataCreare,
+            DataModificare = utilizator.DataModificare
+        };
     }
 }

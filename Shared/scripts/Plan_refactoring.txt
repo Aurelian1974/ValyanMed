@@ -1,45 +1,45 @@
-PLAN DE REFACTORIZARE ȘI ÎMBUNĂTĂȚIRE APLICAȚIE
+PLAN DE REFACTORIZARE SI IMBUNATATIRE APLICATIE
 =================================================
 
-📋 PĂSTRĂM ARHITECTURA EXISTENTĂ
+📋 PASTRAM ARHITECTURA EXISTENTA
 -------------------------------
 
 Core Components:
-✅ Arhitectura actuală - menține structura stabilă
+✅ Arhitectura actuala - mentine structura stabila
 ✅ Stored Procedures - optimizate pentru performance
 ✅ Dapper - micro-ORM eficient
 ✅ MudBlazor - componente UI moderne
-✅ PagedResult Pattern - paginare eficientă
-✅ MudBlazor DataGrid - afișare date optimizată
-✅ Error Handling Pattern - gestionare erori în Controllers
+✅ PagedResult Pattern - paginare eficienta
+✅ MudBlazor DataGrid - afisare date optimizata
+✅ Error Handling Pattern - gestionare erori in Controllers
 ✅ SQL Performance cu Dapper
-✅ Structured Logging - urmărire aplicație
+✅ Structured Logging - urmarire aplicatie
 
 
-🔧 REFACTORIZĂRI CRITICE
+🔧 REFACTORIZARI CRITICE
 -----------------------
 
 1. Eliminare Magic Strings din UI
 ---------------------------------
-ÎNAINTE:
+INAINTE:
 <MudSelectItem Value="@("Activ")">Activ</MudSelectItem>
 
-DUPĂ:
+DUPA:
 public enum StatusOptions
 {
     [Display(Name = "Activ")] Active = 1,
     [Display(Name = "Inactiv")] Inactive = 2
 }
 
-2. Rich Services în loc de Simple Pass-Through
+2. Rich Services in loc de Simple Pass-Through
 ----------------------------------------------
-ÎNAINTE:
+INAINTE:
 public async Task<IEnumerable<PersoanaDTO>> GetAllAsync()
 {
     return await _repository.GetAllAsync(); // doar forwarding
 }
 
-DUPĂ:
+DUPA:
 public async Task<BookingResult> BookAppointment(BookAppointmentRequest request)
 {
     // Validare business
@@ -55,10 +55,10 @@ public async Task<BookingResult> BookAppointment(BookAppointmentRequest request)
     return BookingResult.Success(appointmentId);
 }
 
-3. Domain Models în loc de DTOs Everywhere
+3. Domain Models in loc de DTOs Everywhere
 ------------------------------------------
-- Migrare progresivă de la DTOs la Domain Models
-- Păstrarea DTOs doar pentru API boundaries
+- Migrare progresiva de la DTOs la Domain Models
+- Pastrarea DTOs doar pentru API boundaries
 
 4. FluentValidation Layer
 ------------------------
@@ -73,13 +73,13 @@ public class CreatePatientValidator : AbstractValidator<CreatePatientRequest>
 
 5. Exception Handling Specific
 -----------------------------
-ÎNAINTE:
+INAINTE:
 catch (Exception ex)
 {
-    return StatusCode(500, new { message = "Eroare internă" });
+    return StatusCode(500, new { message = "Eroare interna" });
 }
 
-DUPĂ:
+DUPA:
 catch (ValidationException ex)
 {
     return BadRequest(new { errors = ex.Errors });
@@ -93,7 +93,7 @@ catch (BusinessRuleException ex)
     return Conflict(new { message = ex.Message });
 }
 
-6. Enums în loc de Hardcoded Strings
+6. Enums in loc de Hardcoded Strings
 -----------------------------------
 public enum MedicationStatus 
 {
@@ -102,7 +102,7 @@ public enum MedicationStatus
     [Description("Suspendat")] Suspended = 3
 }
 
-🎨 ÎMBUNĂTĂȚIRI STRUCTURALE
+🎨 IMBUNATATIRI STRUCTURALE
 --------------------------
 
 1. Reorganizare CSS
@@ -110,7 +110,7 @@ public enum MedicationStatus
 DIN:
 Client/wwwroot/css/app.css (500+ linii)
 
-ÎN:
+IN:
 wwwroot/css/
 ├── base/
 │   ├── variables.css
@@ -134,26 +134,31 @@ wwwroot/css/
 
 2. Refactorizare Blazor Components
 ---------------------------------
-ÎNAINTE:
+INAINTE:
 @code {
-    // 300+ linii în Personal.razor
+    // 300+ linii in Personal.razor
 }
 
-DUPĂ:
+DUPA:
 Personal.razor          // Doar markup
 Personal.razor.cs       // Business logic
 PersonalState.cs        // State management
 PersonalModels.cs       // Page-specific models
 PersonalValidators.cs   // Validations
 
-3. Fara diacritice in UI
+3. FARA DIACRITICE IN UI - IMPLEMENTAT
+--------------------------------------
+- Toate textele din interfata sunt fara diacritice
+- Nu mai folosim a, a, i, s, t in UI
+- Folosim doar a, a, i, s, t pentru compatibilitate
+- Font rendering optimizat pentru caractere simple
 
-🚀 FUNCȚIONALITĂȚI NOI
+🚀 FUNCTIONALITATI NOI
 ---------------------
 
 1. CQRS Pattern
 --------------
-// Commands pentru modificări
+// Commands pentru modificari
 public record DispenseMedicationCommand(int MedicationId, int Quantity, int PatientId);
 
 // Queries pentru citire
@@ -191,13 +196,13 @@ public interface IUnitOfWork
     void Dispose();
 }
 
-📦 PACHETE ȘI SERVICII NOI
+📦 PACHETE SI SERVICII NOI
 -------------------------
 
 Core Services:
-- SignalR - notificări real-time
+- SignalR - notificari real-time
 - AutoMapper - mapare obiecte
-- FluentValidation - validări robuste
+- FluentValidation - validari robuste
 - Serilog - logging structurat
 - Hangfire - task-uri background
 - MediatR - pentru CQRS implementation
@@ -205,14 +210,14 @@ Core Services:
 Security & Authentication:
 - JwtService - autentificare JWT
 - RoleManager - gestionare roluri
-- DataProtection - protecție date
+- DataProtection - protectie date
 - ApiSecurityMiddleware - securitate API
 - AuditMiddleware - audit trails
 
 Error Handling & Monitoring:
-- ExceptionHandler - gestionare centralizată erori
-- HealthChecks - monitorizare stare aplicație
-- ApplicationInsights - telemetrie avansată
+- ExceptionHandler - gestionare centralizata erori
+- HealthChecks - monitorizare stare aplicatie
+- ApplicationInsights - telemetrie avansata
 
 📊 SUGESTII SUPLIMENTARE
 -----------------------
@@ -246,8 +251,8 @@ public class PatientsController : ControllerBase
 
 4. Database Migrations Strategy
 ------------------------------
-- DbUp sau FluentMigrator pentru migrări database
-- Seed Data Management pentru date inițiale
+- DbUp sau FluentMigrator pentru migrari database
+- Seed Data Management pentru date initiale
 
 5. Testing Strategy
 ------------------
@@ -261,3 +266,26 @@ Tests/
 │   └── Controllers/
 └── E2E/
     └── Blazor/
+
+REGULI PENTRU UI FARA DIACRITICE:
+================================
+✅ Cautare -> Cautare (OK)
+✅ Judet -> Judet (OK) 
+✅ Varsta -> Varsta (OK)
+✅ Locatie -> Locatie (OK)
+✅ Inregistrare -> Inregistrare (OK)
+✅ Actiuni -> Actiuni (OK)
+✅ Administreaza -> Administreaza (OK)
+✅ Rezultate per pagina -> Rezultate per pagina (OK)
+
+❌ NU folosim:
+- a, a, i, s, t
+- Căutare, Județul, Vârsta, Locație, Înregistrare, Acțiuni
+- Administrează, înălțime, căutare, diacritice
+
+🎯 STATUS IMPLEMENTARE DIACRITICE:
+================================
+✅ Plan_refactoring.txt - ACTUALIZAT fara diacritice
+✅ patient-list.css - Comentarii fara diacritice  
+✅ PatientList.razor - UI fara diacritice
+⚠️ Alte fisiere - VERIFICARE necesara

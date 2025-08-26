@@ -3,18 +3,9 @@ using Shared.Common;
 using Shared.Enums;
 using Shared.Models.Authentication;
 using System.Data;
+using Application.Services.Authentication;
 
 namespace Infrastructure.Repositories.Authentication;
-
-public interface IPersoanaRepository
-{
-    Task<Result<int>> CreateAsync(Persoana persoana);
-    Task<Result<Persoana?>> GetByIdAsync(int id);
-    Task<Result<IEnumerable<Persoana>>> GetAllAsync();
-    Task<Result> UpdateAsync(Persoana persoana);
-    Task<Result> DeleteAsync(int id);
-    Task<Result<bool>> ExistsByCNPAsync(string cnp, int? excludeId = null);
-}
 
 public class PersoanaRepository : IPersoanaRepository
 {

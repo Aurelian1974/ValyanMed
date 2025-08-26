@@ -1,0 +1,291 @@
+/* Patient Registration Page Specific Styles - NO DIACRITICS */
+
+/* =====================================================
+   Color Palette - Clean & Professional
+   ===================================================== */
+:root {
+    --patient-reg-primary: #2563eb;
+    --patient-reg-primary-light: #dbeafe;
+    --patient-reg-primary-dark: #1d4ed8;
+    --patient-reg-secondary: #64748b;
+    --patient-reg-background: #ffffff;
+    --patient-reg-surface: #f8fafc;
+    --patient-reg-border: #e2e8f0;
+    --patient-reg-text-primary: #0f172a;
+    --patient-reg-text-secondary: #64748b;
+    --patient-reg-text-muted: #94a3b8;
+    --patient-reg-success: #059669;
+    --patient-reg-warning: #d97706;
+    --patient-reg-error: #dc2626;
+    --patient-reg-shadow: rgba(0, 0, 0, 0.1);
+    --patient-reg-shadow-light: rgba(0, 0, 0, 0.05);
+}
+
+/* =====================================================
+   Header Section
+   ===================================================== */
+.patient-registration-header {
+    background: var(--patient-reg-background);
+    border: 1px solid var(--patient-reg-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.patient-registration-header:hover {
+    border-color: var(--patient-reg-primary-light);
+    box-shadow: 0 2px 8px var(--patient-reg-shadow-light);
+}
+
+/* =====================================================
+   Form Sections
+   ===================================================== */
+.form-section {
+    background: var(--patient-reg-background);
+    border: 1px solid var(--patient-reg-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-bottom: 1rem;
+}
+
+.form-section:hover {
+    border-color: var(--patient-reg-primary-light);
+    box-shadow: 0 2px 8px var(--patient-reg-shadow-light);
+}
+
+.form-section-title {
+    color: var(--patient-reg-primary) !important;
+    font-weight: 600 !important;
+    margin-bottom: 1rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* =====================================================
+   Section Icons
+   ===================================================== */
+.section-icon {
+    margin-right: 0.5rem !important;
+    color: var(--patient-reg-primary) !important;
+    font-size: 1.25rem;
+}
+
+/* =====================================================
+   Form Grid Layout
+   ===================================================== */
+.patient-reg-grid {
+    gap: 1rem !important;
+}
+
+.patient-reg-grid .mud-grid-item {
+    padding: 0.5rem !important;
+}
+
+/* =====================================================
+   CNP Field Special Styling
+   ===================================================== */
+.cnp-field .mud-input-slot {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+    letter-spacing: 1px !important;
+}
+
+.cnp-field .mud-input-helper-text {
+    font-size: 0.75rem !important;
+    margin-top: 0.25rem !important;
+}
+
+/* CNP validation feedback colors */
+.cnp-field .mud-input-helper-text[style*="color: rgb(5, 150, 105)"] {
+    color: var(--patient-reg-success) !important;
+}
+
+.cnp-field .mud-input-helper-text[style*="color: rgb(220, 38, 38)"] {
+    color: var(--patient-reg-error) !important;
+}
+
+/* =====================================================
+   Action Buttons Section
+   ===================================================== */
+.action-section {
+    background: var(--patient-reg-surface);
+    border: 1px solid var(--patient-reg-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-top: 2rem;
+}
+
+.action-section:hover {
+    border-color: var(--patient-reg-primary-light);
+    box-shadow: 0 2px 8px var(--patient-reg-shadow-light);
+}
+
+/* =====================================================
+   Button Enhancements
+   ===================================================== */
+.patient-reg-save-btn {
+    background: var(--patient-reg-primary) !important;
+    color: white !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px var(--patient-reg-shadow-light) !important;
+}
+
+.patient-reg-save-btn:hover {
+    background: var(--patient-reg-primary-dark) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px var(--patient-reg-shadow) !important;
+}
+
+.patient-reg-cancel-btn {
+    border: 1px solid var(--patient-reg-border) !important;
+    color: var(--patient-reg-text-secondary) !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.patient-reg-cancel-btn:hover {
+    background: var(--patient-reg-surface) !important;
+    border-color: var(--patient-reg-secondary) !important;
+    color: var(--patient-reg-text-primary) !important;
+}
+
+.patient-reg-back-btn {
+    border: 1px solid var(--patient-reg-border) !important;
+    color: var(--patient-reg-text-secondary) !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.patient-reg-back-btn:hover {
+    background: var(--patient-reg-surface) !important;
+    border-color: var(--patient-reg-secondary) !important;
+    color: var(--patient-reg-text-primary) !important;
+}
+
+/* =====================================================
+   Loading State
+   ===================================================== */
+.patient-reg-loading .mud-progress-circular {
+    color: var(--patient-reg-primary) !important;
+}
+
+.patient-reg-processing {
+    opacity: 0.7 !important;
+    pointer-events: none !important;
+}
+
+/* =====================================================
+   Required Field Indicators
+   ===================================================== */
+.required-field-info {
+    color: var(--patient-reg-text-secondary) !important;
+    font-size: 0.875rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.required-field-info .mud-icon {
+    color: var(--patient-reg-primary) !important;
+}
+
+/* =====================================================
+   Helper Text Styling
+   ===================================================== */
+.patient-reg-form .mud-input-helper-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    color: var(--patient-reg-text-secondary);
+}
+
+/* =====================================================
+   Animation and Transitions
+   ===================================================== */
+.patient-reg-fade-in {
+    animation: patientRegFadeIn 0.3s ease-in-out;
+}
+
+@keyframes patientRegFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =====================================================
+   Typography - NO DIACRITICS
+   ===================================================== */
+.text-patient-primary { color: var(--patient-reg-text-primary) !important; }
+.text-patient-secondary { color: var(--patient-reg-text-secondary) !important; }
+.text-patient-muted { color: var(--patient-reg-text-muted) !important; }
+.text-patient-success { color: var(--patient-reg-success) !important; }
+.text-patient-warning { color: var(--patient-reg-warning) !important; }
+.text-patient-error { color: var(--patient-reg-error) !important; }
+
+/* Font rendering optimization - NO DIACRITICS */
+.patient-reg-form, 
+.patient-reg-form .mud-typography, 
+.patient-reg-form .mud-input, 
+.patient-reg-form .mud-select, 
+.patient-reg-form .mud-button {
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif !important;
+    font-feature-settings: "kern" 1 !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* =====================================================
+   Responsive Design
+   ===================================================== */
+@media (max-width: 768px) {
+    .patient-registration-header {
+        border-radius: 6px;
+    }
+    
+    .form-section {
+        border-radius: 6px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .patient-reg-grid .mud-grid-item {
+        padding: 0.25rem !important;
+    }
+    
+    .action-section {
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .patient-reg-form .mud-button-group {
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    
+    .patient-reg-form .mud-button-group .mud-button {
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+}
+
+/* =====================================================
+   Print Styles
+   ===================================================== */
+@media print {
+    .patient-registration-header,
+    .action-section {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .patient-reg-save-btn,
+    .patient-reg-cancel-btn,
+    .patient-reg-back-btn {
+        display: none !important;
+    }
+    
+    .form-section {
+        break-inside: avoid !important;
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+}

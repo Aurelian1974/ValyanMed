@@ -60,11 +60,11 @@ public class UpdateUtilizatorValidator : AbstractValidator<UpdateUtilizatorReque
         RuleFor(x => x.PersoanaId)
             .GreaterThan(0).WithMessage("Trebuie sa selectati o persoana valida");
 
-        RuleFor(x => x.NovaParola)
-            .MinimumLength(8).When(x => !string.IsNullOrEmpty(x.NovaParola))
+        RuleFor(x => x.ParolaNoua)
+            .MinimumLength(8).When(x => !string.IsNullOrEmpty(x.ParolaNoua))
             .WithMessage("Parola trebuie sa aiba cel putin 8 caractere")
             .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]")
-            .When(x => !string.IsNullOrEmpty(x.NovaParola))
+            .When(x => !string.IsNullOrEmpty(x.ParolaNoua))
             .WithMessage("Parola trebuie sa contina cel putin o litera mica, o litera mare, o cifra si un caracter special");
     }
 }

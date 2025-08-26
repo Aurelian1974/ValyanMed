@@ -1,9 +1,8 @@
 using FluentValidation;
-using Infrastructure.Repositories.Authentication;
-using Infrastructure.Services.Authentication;
 using Shared.Common;
 using Shared.DTOs.Authentication;
 using Shared.Validators.Authentication;
+using Shared.Models.Authentication;
 
 namespace Application.Services.Authentication;
 

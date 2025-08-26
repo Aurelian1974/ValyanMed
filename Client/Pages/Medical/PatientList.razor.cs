@@ -6,6 +6,9 @@ using global::Shared.Common;
 using System.Net.Http.Json;
 using Client.Services;
 using System.Text.Json;
+using global::Shared.Enums;
+using System.Reflection;
+using System.ComponentModel;
 
 namespace Client.Pages.Medical;
 
@@ -26,12 +29,20 @@ public class PatientListBase : ComponentBase, IDisposable
     protected PatientListState State { get; set; } = new();
     private Timer? searchTimer;
 
+    // Lista de judete pentru select
+    protected List<JudetDto> Judete { get; set; } = new();
+
+    // Lista de optiuni pentru Gen (valoare, descriere)
+    protected List<(string Value, string Description)> GenOptions { get; set; } = new();
+
     #endregion
 
     #region Lifecycle
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadJudeteAsync();
+        LoadGenOptions();
         await LoadPatientsAsync();
     }
 
@@ -116,6 +127,32 @@ public class PatientListBase : ComponentBase, IDisposable
             State.IsLoading = false;
             StateHasChanged();
         }
+    }
+
+    private async Task LoadJudeteAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/medical/judete");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonService.Deserialize<List<JudetDto>>(content);
+                if (result != null)
+                    Judete = result.OrderBy(j => j.Nume).ToList();
+            }
+        }
+        catch { /* Optionally handle error */ }
+    }
+
+    private void LoadGenOptions()
+    {
+        GenOptions = typeof(Gen)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Select(f => (
+                Value: f.Name,
+                Description: f.GetCustomAttribute<DescriptionAttribute>()?.Description ?? f.Name
+            )).ToList();
     }
 
     #endregion
@@ -236,37 +273,28 @@ public class PatientListBase : ComponentBase, IDisposable
 
     protected void ViewPacient(Guid pacientId)
     {
-        // For demo purposes, show a message since the actual patient page might not exist
         Snackbar.Add($"Functionalitate in dezvoltare. ID pacient: {pacientId}", MudBlazor.Severity.Info);
-        // Navigation.NavigateTo($"/medical/pacienti/{pacientId}");
     }
 
     protected void EditPacient(Guid pacientId)
     {
-        // For demo purposes, show a message since the actual edit page might not exist
         Snackbar.Add($"Functionalitate in dezvoltare. Editare pacient: {pacientId}", MudBlazor.Severity.Info);
-        // Navigation.NavigateTo($"/medical/pacienti/{pacientId}/editare");
     }
 
     protected void NewAppointment(Guid pacientId)
     {
-        // For demo purposes, show a message since the actual appointment page might not exist
         Snackbar.Add($"Functionalitate in dezvoltare. Programare pentru pacient: {pacientId}", MudBlazor.Severity.Info);
-        // Navigation.NavigateTo($"/medical/programari/noua?pacientId={pacientId}")
     }
 
     protected void ViewMedicalHistory(Guid pacientId)
     {
-        // For demo purposes, show a message since the actual history page might not exist
         Snackbar.Add($"Functionalitate in dezvoltare. Istoric medical pentru pacient: {pacientId}", MudBlazor.Severity.Info);
-        // Navigation.NavigateTo($"/medical/pacienti/{pacientId}/istoric");
     }
 
     protected async Task ExportToExcel()
     {
         try
         {
-            // TODO: Implement Excel export functionality
             Snackbar.Add("Functionalitatea de export va fi implementata curand.", MudBlazor.Severity.Info);
         }
         catch (Exception ex)
@@ -278,9 +306,8 @@ public class PatientListBase : ComponentBase, IDisposable
 
     protected void CreateNewPatient()
     {
-        // For demo purposes, show a message since the actual new patient page might not exist
         Snackbar.Add("Navighez la pagina de inregistrare pacient nou...", MudBlazor.Severity.Success);
-        // Navigation.NavigateTo("/medical/pacienti/nou");
+        Navigation.NavigateTo("/medical/pacienti/nou");
     }
 
     #endregion

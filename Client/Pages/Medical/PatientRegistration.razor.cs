@@ -5,6 +5,9 @@ using global::Shared.DTOs.Medical;
 using global::Shared.Validators.Medical;
 using global::FluentValidation;
 using System.Net.Http.Json;
+using global::Shared.Enums;
+using System.ComponentModel;
+using System.Reflection;
 
 namespace Client.Pages.Medical;
 
@@ -49,7 +52,7 @@ public partial class PatientRegistration
         await _form.Validate();
         if (!_form.IsValid)
         {
-            Snackbar.Add("V? rug?m s? corecta?i erorile din formular.", MudBlazor.Severity.Error);
+            Snackbar.Add("Va rugam sa corectati erorile din formular.", MudBlazor.Severity.Error);
             return;
         }
 
@@ -64,7 +67,7 @@ public partial class PatientRegistration
             {
                 var result = await response.Content.ReadFromJsonAsync<Guid>();
                 
-                Snackbar.Add("Pacientul a fost înregistrat cu succes!", MudBlazor.Severity.Success);
+                Snackbar.Add("Pacientul a fost inregistrat cu succes!", MudBlazor.Severity.Success);
                 
                 // Redirect to patient details page
                 Navigation.NavigateTo($"/medical/pacienti/{result}");
@@ -76,15 +79,15 @@ public partial class PatientRegistration
                 
                 if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
                 {
-                    Snackbar.Add("Datele introduse nu sunt valide. Verifica?i formularul.", MudBlazor.Severity.Error);
+                    Snackbar.Add("Datele introduse nu sunt valide. Verificati formularul.", MudBlazor.Severity.Error);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
-                    Snackbar.Add("Exist? deja un pacient cu acest CNP în sistem.", MudBlazor.Severity.Warning);
+                    Snackbar.Add("Exista deja un pacient cu acest CNP in sistem.", MudBlazor.Severity.Warning);
                 }
                 else
                 {
-                    Snackbar.Add("A ap?rut o eroare la salvarea pacientului. Încerca?i din nou.", MudBlazor.Severity.Error);
+                    Snackbar.Add("A aparut o eroare la salvarea pacientului. Incercati din nou.", MudBlazor.Severity.Error);
                 }
             }
         }
@@ -93,7 +96,7 @@ public partial class PatientRegistration
             Console.WriteLine($"Exception saving patient: {ex.Message}");
             
             // For development - simulate success
-            Snackbar.Add("Demo: Pacientul a fost înregistrat local (API indisponibil).", MudBlazor.Severity.Info);
+            Snackbar.Add("Demo: Pacientul a fost inregistrat local (API indisponibil).", MudBlazor.Severity.Info);
             Navigation.NavigateTo("/medical/pacienti");
         }
         finally
@@ -108,13 +111,77 @@ public partial class PatientRegistration
         Navigation.NavigateTo("/medical/pacienti");
     }
 
-    private void OnCNPKeyPress(KeyboardEventArgs e)
+    private string GetSaveButtonClass()
     {
-        // Allow only digits for CNP
-        if (!char.IsDigit(e.Key[0]) && e.Key != "Backspace" && e.Key != "Delete" && e.Key != "ArrowLeft" && e.Key != "ArrowRight")
+        var baseClass = "patient-reg-save-btn";
+        if (_isProcessing)
         {
-            // This won't prevent the input in Blazor Server, but it's good for UX feedback
+            baseClass += " patient-reg-loading";
         }
+        return baseClass;
+    }
+
+    private void OnCNPValueChanged(string cnp)
+    {
+        // Clean input - keep only digits
+        var cleanCnp = new string(cnp?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>());
+        
+        // Limit to 13 digits
+        if (cleanCnp.Length > 13)
+        {
+            cleanCnp = cleanCnp.Substring(0, 13);
+        }
+        
+        _pacientRequest.CNP = cleanCnp;
+        OnCNPChanged();
+        StateHasChanged();
+    }
+
+    private List<(string Value, string Description)> GetGenderOptions()
+    {
+        return typeof(Gen)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Select(f => (
+                Value: f.GetCustomAttribute<DescriptionAttribute>()?.Description ?? f.Name,
+                Description: f.GetCustomAttribute<DescriptionAttribute>()?.Description ?? f.Name
+            )).ToList();
+    }
+
+    private string GetGenderIcon(string gender)
+    {
+        return gender switch
+        {
+            "Masculin" => Icons.Material.Filled.Man,
+            "Feminin" => Icons.Material.Filled.Woman,
+            _ => Icons.Material.Filled.Person
+        };
+    }
+
+    private string GetCNPHelperText()
+    {
+        if (string.IsNullOrEmpty(_pacientRequest.CNP))
+        {
+            return "CNP-ul va fi folosit pentru auto-completarea genului si datei nasterii";
+        }
+        
+        if (_pacientRequest.CNP.Length < 13)
+        {
+            return $"CNP incomplet - introduceti {13 - _pacientRequest.CNP.Length} cifre mai multe";
+        }
+        
+        if (_pacientRequest.CNP.Length == 13)
+        {
+            if (IsValidCNP(_pacientRequest.CNP))
+            {
+                return "? CNP valid - genul si data nasterii au fost completate automat";
+            }
+            else
+            {
+                return "? CNP invalid - verificati cifrele introduse";
+            }
+        }
+        
+        return "";
     }
 
     // Helper method to validate CNP in real-time

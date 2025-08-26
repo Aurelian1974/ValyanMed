@@ -11,11 +11,12 @@ using FluentValidation;
 using Infrastructure.Repositories.Authentication;
 using Infrastructure.Services.Authentication;
 using Application.Services.Authentication;
-using Shared.Validators.Authentication;
+using Infrastructure.Services.Medical;
+using Application.Services.Medical;
 
 // Medical services and repositories
 using Infrastructure.Repositories.Medical;
-using Application.Services.Medical;
+using Shared.Validators.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,16 +68,16 @@ builder.Services.AddSwaggerGen(c =>
 // DB connection for repositories
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Authentication Repositories
-builder.Services.AddScoped<IPersoanaRepository, PersoanaRepository>();
-builder.Services.AddScoped<IUtilizatorRepository, UtilizatorRepository>();
+// Authentication Repositories - folosesc implementarile din Infrastructure cu interfetele din Application
+builder.Services.AddScoped<Application.Services.Authentication.IPersoanaRepository, PersoanaRepository>();
+builder.Services.AddScoped<Application.Services.Authentication.IUtilizatorRepository, UtilizatorRepository>();
 
 // Medical Repositories
-builder.Services.AddScoped<IPacientRepository, PacientRepository>();
+builder.Services.AddScoped<Application.Services.Medical.IPacientRepository, PacientRepository>();
 
 // Authentication Services
-builder.Services.AddScoped<IPasswordService, PasswordService>();
-builder.Services.AddScoped<IJwtService>(sp =>
+builder.Services.AddScoped<Application.Services.Authentication.IPasswordService, PasswordService>();
+builder.Services.AddScoped<Application.Services.Authentication.IJwtService>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     return new JwtService(
@@ -88,12 +89,13 @@ builder.Services.AddScoped<IJwtService>(sp =>
 });
 
 // Application Services
-builder.Services.AddScoped<Application.Services.Authentication.IPersoanaService, Application.Services.Authentication.PersoanaService>();
-builder.Services.AddScoped<Application.Services.Authentication.IUtilizatorService, Application.Services.Authentication.UtilizatorService>();
+builder.Services.AddScoped<IPersoanaService, Application.Services.Authentication.PersoanaService>();
+builder.Services.AddScoped<IUtilizatorService, Application.Services.Authentication.UtilizatorService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 // Medical Services
 builder.Services.AddScoped<IPacientService, PacientService>();
+builder.Services.AddScoped<IJudetService, JudetService>();
 
 // FluentValidation Validators
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.CreatePersoanaRequest>, CreatePersoanaValidator>();

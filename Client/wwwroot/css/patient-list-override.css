@@ -1,0 +1,8 @@
+﻿/* Patient List - Minimal overrides only. Keep this file tiny to avoid conflicts. */
+
+/* Align search text with search icon (no height/position changes) */
+.search-input .mud-input-slot { padding-left: 32px !important; }
+
+/* Ensure pagination popover stacks above content WITHOUT changing its positioning */
+.pagination-section .mud-popover,
+.pagination-dropdown { z-index: 3000 !important; }

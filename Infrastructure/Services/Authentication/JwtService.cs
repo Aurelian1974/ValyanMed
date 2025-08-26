@@ -3,14 +3,9 @@ using Shared.Models.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Application.Services.Authentication;
 
 namespace Infrastructure.Services.Authentication;
-
-public interface IJwtService
-{
-    string GenerateToken(Utilizator utilizator);
-    ClaimsPrincipal? ValidateToken(string token);
-}
 
 public class JwtService : IJwtService
 {

@@ -1,12 +1,7 @@
 using System.Security.Cryptography;
+using Application.Services.Authentication;
 
 namespace Infrastructure.Services.Authentication;
-
-public interface IPasswordService
-{
-    string HashPassword(string password);
-    bool VerifyPassword(string password, string hash);
-}
 
 public class PasswordService : IPasswordService
 {

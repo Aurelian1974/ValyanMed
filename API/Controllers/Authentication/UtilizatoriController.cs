@@ -218,10 +218,8 @@ public class UtilizatoriController : ControllerBase
                 message = "Debug info pentru utilizator",
                 username = user.NumeUtilizator,
                 email = user.Email,
-                storedHashPreview = user.ParolaHash?.Substring(0, Math.Min(20, user.ParolaHash.Length)) + "...",
-                hashFormat = user.ParolaHash?.Split('.').Length == 3 ? "Valid format" : "Invalid format",
-                hashFullLength = user.ParolaHash?.Length ?? 0,
-                instructions = "Verifică în logs-urile API dacă VerifyPassword returnează true"
+                note = "Password hash is not exposed in DTO for security reasons",
+                instructions = "Check API logs to see if VerifyPassword returns true"
             });
         }
         catch (Exception ex)

@@ -1,5 +1,4 @@
 using Application.Services.Medical;
-using Infrastructure.Repositories.Medical;
 using Shared.DTOs.Medical;
 using Shared.Common;
 using Shared.Exceptions;

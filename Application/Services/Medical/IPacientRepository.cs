@@ -1,7 +1,7 @@
 using Shared.DTOs.Medical;
 using Shared.Common;
 
-namespace Infrastructure.Repositories.Medical;
+namespace Application.Services.Medical;
 
 public interface IPacientRepository
 {

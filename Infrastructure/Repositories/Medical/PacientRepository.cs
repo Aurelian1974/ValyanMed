@@ -1,8 +1,8 @@
-using Infrastructure.Repositories.Medical;
 using Shared.DTOs.Medical;
 using Shared.Common;
 using System.Data;
 using Dapper;
+using Application.Services.Medical;
 
 namespace Infrastructure.Repositories.Medical;
 

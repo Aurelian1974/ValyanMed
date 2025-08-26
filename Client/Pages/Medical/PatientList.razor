@@ -10,408 +10,621 @@
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <MudStack Spacing="3">
-        <!-- Header Section -->
-        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.h4">Gestionare Pacienti</MudText>
-            <MudButton StartIcon="@Icons.Material.Filled.PersonAdd" 
-                      Color="Color.Primary" 
-                      Variant="Variant.Filled"
-                      OnClick="@CreateNewPatient">
-                Pacient Nou
-            </MudButton>
-        </MudStack>
-
-        <!-- Search and Filters -->
-        <MudPaper Class="pa-4 search-bar-compact">
-            <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
-                <MudTextField T="string"
-                             Value="@State.SearchQuery.Search"
-                             ValueChanged="@OnSearchChanged"
-                             Label="Cauta pacienti..." 
-                             Placeholder="Nume, prenume, CNP sau email"
-                             Variant="Variant.Outlined" 
-                             Adornment="Adornment.End" 
-                             AdornmentIcon="@Icons.Material.Filled.Search"
-                             OnAdornmentClick="@SearchPacienti"
-                             OnKeyUp="@OnSearchKeyUp"
-                             Immediate="false"
-                             Clearable="true"
-                             Dense="true"
-                             Class="flex-grow-1 search-compact" />
-
-                <MudSelect T="string"
-                          Value="@State.SearchQuery.Judet"
-                          ValueChanged="@OnJudetChanged"
-                          Label="Judet"
-                          Variant="Variant.Outlined"
-                          Clearable="true"
-                          Dense="true"
-                          Class="search-compact"
-                          Style="min-width: 120px;">
-                    <MudSelectItem T="string" Value="@string.Empty">Toate judetele</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Bucuresti")">Bucuresti</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Cluj")">Cluj</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Timis")">Timis</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Iasi")">Iasi</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Constanta")">Constanta</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Brasov")">Brasov</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Dolj")">Dolj</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Galati")">Galati</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Prahova")">Prahova</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Bihor")">Bihor</MudSelectItem>
-                </MudSelect>
-
-                <MudSelect T="string"
-                          Value="@State.SearchQuery.Gen"
-                          ValueChanged="@OnGenChanged"
-                          Label="Gen"
-                          Variant="Variant.Outlined"
-                          Clearable="true"
-                          Dense="true"
-                          Class="search-compact"
-                          Style="min-width: 100px;">
-                    <MudSelectItem T="string" Value="@string.Empty">Toate</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Masculin")">Masculin</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Feminin")">Feminin</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Neprecizat")">Neprecizat</MudSelectItem>
-                </MudSelect>
-
-                <MudButton StartIcon="@Icons.Material.Filled.UnfoldLess" 
-                          Color="Color.Secondary" 
-                          Variant="Variant.Outlined"
-                          OnClick="@CollapseAllRows"
-                          Size="Size.Small">
-                    Collapse
-                </MudButton>
-
-                <MudButton StartIcon="@Icons.Material.Filled.UnfoldMore" 
-                          Color="Color.Secondary" 
-                          Variant="Variant.Outlined"
-                          OnClick="@ExpandAllRows"
-                          Size="Size.Small">
-                    Expand
-                </MudButton>
-
-                <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
-                          Color="Color.Secondary" 
-                          Variant="Variant.Outlined"
-                          OnClick="@ResetFilters">
-                    Reset
-                </MudButton>
+        <!-- Header Section with enhanced styling -->
+        <MudPaper Class="pa-4 header-section" Elevation="2">
+            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Primary" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h4" Color="Color.Primary" Class="font-weight-bold">Gestionare Pacienti</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Administreaza si monitorizeaza informatiile pacientilor
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+                <MudStack Row Spacing="2">
+                    <MudButton StartIcon="@Icons.Material.Filled.GetApp" Color="Color.Secondary" Variant="Variant.Outlined" OnClick="@ExportToExcel" Size="Size.Medium">Export Excel</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" Variant="Variant.Filled" OnClick="@CreateNewPatient" Size="Size.Medium" Class="elevation-2">Pacient Nou</MudButton>
+                </MudStack>
             </MudStack>
         </MudPaper>
 
-        <!-- Results Summary -->
+        <!-- Enhanced Search and Filters -->
+        <MudPaper Class="pa-4 search-section" Elevation="1">
+            <MudStack Spacing="3">
+                <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.h6" Color="Color.Primary">
+                        <MudIcon Icon="@Icons.Material.Filled.FilterList" Size="Size.Small" Class="mr-2" />
+                        Filtre si Cautare
+                    </MudText>
+                    <MudChip T="string" Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">
+                        @if (State.PagedResult?.TotalCount > 0)
+                        {
+                            @:@State.PagedResult.TotalCount pacienti gasiti
+                        }
+                        else
+                        {
+                            @:Niciun pacient gasit
+                        }
+                    </MudChip>
+                </MudStack>
+
+                <!-- Grid-based layout for stable heights/alignments -->
+                <MudGrid GutterSize="GutterSize.Small">
+                    <MudItem xs="12" md="6" lg="6">
+                        <MudTextField T="string"
+                                      Value="@State.SearchQuery.Search"
+                                      ValueChanged="@OnSearchChanged"
+                                      Label="Cautare pacienti"
+                                      Placeholder="Introduceti nume, prenume, CNP sau email..."
+                                      Variant="Variant.Outlined"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      OnAdornmentClick="@SearchPacienti"
+                                      OnKeyUp="@OnSearchKeyUp"
+                                      Immediate="true"
+                                      Clearable="true"
+                                      Class="search-input w-100"
+                                      HelperText="Cautare in timp real dupa nume, prenume, CNP sau email"
+                                      HelperTextOnFocus="true"
+                                      Dense="true"
+                                      Margin="Margin.Dense" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6" md="3" lg="3">
+                        <MudSelect T="string"
+                                   Value="@State.SearchQuery.Judet"
+                                   ValueChanged="@OnJudetChanged"
+                                   Label="Judet"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   TransformOrigin="Origin.TopCenter"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Class="w-100">
+                            <MudSelectItem T="string" Value="@string.Empty">
+                                <div style="display: flex; align-items: center;">
+                                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Class="mr-2" />
+                                    Toate judetele
+                                </div>
+                            </MudSelectItem>
+                            @foreach (var judet in Judete)
+                            {
+                                <MudSelectItem T="string" Value="@judet.Nume">
+                                    <div style="display: flex; align-items: center;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Place" Size="Size.Small" Class="mr-2" />
+                                        @judet.Nume
+                                    </div>
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6" md="3" lg="3">
+                        <MudSelect T="string"
+                                   Value="@State.SearchQuery.Gen"
+                                   ValueChanged="@OnGenChanged"
+                                   Label="Gen"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   TransformOrigin="Origin.TopCenter"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Class="w-100">
+                            <MudSelectItem T="string" Value="@string.Empty">
+                                <div style="display: flex; align-items: center;">
+                                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-2" />
+                                    Toate
+                                </div>
+                            </MudSelectItem>
+                            @foreach (var gen in GenOptions)
+                            {
+                                <MudSelectItem T="string" Value="@gen.Value">
+                                    <div style="display: flex; align-items: center;">
+                                        <MudIcon Icon="@(gen.Value == "Masculin" ? Icons.Material.Filled.Male : gen.Value == "Feminin" ? Icons.Material.Filled.Female : Icons.Material.Filled.Person)" Size="Size.Small" Class="mr-2" />
+                                        @gen.Description
+                                    </div>
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" md="12" lg="12">
+                        <MudButtonGroup Color="Color.Secondary" Variant="Variant.Outlined">
+                            <MudTooltip Text="Contracta toate randurile"><MudIconButton Icon="@Icons.Material.Filled.UnfoldLess" OnClick="@CollapseAllRows" Size="Size.Medium" /></MudTooltip>
+                            <MudTooltip Text="Extinde toate randurile"><MudIconButton Icon="@Icons.Material.Filled.UnfoldMore" OnClick="@ExpandAllRows" Size="Size.Medium" /></MudTooltip>
+                            <MudTooltip Text="Reseteaza toate filtrele"><MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="@ResetFilters" Size="Size.Medium" /></MudTooltip>
+                        </MudButtonGroup>
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Enhanced Results Summary -->
         @if (!State.IsLoading && State.PagedResult.Items?.Any() == true)
         {
-            <MudAlert Severity="MudBlazor.Severity.Info" Dense="true">
-                Afisati: @State.PagedResult.Items.Count() din @State.PagedResult.TotalCount pacienti totali
-                (Pagina @State.SearchQuery.Page din @State.PagedResult.TotalPages)
-            </MudAlert>
-        }
+            <MudAlert Severity="MudBlazor.Severity.Success" Dense="true" Icon="@Icons.Material.Filled.CheckCircle" Class="results-summary">
+                <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap">
+                    <MudText>
+                        <strong>@State.PagedResult.Items.Count()</strong> pacienti afisati din 
+                        <strong>@State.PagedResult.TotalCount</strong> total
+                    </MudText>
 
-        <!-- Data Grid with master-detail -->
-        @if (State.IsLoading)
-        {
-            <MudDataGrid T="PacientListDto" Items="@(new List<PacientListDto>())" Loading="true">
-                <LoadingContent>
-                    <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
-                        <MudProgressCircular Indeterminate="true" />
-                        <MudText Typo="Typo.body1">Se incarca pacientii...</MudText>
-                    </MudStack>
-                </LoadingContent>
-            </MudDataGrid>
-        }
-        else
-        {
-            <MudDataGrid T="PacientListDto" 
-                        Items="@State.PagedResult.Items" 
-                        Loading="false"
-                        Dense="true"
-                        Hover="true"
-                        ReadOnly="true"
-                        Filterable="false"
-                        Hideable="true"
-                        HasDetailRow="true"
-                        ColumnResizeMode="ResizeMode.Container"
-                        SortMode="SortMode.Multiple">
-                <Columns>
-                    <!-- Coloana de expansiune -->
-                    <TemplateColumn Title="" Sortable="false" Filterable="false" Class="mud-width-xs">
-                        <CellTemplate>
-                            <MudIconButton Icon="@(State.IsRowExpanded(context.Item.PacientID) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
-                                          Size="Size.Small" 
-                                          Color="Color.Default"
-                                          OnClick="@(() => ToggleRowExpansion(context.Item.PacientID))" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                    
-                    <PropertyColumn Property="x => x.NumeComplet" Title="Nume Complet" Sortable="true" />
-                    <TemplateColumn Title="CNP" Sortable="true" SortBy="@(x => x.CNP)">
-                        <CellTemplate>
-                            @if (!string.IsNullOrEmpty(context.Item.CNP))
-                            {
-                                <MudText Typo="Typo.body2" Style="font-family: monospace;">
-                                    @context.Item.CNP
-                                </MudText>
-                            }
-                            else
-                            {
-                                <MudText Color="Color.Surface">-</MudText>
-                            }
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Varsta" Sortable="true" SortBy="@(x => x.DataNasterii)">
-                        <CellTemplate>
-                            <MudText Typo="Typo.body2">@context.Item.Varsta ani</MudText>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Gen" Sortable="true" SortBy="@(x => x.Gen)">
-                        <CellTemplate>
-                            <MudChip T="string" Size="Size.Small" 
-                                    Color="@(context.Item.Gen == "Masculin" ? Color.Primary : context.Item.Gen == "Feminin" ? Color.Secondary : Color.Default)">
-                                @context.Item.Gen
-                            </MudChip>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Contact" Sortable="true" SortBy="@(x => x.Email)">
-                        <CellTemplate>
-                            @if (!string.IsNullOrEmpty(context.Item.Telefon))
-                            {
-                                <MudLink Href="@($"tel:{context.Item.Telefon}")" Typo="Typo.body2">
-                                    @context.Item.Telefon
-                                </MudLink>
-                            }
-                            @if (string.IsNullOrEmpty(context.Item.Telefon))
-                            {
-                                <MudText Color="Color.Surface">-</MudText>
-                            }
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Data Inregistrarii" Sortable="true" SortBy="@(x => x.DataCreare)">
-                        <CellTemplate>
-                            @context.Item.DataCreare.ToString("dd.MM.yyyy HH:mm")
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Actiuni" Sortable="false" Filterable="false">
-                        <CellTemplate>
-                            <div class="patient-action-buttons d-flex gap-1" style="display: flex; gap: 4px; align-items: center;">
-                                <MudTooltip Text="Vezi detalii">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                                  Color="Color.Primary"
-                                                  Size="Size.Small"
-                                                  Variant="Variant.Text"
-                                                  Style="min-width: 32px; height: 32px; padding: 4px;"
-                                                  OnClick="() => ViewPacient(context.Item.PacientID)" />
-                                </MudTooltip>
-                                <MudTooltip Text="Editeaza">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                  Color="Color.Secondary"
-                                                  Size="Size.Small"
-                                                  Variant="Variant.Text"
-                                                  Style="min-width: 32px; height: 32px; padding: 4px;"
-                                                  OnClick="() => EditPacient(context.Item.PacientID)" />
-                                </MudTooltip>
-                                <MudTooltip Text="Programare noua">
-                                    <MudIconButton Icon="@Icons.Material.Filled.EventAvailable"
-                                                  Color="Color.Success"
-                                                  Size="Size.Small"
-                                                  Variant="Variant.Text"
-                                                  Style="min-width: 32px; height: 32px; padding: 4px;"
-                                                  OnClick="() => NewAppointment(context.Item.PacientID)" />
-                                </MudTooltip>
-                                <MudTooltip Text="Istoric medical">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Assignment"
-                                                  Color="Color.Info"
-                                                  Size="Size.Small"
-                                                  Variant="Variant.Text"
-                                                  Style="min-width: 32px; height: 32px; padding: 4px;"
-                                                  OnClick="() => ViewMedicalHistory(context.Item.PacientID)" />
-                                </MudTooltip>
-                            </div>
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-
-                <ChildRowContent>
-                    @if (State.IsRowExpanded(context.Item.PacientID))
-                    {
-                        <MudPaper Class="pa-4" Elevation="0" Style="border-left: 4px solid var(--mud-palette-primary); background: linear-gradient(90deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-background-grey) 5%);">
-                            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
-                                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="font-weight-bold">
-                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" />
-                                    Detalii pacient: @context.Item.NumeComplet
-                                </MudText>
-                                <MudIconButton Icon="@Icons.Material.Filled.Close" 
-                                              Size="Size.Small" 
-                                              Color="Color.Default"
-                                              OnClick="@(() => ToggleRowExpansion(context.Item.PacientID))" />
-                            </MudStack>
-                            
-                            <MudGrid Spacing="3">
-                                <MudItem xs="12" sm="6" md="3">
-                                    <MudStack Spacing="1">
-                                        <MudText Typo="Typo.caption" Class="font-weight-bold mud-text-secondary">ID PACIENT</MudText>
-                                        <MudText Typo="Typo.body2" Class="font-weight-medium">#@context.Item.PacientID</MudText>
-                                    </MudStack>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" md="3">
-                                    <MudStack Spacing="1">
-                                        <MudText Typo="Typo.caption" Class="font-weight-bold mud-text-secondary">CNP</MudText>
-                                        <MudText Typo="Typo.body2" Class="font-weight-medium" Style="font-family: monospace;">
-                                            @(context.Item.CNP ?? "Nespecificat")
-                                        </MudText>
-                                    </MudStack>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" md="3">
-                                    <MudStack Spacing="1">
-                                        <MudText Typo="Typo.caption" Class="font-weight-bold mud-text-secondary">ADRESA</MudText>
-                                        <MudText Typo="Typo.body2">
-                                            @if (!string.IsNullOrEmpty(context.Item.Oras) || !string.IsNullOrEmpty(context.Item.Judet))
-                                            {
-                                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Class="mr-1" />
-                                                @(context.Item.Oras ?? "")@((!string.IsNullOrEmpty(context.Item.Oras) && !string.IsNullOrEmpty(context.Item.Judet)) ? ", " : "")@(context.Item.Judet ?? "")
-                                            }
-                                            else
-                                            {
-                                                <MudText Color="Color.Surface" Typo="Typo.body2">Nu este specificata</MudText>
-                                            }
-                                        </MudText>
-                                    </MudStack>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" md="3">
-                                    <MudStack Spacing="1">
-                                        <MudText Typo="Typo.caption" Class="font-weight-bold mud-text-secondary">INREGISTRAT LA</MudText>
-                                        <MudText Typo="Typo.body2">
-                                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-1" />
-                                            @context.Item.DataCreare.ToString("dd.MM.yyyy")
-                                            <br />
-                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" Class="mr-1" />
-                                                @context.Item.DataCreare.ToString("HH:mm")
-                                            </MudText>
-                                        </MudText>
-                                    </MudStack>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" md="3">
-                                    <MudStack Spacing="1">
-                                        <MudText Typo="Typo.caption" Class="font-weight-bold mud-text-secondary">DATA NASTERII</MudText>
-                                        <MudText Typo="Typo.body2">
-                                            @context.Item.DataNasterii.ToString("dd.MM.yyyy")
-                                        </MudText>
-                                    </MudStack>
-                                </MudItem>
-                                <MudItem xs="12" sm="6" md="3">
-                                    <MudStack Spacing="1">
-                                        <MudText Typo="Typo.caption" Class="font-weight-bold mud-text-secondary">EMAIL</MudText>
-                                        <MudText Typo="Typo.body2">
-                                            @if (!string.IsNullOrEmpty(context.Item.Email))
-                                            {
-                                                <MudLink Href="@($"mailto:{context.Item.Email}")" Typo="Typo.body2">
-                                                    @context.Item.Email
-                                                </MudLink>
-                                            }
-                                            else
-                                            {
-                                                <MudText Color="Color.Surface">-</MudText>
-                                            }
-                                        </MudText>
-                                    </MudStack>
-                                </MudItem>
-                            </MudGrid>
-                        </MudPaper>
-                    }
-                </ChildRowContent>
-
-                <NoRecordsContent>
-                    <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Surface" />
-                        <MudText Typo="Typo.body1" Color="Color.Surface">
-                            @if (string.IsNullOrEmpty(State.SearchQuery.Search) && string.IsNullOrEmpty(State.SearchQuery.Judet) && string.IsNullOrEmpty(State.SearchQuery.Gen))
-                            {
-                                @:Nu au fost gasiti pacienti
-                            }
-                            else
-                            {
-                                @:Nu au fost gasiti pacienti care sa corespunda criteriilor de cautare
-                            }
-                        </MudText>
-                        @if (!string.IsNullOrEmpty(State.SearchQuery.Search) || !string.IsNullOrEmpty(State.SearchQuery.Judet) || !string.IsNullOrEmpty(State.SearchQuery.Gen))
-                        {
-                            <MudButton StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ResetFilters">
-                                Reseteaza filtrele
-                            </MudButton>
-                        }
-                    </MudStack>
-                </NoRecordsContent>
-            </MudDataGrid>
-        }
-
-        <!-- Pagination - compact and with page info next to pagination -->
-        @if (!State.IsLoading && State.PagedResult.TotalCount > 0)
-        {
-            <MudPaper Class="pa-2 pagination-compact">
-                <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2" Class="flex-wrap">
                         <MudSelect T="int"
                                   Value="@State.SearchQuery.PageSize"
                                   ValueChanged="@OnPageSizeChanged"
                                   Label="Rezultate per pagina"
                                   Variant="Variant.Outlined"
+                                  AnchorOrigin="Origin.BottomLeft"
+                                  TransformOrigin="Origin.TopLeft"
+                                  PopoverClass="pagination-dropdown"
+                                  PopoverFixed="true"
+                                  CloseOnScroll="true"
+                                  OffsetY="4"
                                   Dense="true"
-                                  Class="pagination-select-compact"
-                                  Style="min-width: 120px; max-width: 160px;">
-                            <MudSelectItem T="int" Value="5">5 rezultate</MudSelectItem>
-                            <MudSelectItem T="int" Value="10">10 rezultate</MudSelectItem>
-                            <MudSelectItem T="int" Value="25">25 rezultate</MudSelectItem>
-                            <MudSelectItem T="int" Value="50">50 rezultate</MudSelectItem>
-                            <MudSelectItem T="int" Value="100">100 rezultate</MudSelectItem>
+                                  Margin="Margin.Dense">
+                            <MudSelectItem T="int" Value="5"><div style="display: flex; align-items: center;"><MudIcon Icon="@Icons.Material.Filled.ViewList" Size="Size.Small" Class="mr-2" />5 rezultate</div></MudSelectItem>
+                            <MudSelectItem T="int" Value="10"><div style="display: flex; align-items: center;"><MudIcon Icon="@Icons.Material.Filled.ViewList" Size="Size.Small" Class="mr-2" />10 rezultate</div></MudSelectItem>
+                            <MudSelectItem T="int" Value="25"><div style="display: flex; align-items: center;"><MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" Class="mr-2" />25 rezultate</div></MudSelectItem>
+                            <MudSelectItem T="int" Value="50"><div style="display: flex; align-items: center;"><MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" Class="mr-2" />50 rezultate</div></MudSelectItem>
+                            <MudSelectItem T="int" Value="100"><div style="display: flex; align-items: center;"><MudIcon Icon="@Icons.Material.Filled.ViewComfy" Size="Size.Small" Class="mr-2" />100 rezultate</div></MudSelectItem>
                         </MudSelect>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="ml-2">
-                            Pagina @State.SearchQuery.Page din @State.PagedResult.TotalPages
-                        </MudText>
+
+                        <MudPagination Count="State.PagedResult.TotalPages" Selected="State.SearchQuery.Page" SelectedChanged="OnPageChanged" ShowFirstButton="true" ShowLastButton="true" ShowPreviousButton="true" ShowNextButton="true" BoundaryCount="2" MiddleCount="3" Class="modern-pagination" />
                     </MudStack>
-                    <MudPagination Count="State.PagedResult.TotalPages" 
-                                  Selected="State.SearchQuery.Page"
-                                  SelectedChanged="OnPageChanged"
-                                  ShowFirstButton="true"
-                                  ShowLastButton="true"
-                                  ShowPreviousButton="true"
-                                  ShowNextButton="true"
-                                  BoundaryCount="2"
-                                  MiddleCount="3"
-                                  Class="pagination-compact" />
                 </MudStack>
+            </MudAlert>
+        }
+
+        <!-- Enhanced Data Grid -->
+        @if (State.IsLoading)
+        {
+            <MudPaper Class="pa-8" Elevation="2">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Color="Color.Primary">Se incarca pacientii...</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Va rugam sa asteptati</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Elevation="2" Class="data-grid-container">
+                <MudDataGrid T="PacientListDto" 
+                            Items="@State.PagedResult.Items" 
+                            Loading="false"
+                            Dense="false"
+                            Hover="true"
+                            ReadOnly="true"
+                            Filterable="false"
+                            Hideable="true"
+                            HasDetailRow="true"
+                            ColumnResizeMode="ResizeMode.Container"
+                            SortMode="SortMode.Multiple"
+                            Class="modern-data-grid"
+                            Style="width:100%;">
+                    <Columns>
+                        <!-- Enhanced expansion column -->
+                        <TemplateColumn Title="" Sortable="false" Filterable="false" Class="expansion-column">
+                            <CellTemplate>
+                                <MudIconButton Icon="@(State.IsRowExpanded(context.Item.PacientID) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
+                                              Size="Size.Small" 
+                                              Color="@(State.IsRowExpanded(context.Item.PacientID) ? Color.Primary : Color.Default)"
+                                              OnClick="@(() => ToggleRowExpansion(context.Item.PacientID))"
+                                              Class="expansion-button" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        
+                        <!-- Enhanced name column with avatar -->
+                        <TemplateColumn Title="Pacient" Sortable="true" SortBy="@(x => x.NumeComplet)">
+                            <CellTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudAvatar Size="Size.Small" 
+                                              Class="@(context.Item.Gen == "Masculin" ? "patient-avatar-male" : context.Item.Gen == "Feminin" ? "patient-avatar-female" : "patient-avatar-default")">
+                                        @context.Item.NumeComplet.Substring(0, Math.Min(2, context.Item.NumeComplet.Length)).ToUpper()
+                                    </MudAvatar>
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body1" Class="font-weight-medium text-primary">
+                                            @context.Item.NumeComplet
+                                        </MudText>
+                                        @if (!string.IsNullOrEmpty(context.Item.CNP))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="text-muted" Style="font-family: monospace;">
+                                                CNP: @context.Item.CNP
+                                            </MudText>
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Enhanced age and gender column -->
+                        <TemplateColumn Title="Varsta & Gen" Sortable="true" SortBy="@(x => x.DataNasterii)">
+                            <CellTemplate>
+                                <MudStack Spacing="1">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Cake" Size="Size.Small" Class="icon-age" />
+                                        <MudText Typo="Typo.body2" Class="font-weight-medium text-primary">@context.Item.Varsta ani</MudText>
+                                    </MudStack>
+                                    <MudChip T="string" Size="Size.Small" 
+                                            Icon="@(context.Item.Gen == "Masculin" ? Icons.Material.Filled.Male : context.Item.Gen == "Feminin" ? Icons.Material.Filled.Female : Icons.Material.Filled.Person)"
+                                            Class="@(context.Item.Gen == "Masculin" ? "gender-chip-male" : context.Item.Gen == "Feminin" ? "gender-chip-female" : "gender-chip-default")"
+                                            Variant="Variant.Text">
+                                        @context.Item.Gen
+                                    </MudChip>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Enhanced contact column -->
+                        <TemplateColumn Title="Contact" Sortable="true" SortBy="@(x => x.Email)">
+                            <CellTemplate>
+                                <MudStack Spacing="1">
+                                    @if (!string.IsNullOrEmpty(context.Item.Telefon))
+                                    {
+                                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Class="icon-phone" />
+                                            <MudLink Href="@($"tel:{context.Item.Telefon}")" Typo="Typo.body2" Class="text-success">
+                                                @context.Item.Telefon
+                                            </MudLink>
+                                        </MudStack>
+                                    }
+                                    @if (!string.IsNullOrEmpty(context.Item.Email))
+                                    {
+                                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                            <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="icon-email" />
+                                            <MudLink Href="@($"mailto:{context.Item.Email}")" Typo="Typo.caption" Class="text-primary">
+                                                @context.Item.Email
+                                            </MudLink>
+                                        </MudStack>
+                                    }
+                                    @if (string.IsNullOrEmpty(context.Item.Telefon) && string.IsNullOrEmpty(context.Item.Email))
+                                    {
+                                        <MudText Class="text-muted" Typo="Typo.body2">
+                                            <MudIcon Icon="@Icons.Material.Filled.ContactPhone" Size="Size.Small" Class="mr-1" />
+                                            Fara contact
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Enhanced location column -->
+                        <TemplateColumn Title="Locatie" Sortable="true" SortBy="@(x => x.Judet)">
+                            <CellTemplate>
+                                @if (!string.IsNullOrEmpty(context.Item.Oras) || !string.IsNullOrEmpty(context.Item.Judet))
+                                {
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small" Class="icon-location" />
+                                        <MudStack Spacing="0">
+                                            @if (!string.IsNullOrEmpty(context.Item.Oras))
+                                            {
+                                                <MudText Typo="Typo.body2" Class="font-weight-medium text-primary">@context.Item.Oras</MudText>
+                                            }
+                                            @if (!string.IsNullOrEmpty(context.Item.Judet))
+                                            {
+                                                <MudText Typo="Typo.caption" Class="text-secondary">@context.Item.Judet</MudText>
+                                            }
+                                        </MudStack>
+                                    </MudStack>
+                                }
+                                else
+                                {
+                                    <MudText Class="text-muted" Typo="Typo.body2">
+                                        <MudIcon Icon="@Icons.Material.Filled.LocationOff" Size="Size.Small" Class="mr-1" />
+                                        Necunoscuta
+                                    </MudText>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Enhanced registration date -->
+                        <TemplateColumn Title="Inregistrare" Sortable="true" SortBy="@(x => x.DataCreare)">
+                            <CellTemplate>
+                                <MudStack Spacing="0">
+                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="icon-calendar" />
+                                        <MudText Typo="Typo.body2" Class="text-primary">@context.Item.DataCreare.ToString("dd.MM.yyyy")</MudText>
+                                    </MudStack>
+                                    <MudText Typo="Typo.caption" Class="text-secondary">
+                                        @context.Item.DataCreare.ToString("HH:mm")
+                                    </MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- Enhanced actions column -->
+                        <TemplateColumn Title="Actiuni" Sortable="false" Filterable="false" Class="actions-column">
+                            <CellTemplate>
+                                <MudButtonGroup Color="Color.Primary" Variant="Variant.Text" Size="Size.Small" Class="action-buttons">
+                                    <MudTooltip Text="Vezi detalii complete">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small" data-color="primary" OnClick="() => ViewPacient(context.Item.PacientID)" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Editeaza informatiile">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Secondary" Size="Size.Small" data-color="secondary" OnClick="() => EditPacient(context.Item.PacientID)" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Programare noua">
+                                        <MudIconButton Icon="@Icons.Material.Filled.EventAvailable" Color="Color.Success" Size="Size.Small" data-color="success" OnClick="() => NewAppointment(context.Item.PacientID)" />
+                                    </MudTooltip>
+                                    <MudTooltip Text="Istoric medical">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Assignment" Color="Color.Info" Size="Size.Small" data-color="info" OnClick="() => ViewMedicalHistory(context.Item.PacientID)" />
+                                    </MudTooltip>
+                                </MudButtonGroup>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+
+                    <!-- Enhanced child row content -->
+                    <ChildRowContent>
+                        @if (State.IsRowExpanded(context.Item.PacientID))
+                        {
+                            <MudPaper Class="pa-4 detail-row" Elevation="0">
+                                <MudStack Spacing="3">
+                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.h6" Color="Color.Primary" Class="font-weight-bold">
+                                            <MudIcon Icon="@Icons.Material.Filled.PersonPin" Size="Size.Small" Class="mr-2" />
+                                            Profil complet - @context.Item.NumeComplet
+                                        </MudText>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close" 
+                                                      Size="Size.Small" 
+                                                      Color="Color.Default"
+                                                      OnClick="@(() => ToggleRowExpansion(context.Item.PacientID))" />
+                                    </MudStack>
+                                    
+                                    <MudGrid Spacing="3">
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <MudPaper Class="pa-3 info-card" Elevation="1">
+                                                <MudStack Spacing="2">
+                                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Badge" Color="Color.Primary" />
+                                                        <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="font-weight-bold">
+                                                            Identificare
+                                                        </MudText>
+                                                    </MudStack>
+                                                    <MudStack Spacing="1">
+                                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">ID Pacient</MudText>
+                                                        <MudText Typo="Typo.body2" Style="font-family: monospace;">#@context.Item.PacientID.ToString().Substring(0, 8)...</MudText>
+                                                    </MudStack>
+                                                    @if (!string.IsNullOrEmpty(context.Item.CNP))
+                                                    {
+                                                        <MudStack Spacing="1">
+                                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">CNP</MudText>
+                                                            <MudText Typo="Typo.body2" Style="font-family: monospace;">@context.Item.CNP</MudText>
+                                                        </MudStack>
+                                                    }
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudItem>
+
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <MudPaper Class="pa-3 info-card" Elevation="1">
+                                                <MudStack Spacing="2">
+                                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                        <MudIcon Icon="@Icons.Material.Filled.ContactPhone" Color="Color.Success" />
+                                                        <MudText Typo="Typo.subtitle2" Color="Color.Success" Class="font-weight-bold">
+                                                            Contact
+                                                        </MudText>
+                                                    </MudStack>
+                                                    @if (!string.IsNullOrEmpty(context.Item.Telefon))
+                                                    {
+                                                        <MudStack Spacing="1">
+                                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Telefon</MudText>
+                                                            <MudLink Href="@($"tel:{context.Item.Telefon}")" Color="Color.Success">
+                                                                <MudIcon Icon="@Icons.Material.Filled.Phone" Size="Size.Small" Class="mr-1" />
+                                                                @context.Item.Telefon
+                                                            </MudLink>
+                                                        </MudStack>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(context.Item.Email))
+                                                    {
+                                                        <MudStack Spacing="1">
+                                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Email</MudText>
+                                                            <MudLink Href="@($"mailto:{context.Item.Email}")" Color="Color.Info">
+                                                                <MudIcon Icon="@Icons.Material.Filled.Email" Size="Size.Small" Class="mr-1" />
+                                                                @context.Item.Email
+                                                            </MudLink>
+                                                        </MudStack>
+                                                    }
+                                                    @if (string.IsNullOrEmpty(context.Item.Telefon) && string.IsNullOrEmpty(context.Item.Email))
+                                                    {
+                                                        <MudAlert Severity="MudBlazor.Severity.Warning" Dense="true" Icon="@Icons.Material.Filled.ContactPhone">
+                                                            Fara informatii de contact
+                                                        </MudAlert>
+                                                    }
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudItem>
+
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <MudPaper Class="pa-3 info-card" Elevation="1">
+                                                <MudStack Spacing="2">
+                                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Warning" />
+                                                        <MudText Typo="Typo.subtitle2" Color="Color.Warning" Class="font-weight-bold">
+                                                            Locatie
+                                                        </MudText>
+                                                    </MudStack>
+                                                    @if (!string.IsNullOrEmpty(context.Item.Oras) || !string.IsNullOrEmpty(context.Item.Judet))
+                                                    {
+                                                        @if (!string.IsNullOrEmpty(context.Item.Oras))
+                                                        {
+                                                            <MudStack Spacing="1">
+                                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Oras</MudText>
+                                                                <MudText Typo="Typo.body2">@context.Item.Oras</MudText>
+                                                            </MudStack>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(context.Item.Judet))
+                                                        {
+                                                            <MudStack Spacing="1">
+                                                                <MudText Typo="Typo.caption" Class="mud-text-secondary">Judet</MudText>
+                                                                <MudText Typo="Typo.body2">@context.Item.Judet</MudText>
+                                                            </MudStack>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudAlert Severity="MudBlazor.Severity.Info" Dense="true" Icon="@Icons.Material.Filled.LocationOff">
+                                                            Adresa nespecificata
+                                                        </MudAlert>
+                                                    }
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudItem>
+
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <MudPaper Class="pa-3 info-card" Elevation="1">
+                                                <MudStack Spacing="2">
+                                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Secondary" />
+                                                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="font-weight-bold">
+                                                            Informatii personale
+                                                        </MudText>
+                                                    </MudStack>
+                                                    <MudStack Spacing="1">
+                                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Data nasterii</MudText>
+                                                        <MudText Typo="Typo.body2">
+                                                            <MudIcon Icon="@Icons.Material.Filled.Cake" Size="Size.Small" Class="mr-1" />
+                                                            @context.Item.DataNasterii.ToString("dd MMMM yyyy") (@context.Item.Varsta ani)
+                                                        </MudText>
+                                                    </MudStack>
+                                                    <MudStack Spacing="1">
+                                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Gen</MudText>
+                                                        <MudChip T="string" Size="Size.Small" 
+                                                                Icon="@(context.Item.Gen == "Masculin" ? Icons.Material.Filled.Male : context.Item.Gen == "Feminin" ? Icons.Material.Filled.Female : Icons.Material.Filled.Person)"
+                                                                Color="@(context.Item.Gen == "Masculin" ? Color.Primary : context.Item.Gen == "Feminin" ? Color.Secondary : Color.Default)">
+                                                            @context.Item.Gen
+                                                        </MudChip>
+                                                    </MudStack>
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudItem>
+
+                                        <MudItem xs="12" sm="6" md="4">
+                                            <MudPaper Class="pa-3 info-card" Elevation="1">
+                                                <MudStack Spacing="2">
+                                                    <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Info" />
+                                                        <MudText Typo="Typo.subtitle2" Color="Color.Info" Class="font-weight-bold">
+                                                            Inregistrare
+                                                        </MudText>
+                                                    </MudStack>
+                                                    <MudStack Spacing="1">
+                                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Data inregistrarii</MudText>
+                                                        <MudText Typo="Typo.body2">
+                                                            <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Class="mr-1" />
+                                                            @context.Item.DataCreare.ToString("dd MMMM yyyy")
+                                                        </MudText>
+                                                        <MudText Typo="Typo.caption" Class="text-secondary">
+                                                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" Class="mr-1" />
+                                                            la ora @context.Item.DataCreare.ToString("HH:mm")
+                                                        </MudText>
+                                                    </MudStack>
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudItem>
+
+                                        <!-- Quick actions in detail view -->
+                                        <MudItem xs="12">
+                                            <MudPaper Class="pa-3" Elevation="1">
+                                                <MudStack Spacing="2">
+                                                    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="font-weight-bold">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Speed" Size="Size.Small" Class="mr-2" />
+                                                        Actiuni rapide
+                                                    </MudText>
+                                                    <MudStack Row Spacing="2" Class="flex-wrap">
+                                                        <MudButton StartIcon="@Icons.Material.Filled.Visibility"
+                                                                  Color="Color.Primary"
+                                                                  Variant="Variant.Filled"
+                                                                  Size="Size.Small"
+                                                                  OnClick="() => ViewPacient(context.Item.PacientID)">
+                                                            Vezi profilul complet
+                                                        </MudButton>
+                                                        <MudButton StartIcon="@Icons.Material.Filled.Edit"
+                                                                  Color="Color.Secondary"
+                                                                  Variant="Variant.Outlined"
+                                                                  Size="Size.Small"
+                                                                  OnClick="() => EditPacient(context.Item.PacientID)">
+                                                            Editeaza datele
+                                                        </MudButton>
+                                                        <MudButton StartIcon="@Icons.Material.Filled.EventAvailable"
+                                                                  Color="Color.Success"
+                                                                  Variant="Variant.Outlined"
+                                                                  Size="Size.Small"
+                                                                  OnClick="() => NewAppointment(context.Item.PacientID)">
+                                                            Programare noua
+                                                        </MudButton>
+                                                        <MudButton StartIcon="@Icons.Material.Filled.Assignment"
+                                                                  Color="Color.Info"
+                                                                  Variant="Variant.Outlined"
+                                                                  Size="Size.Small"
+                                                                  OnClick="() => ViewMedicalHistory(context.Item.PacientID)">
+                                                            Istoric medical
+                                                        </MudButton>
+                                                    </MudStack>
+                                                </MudStack>
+                                            </MudPaper>
+                                        </MudItem>
+                                    </MudGrid>
+                                </MudStack>
+                            </MudPaper>
+                        }
+                    </ChildRowContent>
+
+                    <!-- Enhanced no records content -->
+                    <NoRecordsContent>
+                        <MudPaper Class="pa-8" Elevation="0">
+                            <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Surface" Style="font-size: 4rem;" />
+                                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudText Typo="Typo.h6" Color="Color.Surface" Class="font-weight-bold">
+                                        @if (string.IsNullOrEmpty(State.SearchQuery.Search) && string.IsNullOrEmpty(State.SearchQuery.Judet) && string.IsNullOrEmpty(State.SearchQuery.Gen))
+                                        {
+                                            @:Nu exista pacienti inregistrati
+                                        }
+                                        else
+                                        {
+                                            @:Nu s-au gasit pacienti
+                                        }
+                                    </MudText>
+                                    <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+                                        @if (string.IsNullOrEmpty(State.SearchQuery.Search) && string.IsNullOrEmpty(State.SearchQuery.Judet) && string.IsNullOrEmpty(State.SearchQuery.Gen))
+                                        {
+                                            @:Incepeti prin a adauga primul pacient in sistem.
+                                        }
+                                        else
+                                        {
+                                            @:Incercati sa modificati criteriile de cautare sau sa resetati filtrele.
+                                        }
+                                    </MudText>
+                                </MudStack>
+                                <MudStack Row Spacing="2">
+                                    @if (!string.IsNullOrEmpty(State.SearchQuery.Search) || !string.IsNullOrEmpty(State.SearchQuery.Judet) || !string.IsNullOrEmpty(State.SearchQuery.Gen))
+                                    {
+                                        <MudButton StartIcon="@Icons.Material.Filled.ClearAll" 
+                                                  Color="Color.Secondary" 
+                                                  Variant="Variant.Outlined"
+                                                  OnClick="@ResetFilters">
+                                            Reseteaza filtrele
+                                        </MudButton>
+                                    }
+                                    <MudButton StartIcon="@Icons.Material.Filled.PersonAdd" 
+                                              Color="Color.Primary" 
+                                              Variant="Variant.Filled"
+                                              OnClick="@CreateNewPatient">
+                                        Adauga primul pacient
+                                    </MudButton>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </NoRecordsContent>
+                </MudDataGrid>
             </MudPaper>
         }
     </MudStack>
 </MudContainer>
-
-<style>
-    .search-bar-compact {
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
-    }
-    .search-compact .mud-input-root, .search-compact .mud-select-root {
-        min-height: 32px !important;
-        height: 32px !important;
-        font-size: 0.95rem;
-    }
-    .pagination-compact .mud-select-root, .pagination-select-compact .mud-select-root {
-        min-height: 32px !important;
-        height: 32px !important;
-        font-size: 0.95rem;
-    }
-    .pagination-compact .mud-pagination {
-        min-height: 32px !important;
-        height: 32px !important;
-    }
-    .pagination-compact .mud-pagination-item {
-        min-width: 32px !important;
-        height: 32px !important;
-        font-size: 0.95rem;
-    }
-</style>
 
 @code {
     // All logic is in PatientListBase
