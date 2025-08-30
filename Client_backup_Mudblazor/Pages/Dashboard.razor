@@ -1,0 +1,197 @@
+@page "/dashboard"
+@inject IAuthenticationStateService AuthStateService
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>Dashboard - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h3" Class="mb-6">Dashboard</MudText>
+    
+    @if (_currentUser != null)
+    {
+        <MudAlert Severity="MudSeverity.Success" Class="mb-4">
+            Bun venit, @_currentUser.NumeComplet! Sunteti conectat cu succes in sistemul ValyanMed.
+        </MudAlert>
+    }
+
+    <MudGrid>
+        <MudItem xs="12" md="6" lg="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Pacienti inregistrati</MudText>
+                            <MudText Typo="Typo.h4">1,234</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Primary" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="6" lg="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Consultatii Astazi</MudText>
+                            <MudText Typo="Typo.h4">45</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Color="Color.Success" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="6" lg="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Stoc Medicamente</MudText>
+                            <MudText Typo="Typo.h4">892</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Large" Color="Color.Warning" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="6" lg="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Venit Luna Curenta</MudText>
+                            <MudText Typo="Typo.h4">€15,450</MudText>
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Size="Size.Large" Color="Color.Tertiary" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" lg="8">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Activitate Recente</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudList T="string">
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.PersonAdd" Text="Pacient nou inregistrat: Maria Popescu" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.EventAvailable" Text="Consultatie programata pentru 14:30" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.LocalPharmacy" Text="Stoc medicament actualizat: Paracetamol" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Payment" Text="Factura generata: #FAC-2024-001" />
+                        <MudListItem T="string" Icon="@Icons.Material.Filled.Assessment" Text="Raport lunar generat cu succes" />
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" lg="4">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Actiuni Rapide</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudStack Spacing="3">
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Primary" 
+                                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                                   FullWidth="true"
+                                   Href="/pacienti">
+                            Adauga Pacient
+                        </MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Secondary" 
+                                   StartIcon="@Icons.Material.Filled.Event"
+                                   FullWidth="true"
+                                   Href="/programari">
+                            Programeaza Consultatie
+                        </MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Tertiary" 
+                                   StartIcon="@Icons.Material.Filled.LocalPharmacy"
+                                   FullWidth="true"
+                                   Href="/farmacie/medicamente">
+                            Gestioneaza Medicamente
+                        </MudButton>
+                        
+                        <MudButton Variant="Variant.Filled" 
+                                   Color="Color.Success" 
+                                   StartIcon="@Icons.Material.Filled.Assessment"
+                                   FullWidth="true"
+                                   Href="/rapoarte">
+                            Vezi Rapoarte
+                        </MudButton>
+                        
+                        <MudDivider />
+                        
+                        <!-- Debug Tools pentru dezvoltare -->
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Debug Tools:</MudText>
+                        
+                        <MudStack Row Spacing="1">
+                            <MudButton Variant="Variant.Text" 
+                                       Color="Color.Info" 
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.BugReport"
+                                       Href="/auth-debug">
+                                Auth Debug
+                            </MudButton>
+                            
+                            <MudButton Variant="Variant.Text" 
+                                       Color="Color.Warning" 
+                                       Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Science"
+                                       Href="/test-simple">
+                                Debug Suite
+                            </MudButton>
+                        </MudStack>
+                        
+                        <MudDivider />
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.Logout"
+                                   FullWidth="true"
+                                   OnClick="@LogoutNow">
+                            Delogare
+                        </MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private AuthenticationResponse? _currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUser = await AuthStateService.GetCurrentUserAsync();
+    }
+
+    private async Task LogoutNow()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("appLifecycle.logoutNow", "https://localhost:7294/api/auth/logout",
+                new[] { "valyanmed_auth_token", "valyanmed_user_info", "currentUser" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dashboard logout error: {ex.Message}");
+        }
+        finally
+        {
+            Nav.NavigateTo("/login", forceLoad: true);
+        }
+    }
+}

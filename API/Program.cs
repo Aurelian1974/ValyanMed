@@ -17,6 +17,10 @@ using Application.Services.Medical;
 // Medical services and repositories
 using Infrastructure.Repositories.Medical;
 using Shared.Validators.Authentication;
+using Shared.Validators.Medical;
+
+// Data layer
+using Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,15 +69,19 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// DB connection for repositories
+// Data layer - Connection factory
+builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
+
+// DB connection for repositories (legacy support)
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Authentication Repositories - folosesc implementarile din Infrastructure cu interfetele din Application
+// Authentication Repositories - ACTUALIZAT pentru a folosi UtilizatoriSistem
 builder.Services.AddScoped<Application.Services.Authentication.IPersoanaRepository, PersoanaRepository>();
-builder.Services.AddScoped<Application.Services.Authentication.IUtilizatorRepository, UtilizatorRepository>();
+builder.Services.AddScoped<Application.Services.Authentication.IUtilizatorRepository, UtilizatoriSistemRepository>(); // SCHIMBAT
 
 // Medical Repositories
 builder.Services.AddScoped<Application.Services.Medical.IPacientRepository, PacientRepository>();
+builder.Services.AddScoped<Application.Services.Medical.IPersonalMedicalRepository, PersonalMedicalRepository>();
 
 // Authentication Services
 builder.Services.AddScoped<Application.Services.Authentication.IPasswordService, PasswordService>();
@@ -96,6 +104,7 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 // Medical Services
 builder.Services.AddScoped<IPacientService, PacientService>();
 builder.Services.AddScoped<IJudetService, JudetService>();
+builder.Services.AddScoped<IPersonalMedicalService, PersonalMedicalService>();
 
 // FluentValidation Validators
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.CreatePersoanaRequest>, CreatePersoanaValidator>();
@@ -103,6 +112,10 @@ builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.UpdatePersoanaR
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.CreateUtilizatorRequest>, CreateUtilizatorValidator>();
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.UpdateUtilizatorRequest>, UpdateUtilizatorValidator>();
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.LoginRequest>, LoginValidator>();
+
+// Medical Validators
+builder.Services.AddScoped<IValidator<Shared.DTOs.Medical.CreatePersonalMedicalRequest>, CreatePersonalMedicalValidator>();
+builder.Services.AddScoped<IValidator<Shared.DTOs.Medical.UpdatePersonalMedicalRequest>, UpdatePersonalMedicalValidator>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

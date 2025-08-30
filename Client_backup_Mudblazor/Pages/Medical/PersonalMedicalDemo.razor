@@ -1,0 +1,408 @@
+@page "/medical/personal-demo"
+@using AntDesign
+@using global::Shared.Models.Medical
+@using Microsoft.AspNetCore.Components
+@attribute [Authorize]
+
+<PageTitle>Demo Personal Medical - Framework UI Comparison</PageTitle>
+
+<div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
+    
+    <!-- Navigation Breadcrumb -->
+    <div style="margin-bottom: 20px; padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #1890ff;">
+        <div style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;">
+            <span>??</span>
+            <a href="/medical/dashboard" style="color: #1890ff; text-decoration: none;">Dashboard</a>
+            <span>?</span>
+            <a href="/medical/pacienti" style="color: #1890ff; text-decoration: none;">Lista Pacien?i</a>
+            <span>?</span>
+            <span style="color: #333; font-weight: 500;">Demo Framework UI</span>
+        </div>
+    </div>
+    
+    <!-- Comparison Header -->
+    <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="color: #1890ff; margin-bottom: 10px;">?? Framework UI Comparison</h1>
+        <p style="color: #666; font-size: 18px;">
+            Compara?ia între <strong>MudBlazor</strong>, <strong>Ant Design Blazor</strong> ?i <strong>Radzen Blazor</strong>
+        </p>
+        <div style="margin-top: 15px;">
+            <span style="background: #e6f7ff; color: #1890ff; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;">
+                ?? Demo interactiv pentru alegerea framework-ului UI
+            </span>
+        </div>
+    </div>
+
+    <!-- Three-Column Comparison -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 40px;">
+        
+        <!-- MudBlazor Section -->
+        <div style="border: 2px solid #594ae2; border-radius: 12px; padding: 20px; background: #f8f9ff;">
+            <h2 style="color: #594ae2; margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="background: #594ae2; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">MudBlazor</span>
+                Material Design
+            </h2>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4 style="margin-top: 0;">?? Search Example</h4>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 12px;">Cautare cu MudBlazor:</label>
+                    <input type="text" 
+                           placeholder="Cautare pacienti..." 
+                           style="width: 100%; padding: 8px; border: 2px solid #594ae2; border-radius: 6px; font-size: 12px;"
+                           @bind="mudSearchTerm" />
+                </div>
+                <div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 10px;">
+                    <strong>C?uta?i:</strong> @mudSearchTerm
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4 style="margin-top: 0;">?? Button Examples</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button style="background: #594ae2; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 11px;">
+                        Primary
+                    </button>
+                    <button style="background: transparent; color: #594ae2; border: 2px solid #594ae2; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px;">
+                        Outlined
+                    </button>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 8px;">
+                <h4 style="margin-top: 0;">?? Table Style</h4>
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr style="background: #594ae2; color: white;">
+                            <th style="padding: 6px; text-align: left;">Nume</th>
+                            <th style="padding: 6px; text-align: left;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 6px;">Dr. Ion Popescu</td>
+                            <td style="padding: 6px;"><span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px;">Activ</span></td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 6px;">Dr. Maria Ionescu</td>
+                            <td style="padding: 6px;"><span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px;">Ocupat</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Ant Design Section -->
+        <div style="border: 2px solid #1890ff; border-radius: 12px; padding: 20px; background: #f0f9ff;">
+            <h2 style="color: #1890ff; margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="background: #1890ff; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">Ant Design</span>
+                Enterprise Design
+            </h2>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4 style="margin-top: 0;">?? Search Example</h4>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 12px;">Cautare cu Ant Design:</label>
+                    <AntDesign.Input Placeholder="Cautare personal medical..." 
+                                     Value="@antSearchTerm"
+                                     OnInput="@OnAntSearchChanged"
+                                     AllowClear="true"
+                                     Size="@InputSize.Small"
+                                     Style="width: 100%;">
+                        <Prefix>
+                            <AntDesign.Icon Type="search" />
+                        </Prefix>
+                    </AntDesign.Input>
+                </div>
+                <div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 10px;">
+                    <strong>C?uta?i:</strong> @antSearchTerm
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4 style="margin-top: 0;">?? Button Examples</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Primary" Size="@AntDesign.ButtonSize.Small">Primary</AntDesign.Button>
+                    <AntDesign.Button Type="@AntDesign.ButtonType.Default" Size="@AntDesign.ButtonSize.Small">Default</AntDesign.Button>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 8px;">
+                <h4 style="margin-top: 0;">?? Table Style</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid #d9d9d9; font-size: 11px;">
+                        <thead>
+                            <tr style="background: #fafafa;">
+                                <th style="padding: 6px; text-align: left; border: 1px solid #d9d9d9; font-weight: 500;">Nume</th>
+                                <th style="padding: 6px; text-align: left; border: 1px solid #d9d9d9; font-weight: 500;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #d9d9d9;">
+                                <td style="padding: 6px; border: 1px solid #d9d9d9;">Dr. Ion Popescu</td>
+                                <td style="padding: 6px; border: 1px solid #d9d9d9;">
+                                    <span style="background: #f6ffed; color: #52c41a; padding: 2px 6px; border: 1px solid #b7eb8f; border-radius: 4px; font-size: 10px;">
+                                        Activ
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #d9d9d9;">
+                                <td style="padding: 6px; border: 1px solid #d9d9d9;">Dr. Maria Ionescu</td>
+                                <td style="padding: 6px; border: 1px solid #d9d9d9;">
+                                    <span style="background: #fff7e6; color: #fa8c16; padding: 2px 6px; border: 1px solid #ffd591; border-radius: 4px; font-size: 10px;">
+                                        Ocupat
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radzen Section -->
+        <div style="border: 2px solid #e91e63; border-radius: 12px; padding: 20px; background: #fdf2f8;">
+            <h2 style="color: #e91e63; margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="background: #e91e63; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px;">Radzen</span>
+                Professional UI
+            </h2>
+            
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4 style="margin-top: 0;">?? Search Example</h4>
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 12px;">Cautare cu Radzen:</label>
+                    <input type="text" 
+                           placeholder="Cautare doctori..." 
+                           style="width: 100%; padding: 8px; border: 2px solid #e91e63; border-radius: 6px; font-size: 12px;"
+                           @bind="radzenSearchTerm" />
+                </div>
+                <div style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 10px;">
+                    <strong>C?uta?i:</strong> @radzenSearchTerm
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4 style="margin-top: 0;">?? Button Examples</h4>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button style="background: #e91e63; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 11px;">
+                        Primary
+                    </button>
+                    <button style="background: transparent; color: #e91e63; border: 2px solid #e91e63; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px;">
+                        Secondary
+                    </button>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 15px; border-radius: 8px;">
+                <h4 style="margin-top: 0;">?? Table Style</h4>
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <thead>
+                        <tr style="background: #e91e63; color: white;">
+                            <th style="padding: 6px; text-align: left;">Nume</th>
+                            <th style="padding: 6px; text-align: left;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 6px;">Dr. Ion Popescu</td>
+                            <td style="padding: 6px;">
+                                <span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px;">
+                                    Activ
+                                </span>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e0e0e0;">
+                            <td style="padding: 6px;">Dr. Maria Ionescu</td>
+                            <td style="padding: 6px;">
+                                <span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px;">
+                                    Ocupat
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Features Comparison -->
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">?? Caracteristici Comparative Complete</h2>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <th style="padding: 12px; text-align: left;">Caracteristic?</th>
+                        <th style="padding: 12px; text-align: center;">MudBlazor</th>
+                        <th style="padding: 12px; text-align: center;">Ant Design Blazor</th>
+                        <th style="padding: 12px; text-align: center;">Radzen Blazor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px; font-weight: 500;">?? Design Philosophy</td>
+                        <td style="padding: 12px; text-align: center;">Material Design</td>
+                        <td style="padding: 12px; text-align: center;">Enterprise Design Language</td>
+                        <td style="padding: 12px; text-align: center;">Professional UI Framework</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee; background: #f9f9f9;">
+                        <td style="padding: 12px; font-weight: 500;">?? Num?rul de componente</td>
+                        <td style="padding: 12px; text-align: center;">60+ componente</td>
+                        <td style="padding: 12px; text-align: center;">50+ componente</td>
+                        <td style="padding: 12px; text-align: center;">70+ componente</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px; font-weight: 500;">?? Documenta?ie</td>
+                        <td style="padding: 12px; text-align: center;">????? Excellent?</td>
+                        <td style="padding: 12px; text-align: center;">???? Foarte bun?</td>
+                        <td style="padding: 12px; text-align: center;">????? Excellent?</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee; background: #f9f9f9;">
+                        <td style="padding: 12px; font-weight: 500;">?? Performan??</td>
+                        <td style="padding: 12px; text-align: center;">????? Optimizat?</td>
+                        <td style="padding: 12px; text-align: center;">???? Bun?</td>
+                        <td style="padding: 12px; text-align: center;">????? Excellent?</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px; font-weight: 500;">?? Potrivire pentru ValyanMed</td>
+                        <td style="padding: 12px; text-align: center;">????? Perfect</td>
+                        <td style="padding: 12px; text-align: center;">???? Foarte bun?</td>
+                        <td style="padding: 12px; text-align: center;">????? Excellent?</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee; background: #f9f9f9;">
+                        <td style="padding: 12px; font-weight: 500;">??? U?urin?a customiz?rii</td>
+                        <td style="padding: 12px; text-align: center;">????? Foarte flexibil</td>
+                        <td style="padding: 12px; text-align: center;">??? Predefinit</td>
+                        <td style="padding: 12px; text-align: center;">???? Flexibil</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px; font-weight: 500;">?? Cost</td>
+                        <td style="padding: 12px; text-align: center;">?? Gratuit</td>
+                        <td style="padding: 12px; text-align: center;">?? Gratuit</td>
+                        <td style="padding: 12px; text-align: center;">?? Freemium/Comercial</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee; background: #f9f9f9;">
+                        <td style="padding: 12px; font-weight: 500;">??? Data Grid</td>
+                        <td style="padding: 12px; text-align: center;">???? Foarte bun</td>
+                        <td style="padding: 12px; text-align: center;">??? Bun</td>
+                        <td style="padding: 12px; text-align: center;">????? Excelent</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Three-Column Summary -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-top: 40px;">
+        <h2 style="margin-top: 0; text-align: center;">?? Compara?ia Final? cu Radzen</h2>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div>
+                <h3>?? MudBlazor</h3>
+                <ul style="line-height: 1.6; font-size: 13px;">
+                    <li><strong>? Design:</strong> Material Design clean ?i modern</li>
+                    <li><strong>? Gratis:</strong> Complet open-source</li>
+                    <li><strong>? Styling:</strong> CSS-in-C# foarte flexibil</li>
+                    <li><strong>? Performan??:</strong> Optimizat pentru Blazor</li>
+                    <li><strong>? Documenta?ie:</strong> Excellent? cu exemple live</li>
+                    <li><strong>? Comunitate:</strong> Mare ?i activ?</li>
+                    <li><strong>? Integrare:</strong> Perfect pentru aplica?ii medicale</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3>?? Ant Design Blazor</h3>
+                <ul style="line-height: 1.6; font-size: 13px;">
+                    <li><strong>? Design:</strong> Enterprise-focused, profesional</li>
+                    <li><strong>? Gratis:</strong> Open-source</li>
+                    <li><strong>? Styling:</strong> Consistent design language</li>
+                    <li><strong>?? Performan??:</strong> Bun?, portare din React</li>
+                    <li><strong>?? Documenta?ie:</strong> Bun?, în dezvoltare</li>
+                    <li><strong>?? Comunitate:</strong> Crescând? rapid</li>
+                    <li><strong>?? Customizare:</strong> Mai pu?in flexibil</li>
+                </ul>
+            </div>
+
+            <div>
+                <h3>?? Radzen Blazor</h3>
+                <ul style="line-height: 1.6; font-size: 13px;">
+                    <li><strong>? Design:</strong> Profesional ?i modern</li>
+                    <li><strong>?? Cost:</strong> Freemium, features avansate sunt pl?tite</li>
+                    <li><strong>? Data Grid:</strong> Cel mai avansat din toate</li>
+                    <li><strong>? Performan??:</strong> Excellent? ?i optimizat?</li>
+                    <li><strong>? Documenta?ie:</strong> Foarte detaliat?</li>
+                    <li><strong>?? Vendor lock-in:</strong> Dependen?? de Radzen</li>
+                    <li><strong>? Features:</strong> Foarte multe componente</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <h3>?? Recomandarea Final?</h3>
+            <p style="font-size: 18px; margin-bottom: 15px;">
+                Pentru <strong>ValyanMed</strong>, r?mâi cu <strong>MudBlazor</strong>! 
+            </p>
+            <p style="font-size: 14px; opacity: 0.9;">
+                De?i Radzen are un DataGrid excelent ?i Ant Design arat? profesional, MudBlazor r?mâne alegerea perfect?:
+                este gratuit, matur, flexibil ?i ai deja o investi?ie substan?ial?. Plus, se potrive?te perfect pentru aplica?ii medicale!
+            </p>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 6px;">
+                <strong>?? Not?:</strong> Radzen ar fi o alegere excellent? pentru un proiect nou cu bugete pentru licen?e comerciale.
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Actions -->
+    <div style="text-align: center; margin-top: 40px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; color: #333;">?? Urm?torii Pa?i</h3>
+        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
+            <a href="/medical/pacienti" 
+               style="background: #594ae2; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                ?? Lista Pacien?i
+            </a>
+            <a href="/medical/dashboard" 
+               style="background: #52c41a; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                ?? Dashboard
+            </a>
+            <a href="https://mudblazor.com/docs/overview" 
+               target="_blank"
+               style="background: #1890ff; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                ?? MudBlazor Docs
+            </a>
+            <a href="https://blazor.radzen.com/" 
+               target="_blank"
+               style="background: #e91e63; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                ?? Radzen Docs
+            </a>
+        </div>
+        <div style="margin-top: 15px; color: #666; font-size: 14px;">
+            <strong>?? Verdict Final:</strong> MudBlazor câ?tig? pentru ValyanMed - perfect balansat între features, cost ?i flexibilitate!
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private string mudSearchTerm = "";
+    private string antSearchTerm = "";
+    private string radzenSearchTerm = "";
+
+    private List<StaffMember> staffData = new()
+    {
+        new StaffMember { Name = "Dr. Ion Popescu", IsActive = true, Status = "Activ" },
+        new StaffMember { Name = "Dr. Maria Ionescu", IsActive = false, Status = "Ocupat" }
+    };
+
+    private void OnAntSearchChanged(ChangeEventArgs e)
+    {
+        antSearchTerm = e.Value?.ToString() ?? "";
+    }
+
+    public class StaffMember
+    {
+        public string Name { get; set; } = "";
+        public bool IsActive { get; set; }
+        public string Status { get; set; } = "";
+    }
+}

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ValyanMed - Clinic Management System</title>
+    <base href="/" />
+    
+    <!-- MudBlazor CSS -->
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    
+    <!-- Ant Design CSS -->
+    <link href="_content/AntDesign/css/ant-design-blazor.css" rel="stylesheet" />
+    
+    <!-- Radzen CSS -->
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/mainlayout.css" />
+    <link rel="stylesheet" href="css/loading.css" />
+    <link rel="stylesheet" href="css/patient-list.css" />
+    <link rel="stylesheet" href="css/patient-list-override.css" />
+    <link rel="stylesheet" href="css/personal-medical-antd.css" />
+    <link rel="stylesheet" href="css/pages/patient-registration.css" />
+    
+    <!-- Fonts required by MudBlazor -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    
+    <style>
+        /* Force hide any unwanted elements that might create black areas */
+        #blazor-error-ui {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        
+        /* Ensure clean layout with no weird margins or padding */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+        }
+        
+        /* Clean bottom area */
+        body::after,
+        html::after {
+            display: none !important;
+            content: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="loading-progress">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Se incarca ValyanMed...</div>
+        </div>
+    </div>
+
+    <!-- Error UI - Will be forcefully hidden -->
+    <div id="blazor-error-ui" style="display: none !important; visibility: hidden !important; height: 0 !important;">
+        <div class="dismiss" onclick="document.getElementById('blazor-error-ui').style.display='none'">X</div>
+        <span>A aparut o eroare necontrolata.</span>
+        <a href="" class="reload">Reincarca</a>
+    </div>
+
+    <!-- Core helpers -->
+    <script src="js/appLifecycle.js"></script>
+    <script src="js/iconFallback.js"></script>
+    <script src="js/paginationDropdown.js"></script>
+
+    <!-- Force hide error UI immediately -->
+    <script>
+        // Immediately hide any error UI elements
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorUI = document.getElementById('blazor-error-ui');
+            if (errorUI) {
+                errorUI.style.display = 'none';
+                errorUI.style.visibility = 'hidden';
+                errorUI.style.height = '0';
+                errorUI.style.overflow = 'hidden';
+                errorUI.style.position = 'absolute';
+                errorUI.style.left = '-9999px';
+            }
+            
+            // Clean up any potential black elements
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.overflowX = 'hidden';
+        });
+        
+        // Monitor for any elements that might be creating black areas
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            // Check for elements with black backgrounds
+                            const computedStyle = window.getComputedStyle(node);
+                            if (computedStyle.backgroundColor === 'rgb(0, 0, 0)' || 
+                                computedStyle.backgroundColor === 'black' ||
+                                computedStyle.background.includes('black')) {
+                                // Only hide if it's not intentionally black content
+                                if (!node.classList.contains('intentional-black') && 
+                                    !node.closest('.fab-container') &&
+                                    !node.closest('.mud-fab')) {
+                                    console.warn('Found potentially unwanted black element:', node);
+                                    node.style.display = 'none';
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    </script>
+
+    <!-- Essential JavaScript helpers -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function(){
+            // Register lifecycle handlers for logout+cache clear on exit
+            try {
+                const apiBase = 'https://localhost:7294/';
+                window.appLifecycle?.register({ 
+                    logoutUrl: apiBase + 'api/auth/logout',
+                    storageKeys: ['valyanmed_auth_token', 'valyanmed_user_info', 'currentUser', 'auth_token', 'auth_user']
+                });
+                console.log('AppLifecycle registered - will clear auth data on app close/logout');
+            } catch (ex) {
+                console.log('AppLifecycle registration failed:', ex);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function(){
+            setTimeout(function(){
+                // Initialize for the first pagination select found
+                var anchor = document.querySelector('.pagination-section .mud-select');
+                if(window.paginationDropdown && anchor){
+                    window.paginationDropdown.init(anchor);
+                }
+            }, 500);
+        });
+    </script>
+
+    <!-- MudBlazor JavaScript -->
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    
+    <!-- Ant Design JavaScript -->
+    <script src="_content/AntDesign/js/ant-design-blazor.js"></script>
+    
+    <!-- Radzen JavaScript -->
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    
+    <!-- Blazor WebAssembly - Enhanced startup -->
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    
+    <script>
+        (async function initializeBlazor() {
+            try {
+                console.log('Starting Blazor WebAssembly...');
+                
+                await Blazor.start({
+                    loadBootResource: function (type, name, defaultUri, integrity) {
+                        const skipFiles = [
+                            'bootstrap', 'Client.styles.css', 'site.css', 
+                            'bootstrap.min.css', 'bootstrap.bundle.min.js'
+                        ];
+                        
+                        if (skipFiles.some(skip => name.includes(skip))) {
+                            console.log(`Skipping known missing file: ${name}`);
+                            return null;
+                        }
+                        
+                        return defaultUri;
+                    },
+                    environment: 'Development'
+                });
+                
+                console.log('Blazor WebAssembly started successfully!');
+                
+                // Clean up loading and ensure no black elements remain
+                setTimeout(() => {
+                    const loadingElement = document.querySelector('.loading-progress');
+                    if (loadingElement) {
+                        loadingElement.style.opacity = '0';
+                        loadingElement.style.transition = 'opacity 0.5s ease';
+                        setTimeout(() => {
+                            if (loadingElement.parentNode) {
+                                loadingElement.parentNode.removeChild(loadingElement);
+                            }
+                        }, 500);
+                    }
+                    
+                    // Final cleanup - hide any error UI that might have appeared
+                    const errorUI = document.getElementById('blazor-error-ui');
+                    if (errorUI) {
+                        errorUI.style.display = 'none';
+                        errorUI.style.visibility = 'hidden';
+                    }
+                    
+                    console.log('Loading UI cleaned up and error UI hidden');
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Blazor startup failed:', error);
+                
+                // Don't show the black error UI, instead create a clean white error message
+                document.getElementById('app').innerHTML = `
+                    <div style="padding: 40px; max-width: 800px; margin: 0 auto; font-family: 'Roboto', Arial, sans-serif; background: #fafafa; min-height: 100vh;">
+                        <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <div style="text-align: center; margin-bottom: 30px;">
+                                <h1 style="color: #d32f2f; margin-bottom: 10px;">Eroare de incarcare</h1>
+                                <p style="color: #666; font-size: 18px;">ValyanMed nu se poate incarca din cauza unei erori.</p>
+                            </div>
+                            
+                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                                <h3 style="margin-top: 0; color: #856404;">Solutii rapide:</h3>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                                    <button onclick="location.reload()" 
+                                            style="background: #28a745; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                        Reincarcare simpla
+                                    </button>
+                                    <button onclick="localStorage.clear(); sessionStorage.clear(); location.reload()" 
+                                            style="background: #fd7e14; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                        Sterge cache
+                                    </button>
+                                    <button onclick="caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => location.reload())" 
+                                            style="background: #6f42c1; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                        Reset complet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; padding: 20px; background: #e8f4fd; border-radius: 8px; color: #0c5460;">
+                                <p style="margin: 0; font-weight: 500;">
+                                    Daca problema persista, verificati ca API-ul ruleaza pe <strong>https://localhost:7294</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Ensure error UI stays hidden even on error
+                const errorUI = document.getElementById('blazor-error-ui');
+                if (errorUI) {
+                    errorUI.style.display = 'none';
+                    errorUI.style.visibility = 'hidden';
+                }
+            }
+        })();
+    </script>
+
+    <script>
+        // Function to download files from Blazor
+        window.downloadFile = (filename, content) => {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        };
+
+        // Console error monitoring
+        window.consoleErrors = [];
+        
+        // Override console.error to capture errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            window.consoleErrors.push({
+                timestamp: new Date(),
+                message: args.join(' ')
+            });
+            originalError.apply(console, args);
+        };
+
+        // Function to get captured console errors
+        window.getConsoleErrors = () => {
+            return window.consoleErrors;
+        };
+
+        // Function to clear captured errors
+        window.clearConsoleErrors = () => {
+            window.consoleErrors = [];
+        };
+    </script>
+
+</body>
+
+</html>

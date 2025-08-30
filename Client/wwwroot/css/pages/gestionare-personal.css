@@ -1,0 +1,46 @@
+/* ===================================================================
+   CSS MINIMAL PENTRU GESTIONARE PERSONAL MEDICAL
+   Conform Plan_refactoring.txt - "FARA CSS-uri stufoase"
+   =================================================================== */
+
+/* Doar stiluri locale, fara a afecta alte pagini/componente */
+
+/* Pager layout ca in demo Radzen: sumar stanga, paginare centru, marime pagina + label dreapta */
+.personal-grid .rz-paginator {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: .5rem;
+}
+
+.personal-grid .rz-paginator .rz-paginator-left {
+    justify-self: start; /* Summary */
+}
+
+.personal-grid .rz-paginator .rz-pages {
+    justify-self: center; /* Page numbers */
+}
+
+.personal-grid .rz-paginator .rz-paginator-right {
+    justify-self: end; /* Page size + label */
+}
+
+/* Responsive pentru mobile */
+@media (max-width: 768px) {
+    .personal-grid .rz-paginator {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+        row-gap: .25rem;
+    }
+    .personal-grid .rz-paginator .rz-pages {
+        justify-self: stretch;
+    }
+}
+
+/* Print support */
+@media print {
+    .personal-action-buttons,
+    .personal-filters-card {
+        display: none !important;
+    }
+}

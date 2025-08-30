@@ -1,17 +1,22 @@
 ﻿using Client;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Http;
 using MudBlazor.Services;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Radzen;
 
 // Authentication services
 using Client.Services.Authentication;
 using Client.Authentication;
 using Client.Converters;
 using Client.Services;
+
+// Medical services
+using Client.Services.Medical;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -24,6 +29,12 @@ try
     builder.Services.AddMudServices();
     builder.Services.AddBlazoredLocalStorage();
     
+    // Add Radzen services
+    builder.Services.AddScoped<DialogService>();
+    builder.Services.AddScoped<NotificationService>();
+    builder.Services.AddScoped<TooltipService>();
+    builder.Services.AddScoped<ContextMenuService>();
+    
     // JSON service for enum handling
     builder.Services.AddSingleton<IJsonService, JsonService>();
 
@@ -35,6 +46,9 @@ try
     builder.Services.AddScoped<IAuthenticationStateService, AuthenticationStateService>();
     builder.Services.AddScoped<IAuthenticationApiService, AuthenticationApiService>();
     builder.Services.AddScoped<AuthenticatedHttpClientHandler>();
+
+    // Medical API services
+    builder.Services.AddScoped<IPersonalMedicalApiService, PersonalMedicalApiService>();
 
     // Authentication state provider and authorization
     builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();

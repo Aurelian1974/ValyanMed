@@ -1,0 +1,177 @@
+@page "/medical/personal"
+@using global::Shared.DTOs.Medical
+@using global::Shared.Common
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen
+@using Radzen.Blazor
+
+<PageTitle>Personal Medical - ValyanMed</PageTitle>
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+    
+    <!-- Header -->
+    <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Personal Medical</RadzenText>
+    
+    <!-- Search and Filters -->
+    <RadzenCard Class="mb-4">
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenLabel Text="Cautare globala" />
+                    <RadzenTextBox @bind-Value="_searchQuery.Search"
+                                   Placeholder="Nume, prenume, specializare, licenta..."
+                                   @oninput="OnSearchInput"
+                                   Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Text="Departament" />
+                    <RadzenDropDown @bind-Value="_searchQuery.Departament"
+                                    Data="@_departamente"
+                                    AllowClear="true"
+                                    Placeholder="Selecteaza departament"
+                                    Change="@OnFilterChanged"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Text="Pozitie" />
+                    <RadzenDropDown @bind-Value="_searchQuery.Pozitie"
+                                    Data="@_pozitii"
+                                    AllowClear="true"
+                                    Placeholder="Selecteaza pozitie"
+                                    Change="@OnFilterChanged"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="2">
+                    <RadzenLabel Text="Status" />
+                    <RadzenDropDown @bind-Value="_searchQuery.EsteActiv"
+                                    Data="@_statusOptions"
+                                    TextProperty="Text"
+                                    ValueProperty="Value"
+                                    AllowClear="true"
+                                    Placeholder="Status"
+                                    Change="@OnFilterChanged"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenCard>
+
+    <!-- Debug info -->
+    @if (_isLoading)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Radzen.Variant.Filled">
+            Se incarca datele...
+        </RadzenAlert>
+    }
+
+    <!-- Data Grid -->
+    <RadzenCard>
+        <RadzenDataGrid @ref="_dataGrid"
+                        Data="@_data"
+                        Count="@_totalCount"
+                        LoadData="@LoadDataAsync"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        AllowColumnResize="true"
+                        PageSize="10"
+                        PagerHorizontalAlign="Radzen.HorizontalAlign.Left"
+                        ShowPagingSummary="true"
+                        PagingSummaryFormat="Pagina {0} din {1} ({2} inregistrari)"
+                        IsLoading="@_isLoading"
+                        ExpandMode="Radzen.DataGridExpandMode.Single"
+                        Style="height: 600px">
+            
+            <!-- Columns -->
+            <Columns>
+                <RadzenDataGridColumn Property="NumeComplet" Title="Nume complet" Width="200px" />
+                <RadzenDataGridColumn Property="SpecializareCompleta" Title="Specializare/Pozitie" Width="250px" />
+                <RadzenDataGridColumn Property="Departament" Title="Departament" Width="150px" />
+                <RadzenDataGridColumn Property="NumarLicenta" Title="Nr. Licenta" Width="120px" />
+                <RadzenDataGridColumn Property="Telefon" Title="Telefon" Width="120px" />
+                <RadzenDataGridColumn Property="Email" Title="Email" Width="200px" />
+                <RadzenDataGridColumn Property="StatusText" Title="Status" Width="80px">
+                    <Template Context="personal">
+                        <RadzenBadge Text="@personal.StatusText" 
+                                     BadgeStyle="@(personal.EsteActiv ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                     Variant="Radzen.Variant.Filled" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="DataCreare" Title="Data creare" Width="120px" FormatString="{0:dd.MM.yyyy}" />
+                <RadzenDataGridColumn Title="Actiuni" Width="80px" Sortable="false">
+                    <Template Context="personal">
+                        <RadzenButton Icon="visibility" 
+                                      ButtonStyle="Radzen.ButtonStyle.Primary" 
+                                      Variant="Radzen.Variant.Outlined" 
+                                      Size="Radzen.ButtonSize.Small"
+                                      Title="Vizualizeaza detalii"
+                                      Click="@(() => ViewDetails(personal.PersonalID))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+
+            <!-- Detail Row Template -->
+            <Template Context="personal">
+                <RadzenCard Class="m-3">
+                    <RadzenRow Gap="2rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                                <RadzenIcon Icon="person" Class="me-2" />
+                                Informatii personale
+                            </RadzenText>
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Nume complet:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@personal.NumeComplet</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Pozitie:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@personal.Pozitie</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Specializare:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@(personal.Specializare ?? "Nu este specificata")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Departament:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@(personal.Departament ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Nr. Licenta:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@(personal.NumarLicenta ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                                <RadzenIcon Icon="contact_phone" Class="me-2" />
+                                Contact
+                            </RadzenText>
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Telefon:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(personal.Telefon ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Email:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(personal.Email ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Status:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">
+                                        <RadzenBadge Text="@personal.StatusText" 
+                                                     BadgeStyle="@(personal.EsteActiv ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                                     Variant="Radzen.Variant.Filled" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Data creare:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@personal.DataCreare.ToString("dd.MM.yyyy HH:mm")</RadzenColumn>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenCard>
+            </Template>
+        </RadzenDataGrid>
+    </RadzenCard>
+</RadzenStack>

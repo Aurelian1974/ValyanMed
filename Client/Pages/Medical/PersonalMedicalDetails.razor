@@ -1,0 +1,272 @@
+@page "/medical/personal/{PersonalId:guid}"
+@using global::Shared.DTOs.Medical
+@using global::Shared.Common
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen
+@using Radzen.Blazor
+
+<PageTitle>Detalii Personal Medical - ValyanMed</PageTitle>
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+    
+    <!-- Header with Back Button -->
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center" Class="mb-3">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
+            <RadzenButton Icon="arrow_back" 
+                         ButtonStyle="ButtonStyle.Light" 
+                         Variant="Radzen.Variant.Outlined"
+                         Title="Inapoi la lista"
+                         Click="GoBack" />
+            <RadzenText TextStyle="TextStyle.H4">
+                @if (_personalDetail != null)
+                {
+                    <text>@_personalDetail.NumeComplet</text>
+                }
+                else
+                {
+                    <text>Detalii Personal Medical</text>
+                }
+            </RadzenText>
+        </RadzenStack>
+        
+        @if (_personalDetail != null)
+        {
+            <RadzenBadge Text="@_personalDetail.StatusText" 
+                         BadgeStyle="@(_personalDetail.EsteActiv ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                         Variant="Radzen.Variant.Filled" 
+                         Class="rz-badge-lg" />
+        }
+    </RadzenStack>
+
+    @if (_isLoading)
+    {
+        <!-- Loading State -->
+        <RadzenCard Class="text-center p-5">
+            <RadzenProgressBar ProgressBarStyle="ProgressBarStyle.Light" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            <RadzenText TextStyle="TextStyle.Body1" Class="mt-3">Se incarca datele...</RadzenText>
+        </RadzenCard>
+    }
+    else if (_personalDetail == null)
+    {
+        <!-- Not Found State -->
+        <RadzenCard Class="text-center p-5">
+            <RadzenIcon Icon="person_off" Style="font-size: 4rem; color: var(--rz-text-disabled-color);" />
+            <RadzenText TextStyle="TextStyle.H6" Class="mt-3">Personal medical nu a fost gasit</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="text-muted">
+                Persoana cautata nu exista sau nu aveti permisiuni pentru a o vizualiza.
+            </RadzenText>
+            <RadzenButton Text="Inapoi la lista" 
+                         ButtonStyle="ButtonStyle.Primary" 
+                         Icon="arrow_back"
+                         Click="GoBack" 
+                         Class="mt-3" />
+        </RadzenCard>
+    }
+    else
+    {
+        <!-- Personal Details Content -->
+        <RadzenRow Gap="2rem">
+            
+            <!-- Left Column - Personal Information -->
+            <RadzenColumn Size="12" SizeMD="6">
+                
+                <!-- Basic Information Card -->
+                <RadzenCard Class="mb-4">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6" Class="mb-2">
+                            <RadzenIcon Icon="person" Class="me-2" />
+                            Informatii Personale
+                        </RadzenText>
+                        
+                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Nume complet:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">@_personalDetail.NumeComplet</RadzenColumn>
+                            </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Pozitie:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">
+                                    <RadzenBadge Text="@_personalDetail.Pozitie" 
+                                               BadgeStyle="BadgeStyle.Info" 
+                                               Variant="Radzen.Variant.Outlined" />
+                                </RadzenColumn>
+                            </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Specializare:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">@(_personalDetail.Specializare ?? "Nu este specificata")</RadzenColumn>
+                            </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Departament:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">@(_personalDetail.Departament ?? "Nu este specificat")</RadzenColumn>
+                            </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Nr. Licenta:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">
+                                    @if (!string.IsNullOrEmpty(_personalDetail.NumarLicenta))
+                                    {
+                                        <RadzenBadge Text="@_personalDetail.NumarLicenta" 
+                                                   BadgeStyle="BadgeStyle.Secondary" 
+                                                   Variant="Radzen.Variant.Filled" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Nu este specificat</span>
+                                    }
+                                </RadzenColumn>
+                            </RadzenRow>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+
+                <!-- Contact Information Card -->
+                <RadzenCard Class="mb-4">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6" Class="mb-2">
+                            <RadzenIcon Icon="contact_phone" Class="me-2" />
+                            Informatii de Contact
+                        </RadzenText>
+                        
+                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                            <RadzenRow>
+                                <RadzenColumn Size="3"><strong>Telefon:</strong></RadzenColumn>
+                                <RadzenColumn Size="9">
+                                    @if (!string.IsNullOrEmpty(_personalDetail.Telefon))
+                                    {
+                                        <RadzenLink href="@($"tel:{_personalDetail.Telefon}")" Text="@_personalDetail.Telefon" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Nu este specificat</span>
+                                    }
+                                </RadzenColumn>
+                            </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="3"><strong>Email:</strong></RadzenColumn>
+                                <RadzenColumn Size="9">
+                                    @if (!string.IsNullOrEmpty(_personalDetail.Email))
+                                    {
+                                        <RadzenLink href="@($"mailto:{_personalDetail.Email}")" Text="@_personalDetail.Email" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Nu este specificat</span>
+                                    }
+                                </RadzenColumn>
+                            </RadzenRow>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+
+                <!-- System Information Card -->
+                <RadzenCard>
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6" Class="mb-2">
+                            <RadzenIcon Icon="info" Class="me-2" />
+                            Informatii Sistem
+                        </RadzenText>
+                        
+                        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Data crearii:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">@_personalDetail.DataCreare.ToString("dd.MM.yyyy HH:mm")</RadzenColumn>
+                            </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="4"><strong>Status:</strong></RadzenColumn>
+                                <RadzenColumn Size="8">
+                                    <RadzenBadge Text="@_personalDetail.StatusText" 
+                                               BadgeStyle="@(_personalDetail.EsteActiv ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                               Variant="Radzen.Variant.Filled" />
+                                </RadzenColumn>
+                            </RadzenRow>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <!-- Right Column - Activity & Statistics -->
+            <RadzenColumn Size="12" SizeMD="6">
+                
+                <!-- Statistics Card - Empty Structure for Future Implementation -->
+                <RadzenCard Class="mb-4">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6" Class="mb-2">
+                            <RadzenIcon Icon="analytics" Class="me-2" />
+                            Statistici Activitate
+                        </RadzenText>
+                        
+                        <RadzenRow Gap="1rem">
+                            <RadzenColumn Size="6">
+                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="text-center p-3">
+                                    <RadzenText TextStyle="TextStyle.H4" Class="text-primary mb-1">-</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" Class="text-muted">Total Programari</RadzenText>
+                                </RadzenCard>
+                            </RadzenColumn>
+                            <RadzenColumn Size="6">
+                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="text-center p-3">
+                                    <RadzenText TextStyle="TextStyle.H4" Class="text-success mb-1">-</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" Class="text-muted">Total Consultatii</RadzenText>
+                                </RadzenCard>
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenStack>
+                </RadzenCard>
+
+                <!-- Recent Appointments Card - Empty Structure for Future Implementation -->
+                <RadzenCard Class="mb-4">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6" Class="mb-2">
+                            <RadzenIcon Icon="event" Class="me-2" />
+                            Programari Recente
+                        </RadzenText>
+                        
+                        <RadzenCard Variant="Radzen.Variant.Outlined" Class="p-3 text-center">
+                            <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
+                                Datele vor fi afisate cand vor fi disponibile
+                            </RadzenText>
+                        </RadzenCard>
+                    </RadzenStack>
+                </RadzenCard>
+
+                <!-- Recent Consultations Card - Empty Structure for Future Implementation -->
+                <RadzenCard>
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+                        <RadzenText TextStyle="TextStyle.H6" Class="mb-2">
+                            <RadzenIcon Icon="medical_services" Class="me-2" />
+                            Consultatii Recente
+                        </RadzenText>
+                        
+                        <RadzenCard Variant="Radzen.Variant.Outlined" Class="p-3 text-center">
+                            <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
+                                Datele vor fi afisate cand vor fi disponibile
+                            </RadzenText>
+                        </RadzenCard>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <!-- Action Buttons -->
+        <RadzenCard Class="mt-4">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+                <RadzenButton Text="Inapoi la lista" 
+                             Icon="arrow_back" 
+                             ButtonStyle="ButtonStyle.Light" 
+                             Variant="Radzen.Variant.Outlined"
+                             Click="GoBack" />
+                
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                    <RadzenButton Text="Programari" 
+                                 Icon="event" 
+                                 ButtonStyle="ButtonStyle.Info" 
+                                 Variant="Radzen.Variant.Outlined"
+                                 Click="@(() => ViewAppointments(_personalDetail.PersonalID))" />
+                    <RadzenButton Text="Consultatii" 
+                                 Icon="medical_services" 
+                                 ButtonStyle="ButtonStyle.Success" 
+                                 Variant="Radzen.Variant.Outlined"
+                                 Click="@(() => ViewConsultations(_personalDetail.PersonalID))" />
+                </RadzenStack>
+            </RadzenStack>
+        </RadzenCard>
+    }
+</RadzenStack>

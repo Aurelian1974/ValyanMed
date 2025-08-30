@@ -1,0 +1,72 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Row AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@GetIcon()" Color="@Color" Size="Size.Large" />
+                <MudText Typo="Typo.h6">@Title</MudText>
+            </MudStack>
+            
+            <MudText Typo="Typo.body1">@ContentText</MudText>
+            
+            @if (!string.IsNullOrEmpty(SubText))
+            {
+                <MudAlert Severity="@GetSeverity()" Dense="true">
+                    @SubText
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Secondary">
+            Anuleaza
+        </MudButton>
+        <MudButton OnClick="Confirm" 
+                  Color="@Color" 
+                  Variant="Variant.Filled"
+                  StartIcon="@GetIcon()">
+            @ButtonText
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter] 
+    public string Title { get; set; } = "Confirmare";
+
+    [Parameter] 
+    public string ContentText { get; set; } = string.Empty;
+
+    [Parameter] 
+    public string? SubText { get; set; }
+
+    [Parameter] 
+    public string ButtonText { get; set; } = "Confirma";
+
+    [Parameter] 
+    public Color Color { get; set; } = Color.Primary;
+
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+
+    private string GetIcon() => Color switch
+    {
+        Color.Error => Icons.Material.Filled.DeleteForever,
+        Color.Warning => Icons.Material.Filled.Warning,
+        Color.Info => Icons.Material.Filled.Info,
+        Color.Success => Icons.Material.Filled.CheckCircle,
+        _ => Icons.Material.Filled.HelpOutline
+    };
+
+    private MudBlazor.Severity GetSeverity() => Color switch
+    {
+        Color.Error => MudBlazor.Severity.Error,
+        Color.Warning => MudBlazor.Severity.Warning,  
+        Color.Info => MudBlazor.Severity.Info,
+        Color.Success => MudBlazor.Severity.Success,
+        _ => MudBlazor.Severity.Normal
+    };
+}

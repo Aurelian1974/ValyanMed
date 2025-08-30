@@ -1,0 +1,396 @@
+/* Patient List Page Specific Styles - FINAL WORKING VERSION */
+
+/* =====================================================
+   Color Palette - Minimalist & Professional
+   ===================================================== */
+:root {
+    --clean-primary: #2563eb;
+    --clean-primary-light: #dbeafe;
+    --clean-primary-dark: #1d4ed8;
+    --clean-secondary: #64748b;
+    --clean-background: #ffffff;
+    --clean-surface: #f8fafc;
+    --clean-border: #e2e8f0;
+    --clean-text-primary: #0f172a;
+    --clean-text-secondary: #64748b;
+    --clean-text-muted: #94a3b8;
+    --clean-success: #059669;
+    --clean-warning: #d97706;
+    --clean-error: #dc2626;
+    --clean-shadow: rgba(0, 0, 0, 0.1);
+    --clean-shadow-light: rgba(0, 0, 0, 0.05);
+}
+
+/* =====================================================
+   Header Section - Clean & Minimal
+   ===================================================== */
+.header-section {
+    background: var(--clean-background);
+    border: 1px solid var(--clean-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.header-section:hover {
+    border-color: var(--clean-primary-light);
+    box-shadow: 0 2px 8px var(--clean-shadow-light);
+}
+
+/* =====================================================
+   Search Section - Simplified alignment (safe overrides)
+   ===================================================== */
+.search-section {
+    background: var(--clean-surface);
+    border: 1px solid var(--clean-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    padding: 12px !important;
+}
+
+.search-section:hover {
+    border-color: var(--clean-primary-light);
+}
+
+/* Keep layout simple: align bottom, allow natural (dense) control height */
+.search-section .mud-stack-row {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Remove forced heights on inputs/selects/button-groups to let Dense sizing apply */
+.search-section .mud-input-root,
+.search-section .mud-select-root,
+.search-section .mud-button-group,
+.search-section .mud-button-group .mud-icon-button {
+    height: auto !important;
+    min-height: unset !important;
+    max-height: unset !important;
+}
+
+/* =====================================================
+   Results Summary - Minimal
+   ===================================================== */
+.results-summary {
+    background: var(--clean-primary-light) !important;
+    border: 1px solid var(--clean-primary) !important;
+    border-radius: 6px;
+    color: var(--clean-primary-dark) !important;
+}
+
+/* =====================================================
+   Data Grid - Clean Professional Look
+   ===================================================== */
+.data-grid-container {
+    background: var(--clean-background);
+    border: 1px solid var(--clean-border);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px var(--clean-shadow-light);
+    overflow: hidden;
+    width: 100%;
+}
+
+.modern-data-grid {
+    border-radius: 8px;
+    width: 100%;
+}
+
+.modern-data-grid .mud-table {
+    table-layout: auto !important; /* allow columns to auto-size based on content */
+    width: 100% !important;
+}
+
+.modern-data-grid .mud-table-head {
+    background: var(--clean-surface);
+    border-bottom: 2px solid var(--clean-border);
+}
+
+.modern-data-grid .mud-table-head .mud-th {
+    color: var(--clean-text-primary);
+    font-weight: 600;
+    padding: 16px 12px;
+    border-bottom: none;
+}
+
+.modern-data-grid .mud-table-row {
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid var(--clean-border);
+}
+
+.modern-data-grid .mud-table-row:hover {
+    background: var(--clean-surface);
+}
+
+.modern-data-grid .mud-table-body .mud-td {
+    padding: 16px 12px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--clean-border);
+    color: var(--clean-text-primary);
+    white-space: normal; /* allow wrapping */
+}
+
+/* =====================================================
+   Column Specific Styles - Clean
+   ===================================================== */
+.expansion-column {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    text-align: center;
+}
+
+/* make actions column flexible but with min width */
+.actions-column {
+    min-width: 220px;
+    text-align: center;
+}
+
+.expansion-button {
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    color: var(--clean-text-secondary);
+}
+
+.expansion-button:hover {
+    background: var(--clean-primary-light);
+    color: var(--clean-primary);
+}
+
+/* =====================================================
+   Action Buttons - Minimal & Clean
+   ===================================================== */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.action-buttons .mud-icon-button {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    color: var(--clean-text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+}
+
+.action-buttons .mud-icon-button:hover {
+    background: var(--clean-surface);
+    border-color: var(--clean-border);
+    color: var(--clean-text-primary);
+}
+
+/* Specific button colors - subtle */
+.action-buttons .mud-icon-button[data-color="primary"]:hover {
+    background: var(--clean-primary-light);
+    border-color: var(--clean-primary);
+    color: var(--clean-primary);
+}
+
+.action-buttons .mud-icon-button[data-color="secondary"]:hover {
+    background: var(--clean-surface);
+    color: var(--clean-text-primary);
+}
+
+.action-buttons .mud-icon-button[data-color="success"]:hover {
+    background: #ecfdf5;
+    color: var(--clean-success);
+    border-color: #10b981;
+}
+
+.action-buttons .mud-icon-button[data-color="info"]:hover {
+    background: #eff6ff;
+    color: #3b82f6;
+    border-color: #60a5fa;
+}
+
+/* =====================================================
+   Detail Row - Clean Expansion
+   ===================================================== */
+.detail-row {
+    background: var(--clean-surface);
+    border: 1px solid var(--clean-border);
+    border-left: 3px solid var(--clean-primary);
+    margin: 8px;
+    border-radius: 8px;
+}
+
+/* =====================================================
+   Info Cards - Minimal Design
+   ===================================================== */
+.info-card {
+    background: var(--clean-background);
+    border: 1px solid var(--clean-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.info-card:hover {
+    border-color: var(--clean-primary-light);
+    box-shadow: 0 2px 8px var(--clean-shadow-light);
+}
+
+/* =====================================================
+   Avatars - Subtle Colors
+   ===================================================== */
+.patient-avatar-male { background: var(--clean-primary) !important; color: white !important; }
+.patient-avatar-female { background: #8b5cf6 !important; color: white !important; }
+.patient-avatar-default { background: var(--clean-secondary) !important; color: white !important;}
+
+/* =====================================================
+   Chips - Minimal Design
+   ===================================================== */
+.gender-chip-male { background: var(--clean-primary-light) !important; color: var(--clean-primary) !important; border: 1px solid var(--clean-primary) !important; }
+.gender-chip-female { background: #f3e8ff !important; color: #8b5cf6 !important; border: 1px solid #8b5cf6 !important; }
+.gender-chip-default { background: var(--clean-surface) !important; color: var(--clean-text-secondary) !important; border: 1px solid var(--clean-border) !important; }
+
+/* =====================================================
+   Icons - Subtle Colors
+   ===================================================== */
+.icon-phone { color: var(--clean-success) !important; }
+.icon-email { color: var(--clean-primary) !important; }
+.icon-location { color: var(--clean-warning) !important; }
+.icon-calendar { color: var(--clean-text-secondary) !important; }
+.icon-age { color: var(--clean-text-secondary) !important; }
+
+/* =====================================================
+   Pagination - simplified (no forced positioning)
+   ===================================================== */
+.pagination-section {
+    background: var(--clean-background);
+    border-top: 1px solid var(--clean-border);
+    border-radius: 0 0 8px 8px;
+    position: relative;
+    overflow: visible !important;
+    z-index: 10 !important;
+}
+
+/* Keep items clickable without altering popover placement */
+.pagination-section .mud-list-item {
+    padding: 8px 16px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.pagination-section .mud-list-item:hover { background: var(--clean-surface) !important; }
+
+.modern-pagination .mud-pagination-item { transition: all 0.2s ease; border-radius: 4px; margin: 0 1px; color: var(--clean-text-secondary); }
+.modern-pagination .mud-pagination-item:hover { background: var(--clean-surface); color: var(--clean-text-primary); }
+.modern-pagination .mud-pagination-item.mud-selected { background: var(--clean-primary); color: white; }
+
+/* =====================================================
+   Status Indicators - Minimal
+   ===================================================== */
+.status-active { color: var(--clean-success); }
+.status-inactive { color: var(--clean-text-muted); }
+.status-warning { color: var(--clean-warning); }
+
+/* =====================================================
+   Responsive Design
+   ===================================================== */
+@media (max-width: 1200px) { .actions-column { width: 140px; min-width: 140px; } }
+
+@media (max-width: 768px) {
+    .header-section { border-radius: 6px; }
+    .search-section .mud-stack-row { flex-direction: column !important; align-items: stretch !important; min-height: auto !important; gap: 12px !important; }
+    .search-section .mud-input-root, .search-section .mud-select-root, .search-section .mud-button-group { width: 100% !important; align-self: stretch !important; }
+    .action-buttons { flex-direction: column; gap: 2px; align-items: stretch; }
+    .action-buttons .mud-icon-button { width: 100%; justify-content: flex-start; padding: 8px 12px; border-radius: 4px; }
+    .info-card { margin-bottom: 8px; border-radius: 6px; }
+    .detail-row { margin: 4px; border-radius: 6px; }
+}
+
+@media (max-width: 480px) {
+    .expansion-column { width: 36px; min-width: 36px; max-width: 36px; }
+    .actions-column { width: 100px; min-width: 100px; }
+    .action-buttons .mud-icon-button { min-width: 28px; width: 28px; height: 28px; padding: 4px; }
+}
+
+/* =====================================================
+   Loading States - Subtle
+   ===================================================== */
+@keyframes subtlePulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+.mud-progress-circular { animation: subtlePulse 2s infinite ease-in-out; color: var(--clean-primary); }
+
+.loading-shimmer { background: linear-gradient(90deg, var(--clean-surface) 25%, var(--clean-border) 50%, var(--clean-surface) 75%); background-size: 200px 100%; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+
+/* =====================================================
+   Accessibility - Clean Focus States
+   ===================================================== */
+.mud-icon-button:focus { outline: 2px solid var(--clean-primary); outline-offset: 1px; }
+.mud-icon-button:focus-visible { box-shadow: 0 0 0 2px var(--clean-primary-light); }
+
+/* =====================================================
+   Typography - Clean Hierarchy - NO DIACRITICS
+   ===================================================== */
+.text-primary { color: var(--clean-text-primary) !important; }
+.text-secondary { color: var(--clean-text-secondary) !important; }
+.text-muted { color: var(--clean-text-muted) !important; }
+.text-success { color: var(--clean-success) !important; }
+.text-warning { color: var(--clean-warning) !important; }
+.text-error { color: var(--clean-error) !important; }
+
+/* Fix pentru encoding - NO DIACRITICS */
+body, .mud-typography, .mud-input, .mud-select, .mud-button { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-feature-settings: "kern" 1 !important; text-rendering: optimizeLegibility !important; -webkit-font-smoothing: antialiased !important; -moz-osx-font-smoothing: grayscale !important; }
+
+.mud-table-cell, .mud-input-slot, .mud-select-input, .mud-button-label { unicode-bidi: normal !important; direction: ltr !important; text-align: left !important; }
+
+/* =====================================================
+   Utility Classes
+   ===================================================== */
+.bg-clean { background: var(--clean-background) !important; }
+.bg-surface { background: var(--clean-surface) !important; }
+.border-clean { border: 1px solid var(--clean-border) !important; }
+.shadow-clean { box-shadow: 0 1px 3px var(--clean-shadow-light) !important; }
+
+/* =====================================================
+   Dark Mode Support (Optional)
+   ===================================================== */
+[data-theme="dark"] {
+    --clean-primary: #3b82f6; --clean-primary-light: #1e293b; --clean-primary-dark: #60a5fa; --clean-background: #0f172a; --clean-surface: #1e293b; --clean-border: #334155; --clean-text-primary: #f1f5f9; --clean-text-secondary: #cbd5e1; --clean-text-muted: #64748b; --clean-shadow: rgba(0, 0, 0, 0.3); --clean-shadow-light: rgba(0, 0, 0, 0.2);
+}
+
+/* =====================================================
+   Print Styles - Clean
+   ===================================================== */
+@media print {
+    .header-section, .search-section, .pagination-section { display: none; }
+    .data-grid-container { box-shadow: none; border: 1px solid #000; }
+    .action-buttons { display: none; }
+    .modern-data-grid .mud-table-row:hover { background: none; }
+    * { color: #000 !important; background: #fff !important; }
+}
+
+/* =====================================================
+   Legacy Support - Minimal Override
+   ===================================================== */
+.patient-action-buttons { display: flex !important; gap: 4px !important; align-items: center !important; justify-content: center !important; }
+.patient-action-buttons .mud-icon-button { min-width: 32px !important; width: 32px !important; height: 32px !important; padding: 6px !important; border-radius: 4px !important; color: var(--clean-text-secondary) !important; background: transparent !important; border: 1px solid transparent !important; transition: all 0.2s ease !important; }
+.patient-action-buttons .mud-icon-button:hover { background: var(--clean-surface) !important; border-color: var(--clean-border) !important; color: var(--clean-text-primary) !important; }
+
+/* =====================================================
+   MudBlazor Component Overrides - Clean
+   ===================================================== */
+.mud-table-container { border: 1px solid var(--clean-border); border-radius: 8px; background: var(--clean-background); }
+.mud-dialog-content { background: var(--clean-background); color: var(--clean-text-primary); }
+.mud-alert { border-radius: 6px; }
+.mud-chip { border-radius: 4px; }
+.mud-avatar { border-radius: 6px; }
+
+/* =====================================================
+   GLOBAL FIXES - Keep minimal to avoid conflicts
+   ===================================================== */
+* { transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease; }
+.action-buttons .mud-icon-button:hover { transform: none !important; box-shadow: none !important; }
+.info-card:hover { transform: none !important; }
+.expansion-button:hover { transform: none !important; }
+.modern-pagination .mud-pagination-item:hover { transform: none !important; }

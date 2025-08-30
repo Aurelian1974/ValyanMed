@@ -24,9 +24,34 @@
     } catch { /* ignore */ }
   }
 
-  // Eliminat handlerul global care ?terge storage la pagehide/beforeunload/visibilitychange
   function register(options) {
-    // Nu mai ata??m niciun handler automat
+    // Handler pentru închiderea aplica?iei/browser-ului
+    window.addEventListener('beforeunload', function(event) {
+      try {
+        // Cur???m localStorage înainte de închidere
+        if (options && options.storageKeys && Array.isArray(options.storageKeys)) {
+          clearStorage(options.storageKeys);
+        } else {
+          // Cur???m specific key-urile ValyanMed
+          clearStorage(['valyanmed_auth_token', 'valyanmed_user_info', 'currentUser', 'auth_token', 'auth_user']);
+        }
+        
+        // Opcional: trimitem logout request
+        if (options && options.logoutUrl) {
+          postLogout(options.logoutUrl);
+        }
+      } catch (e) {
+        console.log('Error during beforeunload cleanup:', e);
+      }
+    });
+
+    // Handler pentru schimbarea vizibilit??ii (tab switch, minimize)
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        // Salv?m starea pentru a ?ti c? aplica?ia a fost minimizat?
+        localStorage.setItem('valyanmed_was_hidden', Date.now().toString());
+      }
+    });
   }
 
   async function logoutNow(logoutUrl, storageKeys) {

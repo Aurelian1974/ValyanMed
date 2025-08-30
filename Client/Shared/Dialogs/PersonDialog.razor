@@ -8,14 +8,14 @@
                 <MudStack Spacing="3">
                     <!-- Personal Information Section -->
                     <MudStack Spacing="2">
-                        <MudText Typo="Typo.h6" Color="Color.Primary">Informatii Personale</MudText>
+                        <MudText Typo="Typo.h6" Color="MudColor.Primary">Informatii Personale</MudText>
                         
                         <MudGrid>
                             <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="Model.Nume"
                                             For="@(() => Model.Nume)"
                                             Label="Nume *"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Required="true"
                                             Immediate="true" />
                             </MudItem>
@@ -23,7 +23,7 @@
                                 <MudTextField @bind-Value="Model.Prenume"
                                             For="@(() => Model.Prenume)"
                                             Label="Prenume *"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Required="true"
                                             Immediate="true" />
                             </MudItem>
@@ -34,14 +34,14 @@
                                 <MudTextField @bind-Value="Model.CNP"
                                             For="@(() => Model.CNP)"
                                             Label="CNP"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Mask="@CnpMask"
                                             Immediate="true" />
                             </MudItem>
                             <MudItem xs="12" md="6">
                                 <MudDatePicker @bind-Date="Model.DataNasterii"
                                              Label="Data Nasterii"
-                                             Variant="Variant.Outlined"
+                                             Variant="MudVariant.Outlined"
                                              DateFormat="dd.MM.yyyy"
                                              MaxDate="DateTime.Today"
                                              Editable="true" />
@@ -52,7 +52,7 @@
                             <MudItem xs="12" md="6">
                                 <MudSelect T="Gen?" @bind-Value="Model.Gen"
                                          Label="Gen"
-                                         Variant="Variant.Outlined"
+                                         Variant="MudVariant.Outlined"
                                          AnchorOrigin="Origin.BottomCenter">
                                     <MudSelectItem T="Gen?" Value="@((Gen?)null)">Nu este specificat</MudSelectItem>
                                     <MudSelectItem T="Gen?" Value="@Gen.Masculin">Masculin</MudSelectItem>
@@ -62,7 +62,7 @@
                             <MudItem xs="12" md="6">
                                 <MudSelect T="StareCivila?" @bind-Value="Model.StareCivila"
                                          Label="Stare Civila"
-                                         Variant="Variant.Outlined"
+                                         Variant="MudVariant.Outlined"
                                          AnchorOrigin="Origin.BottomCenter">
                                     <MudSelectItem T="StareCivila?" Value="@((StareCivila?)null)">Nu este specificata</MudSelectItem>
                                     <MudSelectItem T="StareCivila?" Value="@StareCivila.Necasatorit">Necasatorit(a)</MudSelectItem>
@@ -77,13 +77,13 @@
                     <!-- Identity Document Section -->
                     <MudDivider />
                     <MudStack Spacing="2">
-                        <MudText Typo="Typo.h6" Color="Color.Primary">Act de Identitate</MudText>
+                        <MudText Typo="Typo.h6" Color="MudColor.Primary">Act de Identitate</MudText>
                         
                         <MudGrid>
                             <MudItem xs="12" md="4">
                                 <MudSelect T="TipActIdentitate?" @bind-Value="Model.TipActIdentitate"
                                          Label="Tip Act"
-                                         Variant="Variant.Outlined"
+                                         Variant="MudVariant.Outlined"
                                          AnchorOrigin="Origin.BottomCenter">
                                     <MudSelectItem T="TipActIdentitate?" Value="@((TipActIdentitate?)null)">Nu este specificat</MudSelectItem>
                                     <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.CarteIdentitate">Carte de Identitate</MudSelectItem>
@@ -95,7 +95,7 @@
                                 <MudTextField @bind-Value="Model.SerieActIdentitate"
                                             For="@(() => Model.SerieActIdentitate)"
                                             Label="Serie"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             MaxLength="2"
                                             Immediate="true" />
                             </MudItem>
@@ -103,7 +103,7 @@
                                 <MudTextField @bind-Value="Model.NumarActIdentitate"
                                             For="@(() => Model.NumarActIdentitate)"
                                             Label="Numar"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             MaxLength="6"
                                             Immediate="true" />
                             </MudItem>
@@ -113,21 +113,21 @@
                     <!-- Address Section -->
                     <MudDivider />
                     <MudStack Spacing="2">
-                        <MudText Typo="Typo.h6" Color="Color.Primary">Adresa</MudText>
+                        <MudText Typo="Typo.h6" Color="MudColor.Primary">Adresa</MudText>
                         
                         <MudGrid>
                             <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="Model.Judet"
                                             For="@(() => Model.Judet)"
                                             Label="Judet"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Immediate="true" />
                             </MudItem>
                             <MudItem xs="12" md="6">
                                 <MudTextField @bind-Value="Model.Localitate"
                                             For="@(() => Model.Localitate)"
                                             Label="Localitate"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Immediate="true" />
                             </MudItem>
                         </MudGrid>
@@ -137,14 +137,14 @@
                                 <MudTextField @bind-Value="Model.Strada"
                                             For="@(() => Model.Strada)"
                                             Label="Strada"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Immediate="true" />
                             </MudItem>
                             <MudItem xs="12" md="4">
                                 <MudTextField @bind-Value="Model.NumarStrada"
                                             For="@(() => Model.NumarStrada)"
                                             Label="Numar"
-                                            Variant="Variant.Outlined"
+                                            Variant="MudVariant.Outlined"
                                             Immediate="true" />
                             </MudItem>
                         </MudGrid>
@@ -152,19 +152,19 @@
                         <MudTextField @bind-Value="Model.CodPostal"
                                     For="@(() => Model.CodPostal)"
                                     Label="Cod Postal"
-                                    Variant="Variant.Outlined"
+                                    Variant="MudVariant.Outlined"
                                     Immediate="true" />
                     </MudStack>
 
                     <!-- Professional Information Section -->
                     <MudDivider />
                     <MudStack Spacing="2">
-                        <MudText Typo="Typo.h6" Color="Color.Primary">Informatii Profesionale</MudText>
+                        <MudText Typo="Typo.h6" Color="MudColor.Primary">Informatii Profesionale</MudText>
                         
                         <MudTextField @bind-Value="Model.PozitieOrganizatie"
                                     For="@(() => Model.PozitieOrganizatie)"
                                     Label="Pozitie in Organizatie"
-                                    Variant="Variant.Outlined"
+                                    Variant="MudVariant.Outlined"
                                     Immediate="true" />
                     </MudStack>
                 </MudStack>
@@ -173,10 +173,10 @@
     </DialogContent>
     
     <DialogActions>
-        <MudButton OnClick="Cancel" Color="Color.Secondary">Anuleaza</MudButton>
+        <MudButton OnClick="Cancel" Color="MudColor.Secondary">Anuleaza</MudButton>
         <MudButton OnClick="Submit" 
-                  Color="Color.Primary" 
-                  Variant="Variant.Filled"
+                  Color="MudColor.Primary" 
+                  Variant="MudVariant.Filled"
                   Disabled="@IsSubmitting"
                   StartIcon="@(IsSubmitting ? Icons.Material.Filled.HourglassEmpty : (IsEditMode ? Icons.Material.Filled.Save : Icons.Material.Filled.Add))">
             @if (IsSubmitting)

@@ -1,203 +1,93 @@
 @page "/login"
 @layout EmptyLayout
-@inject IAuthenticationApiService AuthApiService
-@inject IAuthenticationStateService AuthStateService
-@inject ITokenStorageService TokenStorage
-@inject NavigationManager Navigation
-@inject ISnackbar Snackbar
-@inject AuthenticationStateProvider AuthStateProvider
-@inject IJSRuntime JSRuntime
-@using Client.Authentication
+@inherits LoginBase
 
 <PageTitle>Login - ValyanMed</PageTitle>
 
-<link href="css/pages/login.css" rel="stylesheet" />
-
-<div class="login-page">
-    <div class="login-container">
-        <!-- Brand Section -->
-        <div class="login-brand">
-            <img src="images/valyanmed-logo.png" alt="ValyanMed Logo" class="login-brand-logo" />
-            <h1 class="login-brand-title">ValyanMed</h1>
-            <p class="login-brand-subtitle">Clinic Management System</p>
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f5f5f5;">
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 450px; width: 100%;">
+        
+        <!-- Header with Logo beside Blue Band -->
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+            <!-- Logo outside and to the left of blue band - sized to match blue band height -->
+            <div style="display: flex; align-items: center; justify-content: center; width: 70px; height: 70px;">
+                <img src="images/valyanmed-logo.png" alt="ValyanMed Logo" style="width: 66px; height: 66px; object-fit: contain;" />
+            </div>
+            
+            <!-- Blue band with text content -->
+            <div style="background: linear-gradient(135deg, #1e88e5 0%, #0d47a1 100%); color: white; padding: 1rem; border-radius: 8px; flex: 1; height: 70px; display: flex; flex-direction: column; justify-content: center;">
+                <h2 style="margin: 0; font-weight: 600; font-size: 1.5rem; line-height: 1.2;">ValyanMed</h2>
+                <p style="margin: 0; font-size: 0.9rem; opacity: 0.9; line-height: 1.1;">Clinical Management System</p>
+            </div>
+        </div>
+        
+        <!-- Welcome section -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h3 style="color: #333; margin-bottom: 0.5rem;">Welcome Back!</h3>
+            <p style="color: #666;">Please Log in to your account.</p>
         </div>
 
-        <!-- Login Form Section -->
-        <div class="login-form-container">
-            <h2 class="login-form-title">Bun venit!</h2>
-            <p class="login-form-subtitle">Conectati-va pentru a accesa sistemul</p>
+        <!-- Erori -->
+        @if (HasErrors)
+        {
+            <div style="background: #ffebee; color: #c62828; padding: 12px; border-radius: 6px; margin-bottom: 1rem;">
+                @foreach (var error in Errors)
+                {
+                    <div>@error</div>
+                }
+            </div>
+        }
 
-            @if (HasErrors)
-            {
-                <div class="login-error">
-                    @foreach (var error in _errors)
-                    {
-                        <div class="login-error-text">@error</div>
-                    }
+        <!-- Form -->
+        <EditForm Model="FormModel" OnValidSubmit="HandleLogin">
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- Email -->
+                <div>
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #424242;">
+                        Email Address
+                    </label>
+                    <InputText @bind-Value="FormModel.NumeUtilizatorSauEmail" 
+                               placeholder="tuhelrana@gmail.com"
+                               disabled="@IsLoading"
+                               style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 6px;" />
                 </div>
-            }
 
-            <EditForm Model="@_formModel" OnValidSubmit="@HandleLogin" class="login-form">
-                <FluentValidationValidator />
+                <!-- Password -->
+                <div>
+                    <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #424242;">
+                        Password
+                    </label>
+                    <InputText @bind-Value="FormModel.Parola" 
+                               type="password"
+                               placeholder="••••••••"
+                               disabled="@IsLoading"
+                               style="width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 6px;" />
+                </div>
 
-                <MudTextField @bind-Value="_formModel.NumeUtilizatorSauEmail"
-                              Label="Nume utilizator sau Email"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              FullWidth="true"
-                              Disabled="@_isLoading"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Person" />
-
-                <MudTextField @bind-Value="_formModel.Parola"
-                              Label="Parola"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              FullWidth="true"
-                              InputType="@(_showPassword ? InputType.Text : InputType.Password)"
-                              Disabled="@_isLoading"
-                              Adornment="Adornment.End"
-                              AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                              OnAdornmentClick="@TogglePasswordVisibility" />
-
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           Size="Size.Large"
-                           Class="login-button"
-                           Disabled="@_isLoading">
-                    @if (_isLoading)
+                <!-- Login Button -->
+                <button type="submit" disabled="@IsLoading"
+                        style="width: 100%; height: 48px; background: linear-gradient(135deg, #1e88e5 0%, #0d47a1 100%); color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">
+                    @if (IsLoading)
                     {
-                        <div class="login-loading">
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                            <span>Se conecteaza...</span>
-                        </div>
+                        <span>Se conecteaza...</span>
                     }
                     else
                     {
-                        <span>Conectare</span>
+                        <span>Login</span>
                     }
-                </MudButton>
-            </EditForm>
-
-            <div class="forgot-password">
-                <a href="#" class="forgot-password-link" @onclick="@HandleForgotPassword" @onclick:preventDefault="true">
-                    Ati uitat parola?
-                </a>
+                </button>
+                
+                <!-- Forgot Password -->
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="#" @onclick="HandleForgotPassword" @onclick:preventDefault="true" 
+                       style="color: #f44336; text-decoration: none; font-size: 14px;">
+                        Forgot password?
+                    </a>
+                </div>
+                
             </div>
-        </div>
+        </EditForm>
+        
     </div>
 </div>
-
-@code {
-    private LoginFormModel _formModel = new();
-    private bool _isLoading = false;
-    private bool _showPassword = false;
-    private List<string> _errors = new();
-
-    private bool HasErrors => _errors.Any();
-
-    public class LoginFormModel
-    {
-        public string NumeUtilizatorSauEmail { get; set; } = string.Empty;
-        public string Parola { get; set; } = string.Empty;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        // Verifica daca utilizatorul este deja autentificat
-        var currentUser = await AuthStateService.GetCurrentUserAsync();
-        if (currentUser != null)
-        {
-            Navigation.NavigateTo("/dashboard");
-        }
-    }
-
-    private async Task HandleLogin()
-    {
-        _isLoading = true;
-        _errors.Clear();
-
-        try
-        {
-            Console.WriteLine($"HandleLogin: Starting login for user {_formModel.NumeUtilizatorSauEmail}");
-            
-            var loginRequest = new LoginRequest(_formModel.NumeUtilizatorSauEmail, _formModel.Parola);
-            var result = await AuthApiService.LoginAsync(loginRequest);
-
-            Console.WriteLine($"Login API result: IsSuccess={result.IsSuccess}");
-
-            if (result.IsSuccess && result.Value != null)
-            {
-                Console.WriteLine($"Login successful for user: {result.Value.NumeUtilizator}");
-                
-                // DIRECT localStorage save - bypass all services for testing
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "valyanmed_auth_token", result.Value.Token);
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "valyanmed_user_info", System.Text.Json.JsonSerializer.Serialize(result.Value));
-                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "currentUser", System.Text.Json.JsonSerializer.Serialize(result.Value));
-                
-                Console.WriteLine("Direct localStorage save completed");
-                
-                // Also try service-based save
-                try
-                {
-                    await TokenStorage.SetTokenAsync(result.Value.Token);
-                    await TokenStorage.SetUserInfoAsync(result.Value);
-                    await AuthStateService.SetCurrentUserAsync(result.Value);
-                    Console.WriteLine("Service-based save also completed");
-                }
-                catch (Exception serviceEx)
-                {
-                    Console.WriteLine($"Service save failed but direct save succeeded: {serviceEx.Message}");
-                }
-                
-                // Use the enhanced authentication state provider
-                var customAuthProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
-                await customAuthProvider.MarkUserAsAuthenticatedAsync(result.Value.Token, result.Value);
-                
-                Console.WriteLine("User marked as authenticated");
-                
-                Snackbar.Add(result.SuccessMessage ?? "Conectare reusita!", MudSeverity.Success);
-                
-                // Verify the save worked
-                var savedToken = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "valyanmed_auth_token");
-                Console.WriteLine($"Verification: Token saved = {!string.IsNullOrEmpty(savedToken)}");
-                
-                // Small delay to ensure state is updated
-                await Task.Delay(200);
-                
-                Console.WriteLine("Navigating to dashboard");
-                // IMPORTANT: do NOT forceLoad here; a full reload triggers beforeunload and clears storage via appLifecycle
-                Navigation.NavigateTo("/dashboard");
-            }
-            else
-            {
-                Console.WriteLine($"Login failed: {string.Join(", ", result.Errors ?? new List<string>())}");
-                _errors = result.Errors ?? new List<string> { "Login failed" };
-                Snackbar.Add("Eroare la conectare", MudSeverity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Login exception: {ex.Message}");
-            Console.WriteLine($"StackTrace: {ex.StackTrace}");
-            _errors = new List<string> { $"Eroare neasteptata: {ex.Message}" };
-            Snackbar.Add("Eroare de conexiune", MudSeverity.Error);
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private void TogglePasswordVisibility()
-    {
-        _showPassword = !_showPassword;
-    }
-
-    private void HandleForgotPassword()
-    {
-        Snackbar.Add("Functionalitatea de resetare parola va fi implementata in curand", MudSeverity.Info);
-    }
-}

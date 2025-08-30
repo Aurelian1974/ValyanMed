@@ -10,7 +10,7 @@ Core Components:
 ✅ Dapper - micro-ORM eficient
 ✅ MudBlazor - componente UI moderne
 ✅ PagedResult Pattern - paginare eficienta
-✅ MudBlazor DataGrid - afisare date optimizata
+✅ Vom folosi de acum incolo Radzen cu toate componentele sale
 ✅ Error Handling Pattern - gestionare erori in Controllers
 ✅ SQL Performance cu Dapper
 ✅ Structured Logging - urmarire aplicatie
@@ -152,6 +152,9 @@ PersonalValidators.cs   // Validations
 - Nu mai folosim a, a, i, s, t in UI
 - Folosim doar a, a, i, s, t pentru compatibilitate
 - Font rendering optimizat pentru caractere simple
+
+4. FARA MULTE culori in UI maxim 2 culori in acelasi timp
+5. FARA CSS-uri stufoase doar strictul necesar, ce nu poate sa faca Radzen, fara overide-uri
 
 🚀 FUNCTIONALITATI NOI
 ---------------------

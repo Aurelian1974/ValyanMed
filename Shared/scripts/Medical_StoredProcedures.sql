@@ -5,7 +5,6 @@
 
 USE [ValyanMed]
 GO
-
 -- ===== PROCEDURI PENTRU PACIENTI =====
 
 -- Obținere toți pacienții cu paginare
@@ -217,7 +216,6 @@ BEGIN
     END CATCH
 END
 GO
-
 -- ===== PROCEDURI PENTRU PERSONAL MEDICAL =====
 
 -- Obținere personal medical cu paginare
@@ -229,6 +227,16 @@ CREATE PROCEDURE [dbo].[sp_PersonalMedical_GetPaged]
     @Search NVARCHAR(255) = NULL,
     @Departament NVARCHAR(100) = NULL,
     @Pozitie NVARCHAR(50) = NULL,
+    @EsteActiv BIT = NULL,
+    @Nume NVARCHAR(100) = NULL,
+    @Prenume NVARCHAR(100) = NULL,
+    @Specializare NVARCHAR(150) = NULL,
+    @NumarLicenta NVARCHAR(50) = NULL,
+    @Telefon NVARCHAR(30) = NULL,
+    @Email NVARCHAR(150) = NULL,
+    @SpecializariCsv NVARCHAR(MAX) = NULL,
+    @DepartamenteCsv NVARCHAR(MAX) = NULL,
+    @PozitiiCsv NVARCHAR(MAX) = NULL,
     @Page INT = 1,
     @PageSize INT = 25,
     @Sort NVARCHAR(400) = NULL
@@ -238,12 +246,53 @@ BEGIN
 
     IF (@Page IS NULL OR @Page < 1) SET @Page = 1;
     IF (@PageSize IS NULL OR @PageSize < 1) SET @PageSize = 25;
-    IF (@PageSize > 1000) SET @PageSize = 1000;
+    IF (@PageSize > 100000) SET @PageSize = 100000; -- increased cap to allow full-page loads when grouping summaries are needed
 
     DECLARE @Offset INT = (@Page - 1) * @PageSize;
-    DECLARE @OrderBy NVARCHAR(MAX) = N'Nume ASC, Prenume ASC';
 
-    DECLARE @sql NVARCHAR(MAX) = N'
+    -- Parse Sort into @OrderCol and @OrderDir (whitelisted)
+    DECLARE @OrderCol NVARCHAR(100) = N'Nume';
+    DECLARE @OrderDir NVARCHAR(4) = N'ASC';
+    IF (@Sort IS NOT NULL AND LEN(@Sort) > 0)
+    BEGIN
+        DECLARE @pos INT = CHARINDEX(':', @Sort);
+        DECLARE @col NVARCHAR(100) = LTRIM(RTRIM(@Sort));
+        DECLARE @dir NVARCHAR(10) = N'asc';
+        IF @pos > 0
+        BEGIN
+            SET @col = LTRIM(RTRIM(SUBSTRING(@Sort, 1, @pos - 1)));
+            SET @dir = LTRIM(RTRIM(SUBSTRING(@Sort, @pos + 1, 10)));
+        END
+        SET @col = CASE @col
+            WHEN N'Nume' THEN N'Nume'
+            WHEN N'Prenume' THEN N'Prenume'
+            WHEN N'Specializare' THEN N'Specializare'
+            WHEN N'NumarLicenta' THEN N'NumarLicenta'
+            WHEN N'Departament' THEN N'Departament'
+            WHEN N'Pozitie' THEN N'Pozitie'
+            WHEN N'Telefon' THEN N'Telefon'
+            WHEN N'Email' THEN N'Email'
+            WHEN N'EsteActiv' THEN N'EsteActiv'
+            WHEN N'DataCreare' THEN N'DataCreare'
+            ELSE N'Nume' END;
+        SET @OrderCol = @col;
+        SET @OrderDir = CASE WHEN LOWER(@dir) = 'desc' THEN N'DESC' ELSE N'ASC' END;
+    END
+
+    -- Prepare CSV filters into table variables
+    DECLARE @tSpec TABLE(val NVARCHAR(150));
+    IF (@SpecializariCsv IS NOT NULL AND LTRIM(RTRIM(@SpecializariCsv)) <> '')
+        INSERT INTO @tSpec SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@SpecializariCsv, ',');
+
+    DECLARE @tDep TABLE(val NVARCHAR(100));
+    IF (@DepartamenteCsv IS NOT NULL AND LTRIM(RTRIM(@DepartamenteCsv)) <> '')
+        INSERT INTO @tDep SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@DepartamenteCsv, ',');
+
+    DECLARE @tPoz TABLE(val NVARCHAR(50));
+    IF (@PozitiiCsv IS NOT NULL AND LTRIM(RTRIM(@PozitiiCsv)) <> '')
+        INSERT INTO @tPoz SELECT LTRIM(RTRIM(value)) FROM STRING_SPLIT(@PozitiiCsv, ',');
+
+    -- Data query
     SELECT 
         PersonalID,
         Nume,
@@ -256,633 +305,290 @@ BEGIN
         Pozitie,
         EsteActiv,
         DataCreare
-    FROM PersonalMedical
-    WHERE EsteActiv = 1
-      AND (@Search IS NULL OR @Search = '''' OR 
-           UPPER(Nume) LIKE ''%'' + UPPER(@Search) + ''%'' OR 
-           UPPER(Prenume) LIKE ''%'' + UPPER(@Search) + ''%'' OR 
-           UPPER(Specializare) LIKE ''%'' + UPPER(@Search) + ''%'' OR
-           UPPER(NumarLicenta) LIKE ''%'' + UPPER(@Search) + ''%'')
-      AND (@Departament IS NULL OR @Departament = '''' OR @Departament = ''toate'' OR Departament = @Departament)
-      AND (@Pozitie IS NULL OR @Pozitie = '''' OR @Pozitie = ''toate'' OR Pozitie = @Pozitie)
-    ORDER BY ' + @OrderBy + '
+    FROM PersonalMedical WITH (NOLOCK)
+    WHERE 1 = 1
+      AND (@EsteActiv IS NULL OR EsteActiv = @EsteActiv)
+      AND (
+            @DepartamenteCsv IS NULL OR NOT EXISTS (SELECT 1 FROM @tDep)
+            OR EXISTS (SELECT 1 FROM @tDep d WHERE UPPER(d.val) = UPPER(LTRIM(RTRIM(Departament))))
+          )
+      AND (
+            @PozitiiCsv IS NULL OR NOT EXISTS (SELECT 1 FROM @tPoz)
+            OR EXISTS (SELECT 1 FROM @tPoz p WHERE UPPER(p.val) = UPPER(LTRIM(RTRIM(Pozitie))))
+          )
+      AND (@Departament IS NULL OR @Departament = '' OR @Departament = 'toate' OR UPPER(Departament) LIKE '%' + UPPER(@Departament) + '%')
+      AND (@Pozitie IS NULL OR @Pozitie = '' OR @Pozitie = 'toate' OR UPPER(Pozitie) LIKE '%' + UPPER(@Pozitie) + '%')
+      AND (@Nume IS NULL OR @Nume = '' OR UPPER(Nume) LIKE '%' + UPPER(@Nume) + '%')
+      AND (@Prenume IS NULL OR @Prenume = '' OR UPPER(Prenume) LIKE '%' + UPPER(@Prenume) + '%')
+      AND (
+            (NOT EXISTS (SELECT 1 FROM @tSpec) AND (@Specializare IS NULL OR @Specializare = '' OR UPPER(Specializare) LIKE '%' + UPPER(@Specializare) + '%'))
+            OR EXISTS (SELECT 1 FROM @tSpec s WHERE UPPER(s.val) = UPPER(LTRIM(RTRIM(Specializare))))
+          )
+      AND (@NumarLicenta IS NULL OR @NumarLicenta = '' OR UPPER(NumarLicenta) LIKE '%' + UPPER(@NumarLicenta) + '%')
+      AND (@Telefon IS NULL OR @Telefon = '' OR Telefon LIKE '%' + @Telefon + '%')
+      AND (@Email IS NULL OR @Email = '' OR UPPER(Email) LIKE '%' + UPPER(@Email) + '%')
+      AND (
+            @Search IS NULL OR @Search = ''
+            OR UPPER(Nume) LIKE '%' + UPPER(@Search) + '%'
+            OR UPPER(Prenume) LIKE '%' + UPPER(@Search) + '%'
+            OR UPPER(CONCAT(Nume, ' ', Prenume)) LIKE '%' + UPPER(@Search) + '%'
+            OR (Specializare IS NOT NULL AND UPPER(Specializare) LIKE '%' + UPPER(@Search) + '%')
+            OR (NumarLicenta IS NOT NULL AND UPPER(NumarLicenta) LIKE '%' + UPPER(@Search) + '%')
+            OR (Departament IS NOT NULL AND UPPER(Departament) LIKE '%' + UPPER(@Search) + '%')
+            OR (Pozitie IS NOT NULL AND UPPER(Pozitie) LIKE '%' + UPPER(@Search) + '%')
+            OR (Telefon IS NOT NULL AND Telefon LIKE '%' + @Search + '%')
+            OR (Email IS NOT NULL AND UPPER(Email) LIKE '%' + UPPER(@Search) + '%')
+          )
+    ORDER BY
+        CASE WHEN @OrderCol = 'Nume' AND @OrderDir = 'ASC' THEN Nume END ASC,
+        CASE WHEN @OrderCol = 'Nume' AND @OrderDir = 'DESC' THEN Nume END DESC,
+        CASE WHEN @OrderCol = 'Prenume' AND @OrderDir = 'ASC' THEN Prenume END ASC,
+        CASE WHEN @OrderCol = 'Prenume' AND @OrderDir = 'DESC' THEN Prenume END DESC,
+        CASE WHEN @OrderCol = 'Specializare' AND @OrderDir = 'ASC' THEN Specializare END ASC,
+        CASE WHEN @OrderCol = 'Specializare' AND @OrderDir = 'DESC' THEN Specializare END DESC,
+        CASE WHEN @OrderCol = 'NumarLicenta' AND @OrderDir = 'ASC' THEN NumarLicenta END ASC,
+        CASE WHEN @OrderCol = 'NumarLicenta' AND @OrderDir = 'DESC' THEN NumarLicenta END DESC,
+        CASE WHEN @OrderCol = 'Departament' AND @OrderDir = 'ASC' THEN Departament END ASC,
+        CASE WHEN @OrderCol = 'Departament' AND @OrderDir = 'DESC' THEN Departament END DESC,
+        CASE WHEN @OrderCol = 'Pozitie' AND @OrderDir = 'ASC' THEN Pozitie END ASC,
+        CASE WHEN @OrderCol = 'Pozitie' AND @OrderDir = 'DESC' THEN Pozitie END DESC,
+        CASE WHEN @OrderCol = 'Telefon' AND @OrderDir = 'ASC' THEN Telefon END ASC,
+        CASE WHEN @OrderCol = 'Telefon' AND @OrderDir = 'DESC' THEN Telefon END DESC,
+        CASE WHEN @OrderCol = 'Email' AND @OrderDir = 'ASC' THEN Email END ASC,
+        CASE WHEN @OrderCol = 'Email' AND @OrderDir = 'DESC' THEN Email END DESC,
+        CASE WHEN @OrderCol = 'EsteActiv' AND @OrderDir = 'ASC' THEN CONVERT(INT, EsteActiv) END ASC,
+        CASE WHEN @OrderCol = 'EsteActiv' AND @OrderDir = 'DESC' THEN CONVERT(INT, EsteActiv) END DESC,
+        CASE WHEN @OrderCol = 'DataCreare' AND @OrderDir = 'ASC' THEN DataCreare END ASC,
+        CASE WHEN @OrderCol = 'DataCreare' AND @OrderDir = 'DESC' THEN DataCreare END DESC,
+        Nume ASC, Prenume ASC -- fallback stable order
     OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
 
+    -- Count query
     SELECT COUNT(1)
-    FROM PersonalMedical
-    WHERE EsteActiv = 1
-      AND (@Search IS NULL OR @Search = '''' OR 
-           UPPER(Nume) LIKE ''%'' + UPPER(@Search) + ''%'' OR 
-           UPPER(Prenume) LIKE ''%'' + UPPER(@Search) + ''%'' OR 
-           UPPER(Specializare) LIKE ''%'' + UPPER(@Search) + ''%'' OR
-           UPPER(NumarLicenta) LIKE ''%'' + UPPER(@Search) + ''%'')
-      AND (@Departament IS NULL OR @Departament = '''' OR @Departament = ''toate'' OR Departament = @Departament)
-      AND (@Pozitie IS NULL OR @Pozitie = '''' OR @Pozitie = ''toate'' OR Pozitie = @Pozitie);';
-
-    EXEC sp_executesql
-        @sql,
-        N'@Search NVARCHAR(255), @Departament NVARCHAR(100), @Pozitie NVARCHAR(50), @Offset INT, @PageSize INT',
-        @Search = @Search, @Departament = @Departament, @Pozitie = @Pozitie, @Offset = @Offset, @PageSize = @PageSize;
+    FROM PersonalMedical WITH (NOLOCK)
+    WHERE 1 = 1
+      AND (@EsteActiv IS NULL OR EsteActiv = @EsteActiv)
+      AND (
+            @DepartamenteCsv IS NULL OR NOT EXISTS (SELECT 1 FROM @tDep)
+            OR EXISTS (SELECT 1 FROM @tDep d WHERE UPPER(d.val) = UPPER(LTRIM(RTRIM(Departament))))
+          )
+      AND (
+            @PozitiiCsv IS NULL OR NOT EXISTS (SELECT 1 FROM @tPoz)
+            OR EXISTS (SELECT 1 FROM @tPoz p WHERE UPPER(p.val) = UPPER(LTRIM(RTRIM(Pozitie))))
+          )
+      AND (@Departament IS NULL OR @Departament = '' OR @Departament = 'toate' OR UPPER(Departament) LIKE '%' + UPPER(@Departament) + '%')
+      AND (@Pozitie IS NULL OR @Pozitie = '' OR @Pozitie = 'toate' OR UPPER(Pozitie) LIKE '%' + UPPER(@Pozitie) + '%')
+      AND (@Nume IS NULL OR @Nume = '' OR UPPER(Nume) LIKE '%' + UPPER(@Nume) + '%')
+      AND (@Prenume IS NULL OR @Prenume = '' OR UPPER(Prenume) LIKE '%' + UPPER(@Prenume) + '%')
+      AND (
+            (NOT EXISTS (SELECT 1 FROM @tSpec) AND (@Specializare IS NULL OR @Specializare = '' OR UPPER(Specializare) LIKE '%' + UPPER(@Specializare) + '%'))
+            OR EXISTS (SELECT 1 FROM @tSpec s WHERE UPPER(s.val) = UPPER(LTRIM(RTRIM(Specializare))))
+          )
+      AND (@NumarLicenta IS NULL OR @NumarLicenta = '' OR UPPER(NumarLicenta) LIKE '%' + UPPER(@NumarLicenta) + '%')
+      AND (@Telefon IS NULL OR @Telefon = '' OR Telefon LIKE '%' + @Telefon + '%')
+      AND (@Email IS NULL OR @Email = '' OR UPPER(Email) LIKE '%' + UPPER(@Email) + '%')
+      AND (
+            @Search IS NULL OR @Search = ''
+            OR UPPER(Nume) LIKE '%' + UPPER(@Search) + '%'
+            OR UPPER(Prenume) LIKE '%' + UPPER(@Search) + '%'
+            OR UPPER(CONCAT(Nume, ' ', Prenume)) LIKE '%' + UPPER(@Search) + '%'
+            OR (Specializare IS NOT NULL AND UPPER(Specializare) LIKE '%' + UPPER(@Search) + '%')
+            OR (NumarLicenta IS NOT NULL AND UPPER(NumarLicenta) LIKE '%' + UPPER(@Search) + '%')
+            OR (Departament IS NOT NULL AND UPPER(Departament) LIKE '%' + UPPER(@Search) + '%')
+            OR (Pozitie IS NOT NULL AND UPPER(Pozitie) LIKE '%' + UPPER(@Search) + '%')
+            OR (Telefon IS NOT NULL AND Telefon LIKE '%' + @Search + '%')
+            OR (Email IS NOT NULL AND UPPER(Email) LIKE '%' + UPPER(@Search) + '%')
+          );
 END
 GO
 
--- Obținere doctori pentru dropdown-uri
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_PersonalMedical_GetDoctori]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_PersonalMedical_GetDoctori]
+-- Creare utilizator nou
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Utilizatori_Create]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[sp_Utilizatori_Create]
 GO
 
-CREATE PROCEDURE [dbo].[sp_PersonalMedical_GetDoctori]
+CREATE PROCEDURE [dbo].[sp_Utilizatori_Create]
+    @Nume NVARCHAR(100),
+    @Prenume NVARCHAR(100),
+    @Email NVARCHAR(255),
+    @Parola NVARCHAR(255),
+    @Telefon NVARCHAR(20) = NULL,
+    @Departament NVARCHAR(100) = NULL,
+    @Pozitie NVARCHAR(50) = NULL,
+    @Specializare NVARCHAR(150) = NULL,
+    @NumarLicenta NVARCHAR(50) = NULL,
+    @EsteActiv BIT = 1
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT 
-        PersonalID,
-        CONCAT(Nume, ' ', Prenume) AS NumeComplet,
-        Specializare,
-        Departament
-    FROM PersonalMedical
-    WHERE EsteActiv = 1 
-      AND Pozitie IN ('Doctor Primar', 'Doctor Specialist')
-    ORDER BY Nume, Prenume;
+    DECLARE @UserID UNIQUEIDENTIFIER = NEWID();
+    DECLARE @Salt NVARCHAR(255) = NEWID();
+    DECLARE @HashedParola NVARCHAR(255) = HASHBYTES('SHA2_256', @Parola + @Salt);
+    
+    INSERT INTO Utilizatori (UserID, Nume, Prenume, Email, Parola, Telefon, Departament, Pozitie, Specializare, NumarLicenta, EsteActiv, DataCreare)
+    VALUES (@UserID, @Nume, @Prenume, @Email, @HashedParola, @Telefon, @Departament, @Pozitie, @Specializare, @NumarLicenta, @EsteActiv, GETDATE());
+    
+    SELECT @UserID AS UserID;
 END
 GO
 
--- ===== PROCEDURI PENTRU PROGRAMĂRI =====
-
--- Obținere programări cu paginare
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Programari_GetPaged]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_Programari_GetPaged]
+-- Obținere utilizator după ID
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Utilizatori_GetByID]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[sp_Utilizatori_GetByID]
 GO
 
-CREATE PROCEDURE [dbo].[sp_Programari_GetPaged]
-    @DataStart DATE = NULL,
-    @DataEnd DATE = NULL,
-    @DoctorID UNIQUEIDENTIFIER = NULL,
-    @Status NVARCHAR(50) = NULL,
-    @Page INT = 1,
-    @PageSize INT = 25,
-    @Sort NVARCHAR(400) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF (@Page IS NULL OR @Page < 1) SET @Page = 1;
-    IF (@PageSize IS NULL OR @PageSize < 1) SET @PageSize = 25;
-    IF (@PageSize > 1000) SET @PageSize = 1000;
-
-    DECLARE @Offset INT = (@Page - 1) * @PageSize;
-    DECLARE @OrderBy NVARCHAR(MAX) = N'pr.DataProgramare DESC';
-
-    DECLARE @sql NVARCHAR(MAX) = N'
-    SELECT 
-        pr.ProgramareID,
-        pr.DataProgramare,
-        pr.TipProgramare,
-        pr.Status,
-        pr.Observatii,
-        pr.DataCreare,
-        CONCAT(p.Nume, '' '', p.Prenume) AS NumePacient,
-        p.CNP AS CNPPacient,
-        p.Telefon AS TelefonPacient,
-        CONCAT(pm.Nume, '' '', pm.Prenume) AS NumeDoctor,
-        pm.Specializare AS SpecializareDoctor
-    FROM Programari pr
-    INNER JOIN Pacienti p ON pr.PacientID = p.PacientID
-    INNER JOIN PersonalMedical pm ON pr.DoctorID = pm.PersonalID
-    WHERE 1=1
-      AND (@DataStart IS NULL OR CAST(pr.DataProgramare AS DATE) >= @DataStart)
-      AND (@DataEnd IS NULL OR CAST(pr.DataProgramare AS DATE) <= @DataEnd)
-      AND (@DoctorID IS NULL OR pr.DoctorID = @DoctorID)
-      AND (@Status IS NULL OR @Status = '''' OR @Status = ''toate'' OR pr.Status = @Status)
-    ORDER BY ' + @OrderBy + '
-    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
-
-    SELECT COUNT(1)
-    FROM Programari pr
-    INNER JOIN Pacienti p ON pr.PacientID = p.PacientID
-    INNER JOIN PersonalMedical pm ON pr.DoctorID = pm.PersonalID
-    WHERE 1=1
-      AND (@DataStart IS NULL OR CAST(pr.DataProgramare AS DATE) >= @DataStart)
-      AND (@DataEnd IS NULL OR CAST(pr.DataProgramare AS DATE) <= @DataEnd)
-      AND (@DoctorID IS NULL OR pr.DoctorID = @DoctorID)
-      AND (@Status IS NULL OR @Status = '''' OR @Status = ''toate'' OR pr.Status = @Status);';
-
-    EXEC sp_executesql
-        @sql,
-        N'@DataStart DATE, @DataEnd DATE, @DoctorID UNIQUEIDENTIFIER, @Status NVARCHAR(50), @Offset INT, @PageSize INT',
-        @DataStart = @DataStart, @DataEnd = @DataEnd, @DoctorID = @DoctorID, @Status = @Status, @Offset = @Offset, @PageSize = @PageSize;
-END
-GO
-
--- Creare programare nouă
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Programari_Create]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_Programari_Create]
-GO
-
-CREATE PROCEDURE [dbo].[sp_Programari_Create]
-    @PacientID UNIQUEIDENTIFIER,
-    @DoctorID UNIQUEIDENTIFIER,
-    @DataProgramare DATETIME2,
-    @TipProgramare NVARCHAR(100),
-    @Observatii NVARCHAR(1000) = NULL,
-    @CreatDe UNIQUEIDENTIFIER
+CREATE PROCEDURE [dbo].[sp_Utilizatori_GetByID]
+    @UserID UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    BEGIN TRY
-        -- Verificare conflict de programare pentru doctor
-        IF EXISTS (
-            SELECT 1 FROM Programari 
-            WHERE DoctorID = @DoctorID 
-              AND ABS(DATEDIFF(MINUTE, DataProgramare, @DataProgramare)) < 30
-              AND Status NOT IN ('Anulata')
-        )
-        BEGIN
-            RAISERROR('Doctorul are deja o programare în acest interval de timp.', 16, 1);
-            RETURN;
-        END
-        
-        DECLARE @NewProgramareID UNIQUEIDENTIFIER = NEWID();
-        
-        INSERT INTO Programari (
-            ProgramareID,
-            PacientID,
-            DoctorID,
-            DataProgramare,
-            TipProgramare,
-            Status,
-            Observatii,
-            DataCreare,
-            CreatDe
-        )
-        VALUES (
-            @NewProgramareID,
-            @PacientID,
-            @DoctorID,
-            @DataProgramare,
-            @TipProgramare,
-            'Programata',
-            @Observatii,
-            GETDATE(),
-            @CreatDe
-        );
-        
-        SELECT @NewProgramareID AS ProgramareID;
-        
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-        DECLARE @ErrorState INT = ERROR_STATE();
-        
-        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
+    SELECT UserID, Nume, Prenume, Email, Telefon, Departament, Pozitie, Specializare, NumarLicenta, EsteActiv, DataCreare
+    FROM Utilizatori
+    WHERE UserID = @UserID;
 END
 GO
 
--- Actualizare status programare
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Programari_UpdateStatus]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_Programari_UpdateStatus]
+-- Obținere utilizator după email
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Utilizatori_GetByEmail]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[sp_Utilizatori_GetByEmail]
 GO
 
-CREATE PROCEDURE [dbo].[sp_Programari_UpdateStatus]
-    @ProgramareID UNIQUEIDENTIFIER,
-    @Status NVARCHAR(50),
-    @ModificatDe UNIQUEIDENTIFIER = NULL
+CREATE PROCEDURE [dbo].[sp_Utilizatori_GetByEmail]
+    @Email NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    BEGIN TRY
-        -- Validare status
-        IF @Status NOT IN ('Programata', 'Confirmata', 'In Asteptare', 'In Consultatie', 'Finalizata', 'Anulata', 'Nu s-a prezentat', 'Amanata')
-        BEGIN
-            RAISERROR('Status programare invalid.', 16, 1);
-            RETURN;
-        END
-        
-        -- Verifică dacă programarea există
-        IF NOT EXISTS (SELECT 1 FROM Programari WHERE ProgramareID = @ProgramareID)
-        BEGIN
-            RAISERROR('Programarea nu a fost găsită.', 16, 1);
-            RETURN;
-        END
-        
-        UPDATE Programari 
-        SET 
-            Status = @Status,
-            DataUltimeiModificari = GETDATE()
-        WHERE ProgramareID = @ProgramareID;
-        
-        SELECT @@ROWCOUNT AS RowsAffected;
-        
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-        DECLARE @ErrorState INT = ERROR_STATE();
-        
-        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
+    SELECT UserID, Nume, Prenume, Email, Telefon, Departament, Pozitie, Specializare, NumarLicenta, EsteActiv, DataCreare
+    FROM Utilizatori
+    WHERE Email = @Email;
 END
 GO
 
--- ===== PROCEDURI PENTRU CONSULTAȚII =====
-
--- Obținere consultații pacient
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Consultatii_GetByPacient]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_Consultatii_GetByPacient]
+-- Modificare utilizator existent
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Utilizatori_Update]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[sp_Utilizatori_Update]
 GO
 
-CREATE PROCEDURE [dbo].[sp_Consultatii_GetByPacient]
-    @PacientID UNIQUEIDENTIFIER
+CREATE PROCEDURE [dbo].[sp_Utilizatori_Update]
+    @UserID UNIQUEIDENTIFIER,
+    @Nume NVARCHAR(100) = NULL,
+    @Prenume NVARCHAR(100) = NULL,
+    @Email NVARCHAR(255) = NULL,
+    @Parola NVARCHAR(255) = NULL,
+    @Telefon NVARCHAR(20) = NULL,
+    @Departament NVARCHAR(100) = NULL,
+    @Pozitie NVARCHAR(50) = NULL,
+    @Specializare NVARCHAR(150) = NULL,
+    @NumarLicenta NVARCHAR(50) = NULL,
+    @EsteActiv BIT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT 
-        c.ConsultatieID,
-        c.PlangereaPrincipala,
-        c.IstoricBoalaActuala,
-        c.ExamenFizic,
-        c.Evaluare,
-        c.[Plan],
-        c.DataConsultatie,
-        c.Durata,
-        pr.DataProgramare,
-        pr.TipProgramare,
-        CONCAT(pm.Nume, ' ', pm.Prenume) AS NumeDoctor,
-        pm.Specializare AS SpecializareDoctor
-    FROM Consultatii c
-    INNER JOIN Programari pr ON c.ProgramareID = pr.ProgramareID
-    INNER JOIN PersonalMedical pm ON pr.DoctorID = pm.PersonalID
-    WHERE pr.PacientID = @PacientID
-    ORDER BY c.DataConsultatie DESC;
+    DECLARE @Sql NVARCHAR(MAX) = N'UPDATE Utilizatori SET ';
+    DECLARE @Params NVARCHAR(MAX) = N'';
+    
+    IF @Nume IS NOT NULL
+    BEGIN
+        SET @Sql += N'Nume = @Nume, ';
+        SET @Params += N'@Nume NVARCHAR(100), ';
+    END
+    
+    IF @Prenume IS NOT NULL
+    BEGIN
+        SET @Sql += N'Prenume = @Prenume, ';
+        SET @Params += N'@Prenume NVARCHAR(100), ';
+    END
+    
+    IF @Email IS NOT NULL
+    BEGIN
+        SET @Sql += N'Email = @Email, ';
+        SET @Params += N'@Email NVARCHAR(255), ';
+    END
+    
+    IF @Parola IS NOT NULL
+    BEGIN
+        SET @Sql += N'Parola = HASHBYTES(''SHA2_256'', @Parola + ''salt''), ';
+        SET @Params += N'@Parola NVARCHAR(255), ';
+    END
+    
+    IF @Telefon IS NOT NULL
+    BEGIN
+        SET @Sql += N'Telefon = @Telefon, ';
+        SET @Params += N'@Telefon NVARCHAR(20), ';
+    END
+    
+    IF @Departament IS NOT NULL
+    BEGIN
+        SET @Sql += N'Departament = @Departament, ';
+        SET @Params += N'@Departament NVARCHAR(100), ';
+    END
+    
+    IF @Pozitie IS NOT NULL
+    BEGIN
+        SET @Sql += N'Pozitie = @Pozitie, ';
+        SET @Params += N'@Pozitie NVARCHAR(50), ';
+    END
+    
+    IF @Specializare IS NOT NULL
+    BEGIN
+        SET @Sql += N'Specializare = @Specializare, ';
+        SET @Params += N'@Specializare NVARCHAR(150), ';
+    END
+    
+    IF @NumarLicenta IS NOT NULL
+    BEGIN
+        SET @Sql += N'NumarLicenta = @NumarLicenta, ';
+        SET @Params += N'@NumarLicenta NVARCHAR(50), ';
+    END
+    
+    IF @EsteActiv IS NOT NULL
+    BEGIN
+        SET @Sql += N'EsteActiv = @EsteActiv, ';
+        SET @Params += N'@EsteActiv BIT, ';
+    END
+    
+    -- Înlătură ultima virgulă și spațiu
+    SET @Sql = LEFT(@Sql, LEN(@Sql) - 1);
+    SET @Sql += N' WHERE UserID = @UserID';
+    
+    SET @Params += N'@UserID UNIQUEIDENTIFIER';
+
+    EXEC sp_executesql @Sql, @Params,
+        @Nume = @Nume,
+        @Prenume = @Prenume,
+        @Email = @Email,
+        @Parola = @Parola,
+        @Telefon = @Telefon,
+        @Departament = @Departament,
+        @Pozitie = @Pozitie,
+        @Specializare = @Specializare,
+        @NumarLicenta = @NumarLicenta,
+        @EsteActiv = @EsteActiv,
+        @UserID = @UserID;
 END
 GO
 
--- ===== PROCEDURI PENTRU UTILIZATORI SISTEM =====
-
--- Autentificare utilizator
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_UtilizatoriSistem_Authenticate]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_UtilizatoriSistem_Authenticate]
+-- Schimbare parolă utilizator
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Utilizatori_ChangePassword]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[sp_Utilizatori_ChangePassword]
 GO
 
-CREATE PROCEDURE [dbo].[sp_UtilizatoriSistem_Authenticate]
-    @NumeUtilizatorSauEmail NVARCHAR(100)
+CREATE PROCEDURE [dbo].[sp_Utilizatori_ChangePassword]
+    @UserID UNIQUEIDENTIFIER,
+    @OldParola NVARCHAR(255),
+    @NewParola NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
     
-    SELECT 
-        u.UtilizatorID,
-        u.NumeUtilizator,
-        u.HashParola,
-        u.Email,
-        u.PersonalID,
-        u.EsteActiv,
-        u.DataUltimeiAutentificari,
-        u.IncercariEsuateAutentificare,
-        u.BlocatPanaLa,
-        CONCAT(pm.Nume, ' ', pm.Prenume) AS NumeComplet,
-        pm.Pozitie,
-        pm.Departament,
-        STRING_AGG(rs.NumeRol, ',') AS Roluri
-    FROM UtilizatoriSistem u
-    LEFT JOIN PersonalMedical pm ON u.PersonalID = pm.PersonalID
-    LEFT JOIN UtilizatorRoluri ur ON u.UtilizatorID = ur.UtilizatorID
-    LEFT JOIN RoluriSistem rs ON ur.RolID = rs.RolID AND rs.EsteActiv = 1
-    WHERE (u.NumeUtilizator = @NumeUtilizatorSauEmail OR u.Email = @NumeUtilizatorSauEmail)
-      AND u.EsteActiv = 1
-    GROUP BY 
-        u.UtilizatorID, u.NumeUtilizator, u.HashParola, u.Email, u.PersonalID, 
-        u.EsteActiv, u.DataUltimeiAutentificari, u.IncercariEsuateAutentificare, 
-        u.BlocatPanaLa, pm.Nume, pm.Prenume, pm.Pozitie, pm.Departament;
+    -- Hash inline to avoid quoting issues and keep consistency with sp_Utilizatori_Update
+    UPDATE Utilizatori
+    SET Parola = HASHBYTES('SHA2_256', @NewParola + 'salt')
+    WHERE UserID = @UserID 
+      AND Parola = HASHBYTES('SHA2_256', @OldParola + 'salt');
 END
 GO
-
--- Actualizare ultima autentificare
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_UtilizatoriSistem_UpdateLastLogin]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_UtilizatoriSistem_UpdateLastLogin]
-GO
-
-CREATE PROCEDURE [dbo].[sp_UtilizatoriSistem_UpdateLastLogin]
-    @UtilizatorID UNIQUEIDENTIFIER
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    UPDATE UtilizatoriSistem 
-    SET 
-        DataUltimeiAutentificari = GETDATE(),
-        IncercariEsuateAutentificare = 0,
-        BlocatPanaLa = NULL
-    WHERE UtilizatorID = @UtilizatorID;
-END
-GO
-
--- ===== PROCEDURI PENTRU DASHBOARD ȘI STATISTICI =====
-
--- Dashboard principal - statistici generale
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_Dashboard_GetStatistici]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_Dashboard_GetStatistici]
-GO
-
-CREATE PROCEDURE [dbo].[sp_Dashboard_GetStatistici]
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    -- Statistici generale
-    SELECT 
-        'PacientiTotal' AS Tip,
-        COUNT(*) AS Valoare
-    FROM Pacienti 
-    WHERE EsteActiv = 1
-    
-    UNION ALL
-    
-    SELECT 
-        'ProgramariAzi' AS Tip,
-        COUNT(*) AS Valoare
-    FROM Programari 
-    WHERE CAST(DataProgramare AS DATE) = CAST(GETDATE() AS DATE)
-      AND Status = 'Programata'
-    
-    UNION ALL
-    
-    SELECT 
-        'ConsultatiiLunaAceasta' AS Tip,
-        COUNT(*) AS Valoare
-    FROM Consultatii 
-    WHERE YEAR(DataConsultatie) = YEAR(GETDATE()) 
-      AND MONTH(DataConsultatie) = MONTH(GETDATE())
-    
-    UNION ALL
-    
-    SELECT 
-        'PersonalActiv' AS Tip,
-        COUNT(*) AS Valoare
-    FROM PersonalMedical 
-    WHERE EsteActiv = 1;
-    
-    -- Programările de astăzi
-    SELECT 
-        pr.ProgramareID,
-        pr.DataProgramare,
-        pr.TipProgramare,
-        pr.Status,
-        CONCAT(p.Nume, ' ', p.Prenume) AS NumePacient,
-        p.Telefon AS TelefonPacient,
-        CONCAT(pm.Nume, ' ', pm.Prenume) AS NumeDoctor
-    FROM Programari pr
-    INNER JOIN Pacienti p ON pr.PacientID = p.PacientID
-    INNER JOIN PersonalMedical pm ON pr.DoctorID = pm.PersonalID
-    WHERE CAST(pr.DataProgramare AS DATE) = CAST(GETDATE() AS DATE)
-    ORDER BY pr.DataProgramare;
-END
-GO
-
--- ===== PROCEDURI PENTRU SEMNE VITALE =====
-
--- Crearea unei înregistrări de semne vitale
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_SemneVitale_Create]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_SemneVitale_Create]
-GO
-
-CREATE PROCEDURE [dbo].[sp_SemneVitale_Create]
-    @PacientID UNIQUEIDENTIFIER,
-    @TensiuneArterialaMax INT = NULL,
-    @TensiuneArterialaMin INT = NULL,
-    @FrecariaCardiaca INT = NULL,
-    @Temperatura DECIMAL(4,1) = NULL,
-    @Greutate DECIMAL(5,2) = NULL,
-    @Inaltime INT = NULL,
-    @FrecariaRespiratorie INT = NULL,
-    @SaturatieOxigen DECIMAL(5,2) = NULL,
-    @MasuratDe UNIQUEIDENTIFIER
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    BEGIN TRY
-        DECLARE @NewSemneVitaleID UNIQUEIDENTIFIER = NEWID();
-        
-        INSERT INTO SemneVitale (
-            SemneVitaleID,
-            PacientID,
-            TensiuneArterialaMax,
-            TensiuneArterialaMin,
-            FrecariaCardiaca,
-            Temperatura,
-            Greutate,
-            Inaltime,
-            FrecariaRespiratorie,
-            SaturatieOxigen,
-            MasuratDe,
-            DataMasurare
-        )
-        VALUES (
-            @NewSemneVitaleID,
-            @PacientID,
-            @TensiuneArterialaMax,
-            @TensiuneArterialaMin,
-            @FrecariaCardiaca,
-            @Temperatura,
-            @Greutate,
-            @Inaltime,
-            @FrecariaRespiratorie,
-            @SaturatieOxigen,
-            @MasuratDe,
-            GETDATE()
-        );
-        
-        SELECT @NewSemneVitaleID AS SemneVitaleID;
-        
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-        DECLARE @ErrorState INT = ERROR_STATE();
-        
-        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- Obținere semne vitale pentru pacient
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_SemneVitale_GetByPacient]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_SemneVitale_GetByPacient]
-GO
-
-CREATE PROCEDURE [dbo].[sp_SemneVitale_GetByPacient]
-    @PacientID UNIQUEIDENTIFIER,
-    @Limit INT = 10
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    SELECT TOP (@Limit)
-        sv.SemneVitaleID,
-        sv.PacientID,
-        sv.TensiuneArterialaMax,
-        sv.TensiuneArterialaMin,
-        sv.FrecariaCardiaca,
-        sv.Temperatura,
-        sv.Greutate,
-        sv.Inaltime,
-        sv.FrecariaRespiratorie,
-        sv.SaturatieOxigen,
-        sv.DataMasurare,
-        CONCAT(pm.Nume, ' ', pm.Prenume) AS MasuratDe
-    FROM SemneVitale sv
-    LEFT JOIN PersonalMedical pm ON sv.MasuratDe = pm.PersonalID
-    WHERE sv.PacientID = @PacientID
-    ORDER BY sv.DataMasurare DESC;
-END
-GO
-
--- ===== PROCEDURI PENTRU TRIAJ =====
-
--- Crearea unei înregistrări de triaj
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_TriajPacienti_Create]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_TriajPacienti_Create]
-GO
-
-CREATE PROCEDURE [dbo].[sp_TriajPacienti_Create]
-    @ProgramareID UNIQUEIDENTIFIER,
-    @NivelTriaj INT,
-    @PlangereaPrincipala NVARCHAR(1000),
-    @AsistentTriajID UNIQUEIDENTIFIER,
-    @Observatii NVARCHAR(1000) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    BEGIN TRY
-        -- Validare nivel triaj
-        IF @NivelTriaj NOT BETWEEN 1 AND 5
-        BEGIN
-            RAISERROR('Nivelul de triaj trebuie să fie între 1 și 5.', 16, 1);
-            RETURN;
-        END
-        
-        DECLARE @NewTriajID UNIQUEIDENTIFIER = NEWID();
-        
-        INSERT INTO TriajPacienti (
-            TriajID,
-            ProgramareID,
-            NivelTriaj,
-            PlangereaPrincipala,
-            AsistentTriajID,
-            DataTriaj,
-            Observatii
-        )
-        VALUES (
-            @NewTriajID,
-            @ProgramareID,
-            @NivelTriaj,
-            @PlangereaPrincipala,
-            @AsistentTriajID,
-            GETDATE(),
-            @Observatii
-        );
-        
-        SELECT @NewTriajID AS TriajID;
-        
-    END TRY
-    BEGIN CATCH
-        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-        DECLARE @ErrorState INT = ERROR_STATE();
-        
-        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
-    END CATCH
-END
-GO
-
--- Obținere triaj pentru astăzi
-IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_TriajPacienti_GetToday]') AND type in (N'P', N'PC'))
-    DROP PROCEDURE [dbo].[sp_TriajPacienti_GetToday]
-GO
-
-CREATE PROCEDURE [dbo].[sp_TriajPacienti_GetToday]
-AS
-BEGIN
-    SET NOCOUNT ON;
-    
-    SELECT 
-        t.TriajID,
-        t.ProgramareID,
-        t.NivelTriaj,
-        t.PlangereaPrincipala,
-        t.DataTriaj,
-        t.Observatii,
-        CONCAT(p.Nume, ' ', p.Prenume) AS NumePacient,
-        p.CNP AS CNPPacient,
-        p.DataNasterii,
-        pr.DataProgramare,
-        CONCAT(pm.Nume, ' ', pm.Prenume) AS NumeDoctor,
-        CONCAT(ast.Nume, ' ', ast.Prenume) AS AsistentTriaj
-    FROM TriajPacienti t
-    INNER JOIN Programari pr ON t.ProgramareID = pr.ProgramareID
-    INNER JOIN Pacienti p ON pr.PacientID = p.PacientID
-    INNER JOIN PersonalMedical pm ON pr.DoctorID = pm.PersonalID
-    LEFT JOIN PersonalMedical ast ON t.AsistentTriajID = ast.PersonalID
-    WHERE CAST(pr.DataProgramare AS DATE) = CAST(GETDATE() AS DATE)
-    ORDER BY t.NivelTriaj ASC, t.DataTriaj ASC;
-END
-GO
-
-PRINT '';
-PRINT '===============================================';
-PRINT 'PROCEDURI STOCATE PENTRU SISTEMUL MEDICAL COMPLETE!';
-PRINT '===============================================';
-PRINT '';
-PRINT 'PROCEDURI CREATE:';
-PRINT '=================';
-PRINT '• sp_Pacienti_GetPaged - Căutare și paginare pacienți';
-PRINT '• sp_Pacienti_GetByCNP - Căutare pacient după CNP';
-PRINT '• sp_Pacienti_Create - Creare pacient nou';
-PRINT '• sp_PersonalMedical_GetPaged - Căutare personal medical';
-PRINT '• sp_PersonalMedical_GetDoctori - Lista doctorilor pentru dropdown-uri';
-PRINT '• sp_Programari_GetPaged - Căutare și paginare programări';
-PRINT '• sp_Programari_Create - Creare programare nouă cu validări';
-PRINT '• sp_Programari_UpdateStatus - Actualizare status programare';
-PRINT '• sp_Consultatii_GetByPacient - Istoric consultații pacient';
-PRINT '• sp_SemneVitale_Create - Creare înregistrare semne vitale';
-PRINT '• sp_SemneVitale_GetByPacient - Istoric semne vitale pacient';
-PRINT '• sp_TriajPacienti_Create - Creare înregistrare triaj';
-PRINT '• sp_TriajPacienti_GetToday - Triaj pentru astăzi';
-PRINT '• sp_UtilizatoriSistem_Authenticate - Autentificare utilizatori';
-PRINT '• sp_UtilizatoriSistem_UpdateLastLogin - Actualizare ultima autentificare';
-PRINT '• sp_Dashboard_GetStatistici - Statistici pentru dashboard';
-PRINT '';
-PRINT 'FUNCȚIONALITĂȚI INCLUSE:';
-PRINT '========================';
-PRINT '• Rich business logic în proceduri (nu doar forwarding)';
-PRINT '• Validări pentru conflicte de programare și nivel triaj';
-PRINT '• Căutare avansată cu filtre multiple';
-PRINT '• Paginare optimizată pentru performance';
-PRINT '• Join-uri pentru afișare date complete';
-PRINT '• Error handling specific și informativ';
-PRINT '• Suport pentru semne vitale și triaj medical';
-PRINT '• Actualizare status programări cu validări';
-PRINT '';
-PRINT 'NEXT STEPS:';
-PRINT '===========';
-PRINT '1. Rulează Medical_Tables_Structure.sql pentru structura tabelelor';
-PRINT '2. Rulează Medical_Data_Population.sql pentru datele dummy';
-PRINT '3. Rulează Medical_StoredProcedures.sql (acest fișier)';
-PRINT '4. Implementează API-urile care folosesc aceste proceduri';
-PRINT '5. Testează aplicația Blazor cu datele reale';
-PRINT '';
-PRINT 'CORECTĂRI APLICATE:';
-PRINT '===================';
-PRINT '✅ NEWID() în loc de NEWSEQUENTIALID() în proceduri';
-PRINT '✅ Adăugată coloana DataUltimeiModificari în Programari';
-PRINT '✅ Adăugată coloana PacientID în SemneVitale';
-PRINT '✅ Proceduri pentru toate funcționalitățile Blazor';
-PRINT '✅ Validări business și error handling complet';

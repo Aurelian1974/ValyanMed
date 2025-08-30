@@ -8,24 +8,27 @@
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
     <MudStack Spacing="3">
         <!-- Header Section -->
-        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.h4">Gestionare Utilizatori</MudText>
-            <MudButton StartIcon="@Icons.Material.Filled.Add" 
-                      Color="Color.Primary" 
-                      Variant="Variant.Filled"
-                      OnClick="@OpenCreateUserDialog">
-                Adauga Utilizator
+        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="MudAlignItems.Center">
+            <MudText Typo="Typo.h4" style="color: var(--mud-palette-primary); font-weight: 600;">
+                ?? Gestionare Utilizatori
+            </MudText>
+            <MudButton StartIcon="@Icons.Material.Filled.PersonAdd" 
+                      Color="MudColor.Primary" 
+                      Variant="MudVariant.Filled"
+                      OnClick="@(() => { /* TODO: Add OpenUserDialog method */ })"
+                      Class="elevation-4">
+                Adaug? Utilizator
             </MudButton>
         </MudStack>
 
         <!-- Search and Filters -->
         <MudPaper Class="pa-4">
-            <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+            <MudStack Row Spacing="2" AlignItems="MudAlignItems.Center">
                 <MudTextField T="string"
                              Value="@State.SearchTerm"
                              ValueChanged="@OnSearchChanged"
                              Label="Cauta utilizatori..." 
-                             Variant="Variant.Outlined" 
+                             Variant="MudVariant.Outlined" 
                              Adornment="Adornment.End" 
                              AdornmentIcon="@Icons.Material.Filled.Search"
                              OnAdornmentClick="@FilterUsers"
@@ -34,24 +37,24 @@
                              Class="flex-grow-1" />
 
                 <MudButton StartIcon="@Icons.Material.Filled.UnfoldLess" 
-                          Color="Color.Secondary" 
-                          Variant="Variant.Outlined"
+                          Color="MudColor.Secondary" 
+                          Variant="MudVariant.Outlined"
                           OnClick="@CollapseAllRows"
                           Size="Size.Small">
                     Collapse
                 </MudButton>
 
                 <MudButton StartIcon="@Icons.Material.Filled.UnfoldMore" 
-                          Color="Color.Secondary" 
-                          Variant="Variant.Outlined"
+                          Color="MudColor.Secondary" 
+                          Variant="MudVariant.Outlined"
                           OnClick="@ExpandAllRows"
                           Size="Size.Small">
                     Expand
                 </MudButton>
 
                 <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
-                          Color="Color.Secondary" 
-                          Variant="Variant.Outlined"
+                          Color="MudColor.Secondary" 
+                          Variant="MudVariant.Outlined"
                           OnClick="@ResetFilters">
                     Reset
                 </MudButton>
@@ -71,7 +74,7 @@
         {
             <MudDataGrid T="Utilizator" Items="@(new List<Utilizator>())" Loading="true">
                 <LoadingContent>
-                    <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
+                    <MudStack AlignItems="MudAlignItems.Center" Spacing="2" Class="pa-8">
                         <MudProgressCircular Indeterminate="true" />
                         <MudText Typo="Typo.body1">Se incarca utilizatorii...</MudText>
                     </MudStack>
@@ -97,7 +100,7 @@
                         <CellTemplate>
                             <MudIconButton Icon="@(State.IsRowExpanded(context.Item.Id) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)" 
                                           Size="Size.Small" 
-                                          Color="Color.Default"
+                                          Color="MudColor.Default"
                                           OnClick="@(() => ToggleRowExpansion(context.Item.Id))" />
                         </CellTemplate>
                     </TemplateColumn>
@@ -113,7 +116,7 @@
                             }
                             else
                             {
-                                <MudText Color="Color.Surface">-</MudText>
+                                <MudText Color="MudColor.Surface">-</MudText>
                             }
                         </CellTemplate>
                     </TemplateColumn>
@@ -125,7 +128,7 @@
                             }
                             else
                             {
-                                <MudText Color="Color.Surface">-</MudText>
+                                <MudText Color="MudColor.Surface">-</MudText>
                             }
                         </CellTemplate>
                     </TemplateColumn>
@@ -135,19 +138,19 @@
                                 <MudTooltip Text="Vizualizeaza utilizator">
                                     <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
                                                   Size="Size.Small" 
-                                                  Color="Color.Info"
+                                                  Color="MudColor.Info"
                                                   OnClick="@(() => ViewUser(context.Item))" />
                                 </MudTooltip>
                                 <MudTooltip Text="Editeaza utilizator">
                                     <MudIconButton Icon="@Icons.Material.Filled.Edit" 
                                                   Size="Size.Small" 
-                                                  Color="Color.Primary"
+                                                  Color="MudColor.Primary"
                                                   OnClick="@(() => OpenEditUserDialog(context.Item))" />
                                 </MudTooltip>
                                 <MudTooltip Text="Sterge utilizator">
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" 
                                                   Size="Size.Small" 
-                                                  Color="Color.Error"
+                                                  Color="MudColor.Error"
                                                   OnClick="@(() => DeleteUser(context.Item))" />
                                 </MudTooltip>
                             </MudStack>
@@ -159,14 +162,14 @@
                     @if (State.IsRowExpanded(context.Item.Id))
                     {
                         <MudPaper Class="pa-4" Elevation="0" Style="border-left: 4px solid var(--mud-palette-primary); background: linear-gradient(90deg, var(--mud-palette-primary-lighten) 0%, var(--mud-palette-background-grey) 5%);">
-                            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
-                                <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="font-weight-bold">
+                            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="MudAlignItems.Center" Class="mb-3">
+                                <MudText Typo="Typo.subtitle1" Color="MudColor.Primary" Class="font-weight-bold">
                                     <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" />
                                     Detalii utilizator: @context.Item.NumeUtilizator
                                 </MudText>
                                 <MudIconButton Icon="@Icons.Material.Filled.Close" 
                                               Size="Size.Small" 
-                                              Color="Color.Default"
+                                              Color="MudColor.Default"
                                               OnClick="@(() => ToggleRowExpansion(context.Item.Id))" />
                             </MudStack>
                             
@@ -194,7 +197,7 @@
                                             }
                                             else
                                             {
-                                                <MudText Color="Color.Surface" Typo="Typo.body2">Nu este specificat</MudText>
+                                                <MudText Color="MudColor.Surface" Typo="Typo.body2">Nu este specificat</MudText>
                                             }
                                         </MudText>
                                     </MudStack>
@@ -215,7 +218,7 @@
                                             }
                                             else
                                             {
-                                                <MudText Color="Color.Surface" Typo="Typo.body2">Data necunoscuta</MudText>
+                                                <MudText Color="MudColor.Surface" Typo="Typo.body2">Data necunoscuta</MudText>
                                             }
                                         </MudText>
                                     </MudStack>
@@ -226,9 +229,9 @@
                 </ChildRowContent>
 
                 <NoRecordsContent>
-                    <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Size="Size.Large" Color="Color.Surface" />
-                        <MudText Typo="Typo.body1" Color="Color.Surface">
+                    <MudStack AlignItems="MudAlignItems.Center" Spacing="2" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.ManageAccounts" Size="Size.Large" Color="MudColor.Surface" />
+                        <MudText Typo="Typo.body1" Color="MudColor.Surface">
                             @if (string.IsNullOrEmpty(State.SearchTerm))
                             {
                                 @:Nu au fost gasiti utilizatori

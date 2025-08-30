@@ -1,0 +1,325 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudLayout>
+    <!-- Header Bar -->
+    <MudAppBar Elevation="1" Color="MudColor.Primary" Dense="true">
+        <div class="app-logo">
+            <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" />
+            <MudText Typo="Typo.h6">ValyanMed</MudText>
+        </div>
+        <MudSpacer />
+        
+        <!-- User menu and logout -->
+        <MudMenu Color="MudColor.Inherit" Icon="@Icons.Material.Filled.AccountCircle" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+            <MudMenuItem Href="/profil" Icon="@Icons.Material.Filled.ManageAccounts">Profil</MudMenuItem>
+            <MudMenuItem OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Delogare</MudMenuItem>
+        </MudMenu>
+
+        <MudButton 
+            OnClick="Logout" 
+            StartIcon="@Icons.Material.Filled.Logout" 
+            Color="MudColor.Inherit" 
+            Class="ml-2" 
+            Variant="Variant.Text">
+            Delogare
+        </MudButton>
+    </MudAppBar>
+
+    <!-- Left Sidebar -->
+    <MudDrawer Open="true" ClipMode="DrawerClipMode.Always" Elevation="2" Variant="DrawerVariant.Persistent" Width="280px">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">ValyanMed</MudText>
+        </MudDrawerHeader>
+        
+        <div style="padding: 8px;">
+            <!-- Medical System Dashboard - NOW CONSISTENT -->
+            <div class="admin-nav-link" @onclick="@NavigateToDashboard">
+                <MudIcon Icon="@Icons.Material.Filled.Dashboard" style="margin-right: 12px;" />
+                Dashboard Medical
+            </div>
+
+            <!-- Medical System Main Menu - Simplified Structure -->
+            <div class="admin-nav-link" @onclick="@ToggleMedicalMenu">
+                <MudIcon Icon="@Icons.Material.Filled.MedicalServices" style="margin-right: 12px;" />
+                Sistemul Medical
+            </div>
+            @if (_medicalExpanded)
+            {
+                <div style="margin-left:32px; padding: 4px 0;">
+                    <!-- Programari si Inregistrare -->
+                    <MudNavLink @onclick="@ToggleProgramariMenu" Icon="@Icons.Material.Filled.EventAvailable" style="font-size: 13px; cursor: pointer;">
+                        Programari si Inregistrare
+                    </MudNavLink>
+                    @if (_programariExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/programari" Icon="@Icons.Material.Filled.Event">
+                                Programari
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/pacienti" Icon="@Icons.Material.Filled.People">
+                                Pacienti
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/pacienti/cautare" Icon="@Icons.Material.Filled.Search">
+                                Cautare pacienti
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/verificare-asigurare" Icon="@Icons.Material.Filled.VerifiedUser">
+                                Verificare asigurare
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/formulare-consimtamant" Icon="@Icons.Material.Filled.Assignment">
+                                Formulare consimtamant
+                            </MudNavLink>
+                        </div>
+                    }
+
+                    <!-- Triaj si Evaluare -->
+                    <MudNavLink @onclick="@ToggleTriajMenu" Icon="@Icons.Material.Filled.PriorityHigh" style="font-size: 13px; cursor: pointer;">
+                        Triaj si Evaluare
+                    </MudNavLink>
+                    @if (_triajExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/triaj" Icon="@Icons.Material.Filled.Assignment">
+                                Triaj pacienti
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/semne-vitale" Icon="@Icons.Material.Filled.MonitorHeart">
+                                Semne vitale
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/chestionar-simptome" Icon="@Icons.Material.Filled.Quiz">
+                                Chestionar simptome
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/clasificare-prioritate" Icon="@Icons.Material.Filled.Flag">
+                                Clasificare prioritate
+                            </MudNavLink>
+                        </div>
+                    }
+
+                    <!-- Consultatie Medicala -->
+                    <MudNavLink @onclick="@ToggleConsultatieMenu" Icon="@Icons.Material.Filled.MedicalServices" style="font-size: 13px; cursor: pointer;">
+                        Consultatie Medicala
+                    </MudNavLink>
+                    @if (_consultatieExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/consultatii" Icon="@Icons.Material.Filled.MedicalServices">
+                                Consultatii
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/istoric-medical" Icon="@Icons.Material.Filled.History">
+                                Istoric medical
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/examinare-clinica" Icon="@Icons.Material.Filled.PersonSearch">
+                                Examinare clinica
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/diagnostic-preliminar" Icon="@Icons.Material.Filled.MedicalServices">
+                                Diagnostic preliminar
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/prescriptii" Icon="@Icons.Material.Filled.LocalPharmacy">
+                                Prescriptii
+                            </MudNavLink>
+                        </div>
+                    }
+
+                    <!-- Investigatii si Analize -->
+                    <MudNavLink @onclick="@ToggleInvestigatiiMenu" Icon="@Icons.Material.Filled.Science" style="font-size: 13px; cursor: pointer;">
+                        Investigatii si Analize
+                    </MudNavLink>
+                    @if (_investigatiiExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/analize-laborator" Icon="@Icons.Material.Filled.Biotech">
+                                Analize laborator
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/imagistica" Icon="@Icons.Material.Filled.MedicalInformation">
+                                Imagistica
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/teste-functionale" Icon="@Icons.Material.Filled.Favorite">
+                                Teste functionale
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/rezultate-teste" Icon="@Icons.Material.Filled.Assignment">
+                                Rezultate teste
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/recoltare-probe" Icon="@Icons.Material.Filled.Bloodtype">
+                                Recoltare probe
+                            </MudNavLink>
+                        </div>
+                    }
+
+                    <!-- Monitorizare si Follow-up -->
+                    <MudNavLink @onclick="@ToggleMonitorizareMenu" Icon="@Icons.Material.Filled.Insights" style="font-size: 13px; cursor: pointer;">
+                        Monitorizare si Follow-up
+                    </MudNavLink>
+                    @if (_monitorizareExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/follow-up" Icon="@Icons.Material.Filled.Schedule">
+                                Follow-up
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/monitorizare-tratament" Icon="@Icons.Material.Filled.MonitorHeart">
+                                Monitorizare tratament
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/comunicare-medic-familie" Icon="@Icons.Material.Filled.Email">
+                                Comunicare medic familie
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/evolutia-pacientului" Icon="@Icons.Material.Filled.TrendingUp">
+                                Evolutia pacientului
+                            </MudNavLink>
+                        </div>
+                    }
+
+                    <!-- Personal Medical -->
+                    <MudNavLink @onclick="@TogglePersonalMenu" Icon="@Icons.Material.Filled.Badge" style="font-size: 13px; cursor: pointer;">
+                        Personal Medical
+                    </MudNavLink>
+                    @if (_personalExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/personal" Icon="@Icons.Material.Filled.Group">
+                                Personal medical
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/calendar-programari" Icon="@Icons.Material.Filled.CalendarMonth">
+                                Calendar programari
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/gestionare-personal" Icon="@Icons.Material.Filled.ManageAccounts">
+                                Gestionare personal
+                            </MudNavLink>
+                            <MudDivider Style="margin: 4px 0;" />
+                            <MudNavLink Href="/medical/personal-demo" Icon="@Icons.Material.Filled.Compare" style="background: linear-gradient(45deg, #594ae2, #1890ff); border-radius: 4px; color: white !important;">
+                                🎨 Demo Framework UI
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/personal-radzen" Icon="@Icons.Material.Filled.DataObject" style="background: linear-gradient(45deg, #e91e63, #ff6b35); border-radius: 4px; color: white !important; margin-top: 2px;">
+                                💼 Demo Radzen
+                            </MudNavLink>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Farmacie Section -->
+            <div class="admin-nav-link" @onclick="@ToggleFarmacieMenu">
+                <MudIcon Icon="@Icons.Material.Filled.LocalPharmacy" style="margin-right: 12px;" />
+                Farmacie
+            </div>
+            @if (_farmacieExpanded)
+            {
+                <div style="margin-left:32px; padding: 4px 0;">
+                    <MudNavLink Href="/farmacie/medicamente" Icon="@Icons.Material.Filled.Medication">
+                        Medicamente
+                    </MudNavLink>
+                    <MudNavLink Href="/farmacie/materiale-sanitare" Icon="@Icons.Material.Filled.MedicalServices">
+                        Materiale sanitare
+                    </MudNavLink>
+                    <MudNavLink Href="/farmacie/dispozitive-medicale" Icon="@Icons.Material.Filled.MedicalInformation">
+                        Dispozitive medicale
+                    </MudNavLink>
+                    <MudNavLink Href="/farmacie/documente-intrare" Icon="@Icons.Material.Filled.Input">
+                        Documente intrare
+                    </MudNavLink>
+                    <MudNavLink Href="/farmacie/documente-iesire" Icon="@Icons.Material.Filled.Output">
+                        Documente iesire
+                    </MudNavLink>
+                </div>
+            }
+
+            <!-- Reports - ALIGNED CORRECTLY -->
+            <div class="admin-nav-link" @onclick="@NavigateToRapoarte">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" style="margin-right: 12px;" />
+                Rapoarte
+            </div>
+
+            <!-- Settings - ALIGNED CORRECTLY -->
+            <div class="admin-nav-link" @onclick="@NavigateToSetari">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" style="margin-right: 12px;" />
+                Setari clinica
+            </div>
+
+            <!-- Admin menu -->
+            <div class="admin-nav-link" @onclick="@ToggleAdminMenu">
+                <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" style="margin-right: 12px;" />
+                Administrare
+            </div>
+            @if (_adminExpanded)
+            {
+                <div style="margin-left:32px; padding: 4px 0;">
+                    <MudNavLink Href="/persoane" Icon="@Icons.Material.Filled.People">
+                        Persoane
+                    </MudNavLink>
+                    <MudNavLink Href="/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">
+                        Utilizatori
+                    </MudNavLink>
+                    <MudNavLink Href="/administrare/parteneri" Icon="@Icons.Material.Filled.Business">
+                        Parteneri
+                    </MudNavLink>
+                    <MudNavLink Href="/administrare/roluri" Icon="@Icons.Material.Filled.GroupWork">
+                        Roluri
+                    </MudNavLink>
+                    <MudDivider Style="margin: 8px 0;" />
+                    <MudNavLink Href="/auth-debug" Icon="@Icons.Material.Filled.BugReport">
+                        Auth Debug
+                    </MudNavLink>
+                    <MudNavLink Href="/test-simple" Icon="@Icons.Material.Filled.Science">
+                        Debug Tools
+                    </MudNavLink>
+                </div>
+            }
+        </div>
+    </MudDrawer>
+
+    <!-- Main Content -->
+    <MudMainContent Class="main-content">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _adminExpanded = false;
+    private bool _farmacieExpanded = false;
+    private bool _medicalExpanded = true; // Start expanded
+    private bool _programariExpanded = false;
+    private bool _triajExpanded = false;
+    private bool _consultatieExpanded = false;
+    private bool _investigatiiExpanded = false;
+    private bool _monitorizareExpanded = false;
+    private bool _personalExpanded = false;
+
+    private async Task Logout()
+    {
+        try
+        {
+            // Call API logout + clear storage via JS helper (uses sendBeacon on unload)
+            await JSRuntime.InvokeVoidAsync("appLifecycle.logoutNow", "https://localhost:7294/api/auth/logout", 
+                new[] { "valyanmed_auth_token", "valyanmed_user_info", "currentUser" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout error: {ex.Message}");
+        }
+        finally
+        {
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+        }
+    }
+
+    void ToggleAdminMenu() => _adminExpanded = !_adminExpanded;
+    void ToggleFarmacieMenu() => _farmacieExpanded = !_farmacieExpanded;
+    void ToggleMedicalMenu() => _medicalExpanded = !_medicalExpanded;
+    void ToggleProgramariMenu() => _programariExpanded = !_programariExpanded;
+    void ToggleTriajMenu() => _triajExpanded = !_triajExpanded;
+    void ToggleConsultatieMenu() => _consultatieExpanded = !_consultatieExpanded;
+    void ToggleInvestigatiiMenu() => _investigatiiExpanded = !_investigatiiExpanded;
+    void ToggleMonitorizareMenu() => _monitorizareExpanded = !_monitorizareExpanded;
+    void TogglePersonalMenu() => _personalExpanded = !_personalExpanded;
+
+    // Navigation methods for consistent alignment
+    void NavigateToRapoarte() => NavigationManager.NavigateTo("/medical/rapoarte");
+    void NavigateToSetari() => NavigationManager.NavigateTo("/medical/setari-clinica");
+    void NavigateToDashboard() => NavigationManager.NavigateTo("/medical/dashboard");
+}

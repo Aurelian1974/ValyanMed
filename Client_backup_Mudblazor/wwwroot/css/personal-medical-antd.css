@@ -1,0 +1,271 @@
+/* Personal Medical Page - Ant Design Blazor Styles */
+
+/* =====================================================
+   Ant Design Custom Overrides for Personal Medical
+   ===================================================== */
+
+/* Avatar hover effects */
+.ant-avatar {
+    transition: all 0.3s ease;
+}
+
+.ant-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Table row hover enhancements */
+.ant-table-tbody > tr:hover > td {
+    background-color: #f0f9ff !important;
+}
+
+/* Expanded row styling */
+.ant-table-expanded-row > td {
+    background: linear-gradient(90deg, #e6f7ff 0%, #f0f0f0 5%) !important;
+    border-left: 4px solid #1890ff !important;
+}
+
+/* Card hover effects in expanded content */
+.ant-table-expanded-row .ant-card {
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.ant-table-expanded-row .ant-card:hover {
+    box-shadow: 0 4px 16px rgba(24, 144, 255, 0.12);
+    border-color: #1890ff;
+}
+
+/* Action buttons hover effects */
+.ant-btn-link {
+    transition: all 0.2s ease;
+}
+
+.ant-btn-link:hover {
+    transform: translateY(-1px);
+}
+
+/* Tag hover effects */
+.ant-tag {
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.ant-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Search input focus enhancement */
+.ant-input:focus,
+.ant-input-focused {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Select dropdown focus enhancement */
+.ant-select-focused .ant-select-selector {
+    border-color: #1890ff !important;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* Button hover enhancements */
+.ant-btn-primary {
+    transition: all 0.3s ease;
+}
+
+.ant-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+}
+
+.ant-btn-default {
+    transition: all 0.2s ease;
+}
+
+.ant-btn-default:hover {
+    border-color: #1890ff;
+    color: #1890ff;
+}
+
+/* Loading spinner customization */
+.ant-spin-lg .ant-spin-dot {
+    width: 40px;
+    height: 40px;
+}
+
+.ant-spin-lg .ant-spin-dot i {
+    width: 14px;
+    height: 14px;
+}
+
+/* Alert customization */
+.ant-alert-success {
+    border-left: 4px solid #52c41a;
+}
+
+/* Table responsive improvements */
+@media (max-width: 768px) {
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    
+    .ant-avatar {
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        font-size: 10px;
+    }
+    
+    .ant-tag {
+        font-size: 10px;
+        padding: 0 4px;
+    }
+}
+
+/* Custom spacing utilities */
+.mb-24 {
+    margin-bottom: 24px;
+}
+
+.mt-16 {
+    margin-top: 16px;
+}
+
+.p-16 {
+    padding: 16px;
+}
+
+/* Card content spacing */
+.ant-card-body .ant-descriptions-item {
+    padding-bottom: 8px;
+}
+
+/* Icon color overrides */
+.text-success {
+    color: #52c41a !important;
+}
+
+.text-primary {
+    color: #1890ff !important;
+}
+
+.text-warning {
+    color: #fa8c16 !important;
+}
+
+.text-danger {
+    color: #ff4d4f !important;
+}
+
+/* Link hover effects */
+a {
+    transition: all 0.2s ease;
+}
+
+a:hover {
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+/* Empty state styling */
+.ant-empty {
+    padding: 48px 16px;
+}
+
+.ant-empty-description {
+    color: #8c8c8c;
+    font-size: 14px;
+}
+
+/* Tooltip customization */
+.ant-tooltip-inner {
+    background-color: rgba(0, 0, 0, 0.85);
+    border-radius: 6px;
+}
+
+/* Table pagination customization */
+.ant-pagination {
+    margin-top: 16px;
+    text-align: center;
+}
+
+.ant-pagination-item-active {
+    border-color: #1890ff;
+    background-color: #1890ff;
+}
+
+.ant-pagination-item-active a {
+    color: #fff;
+}
+
+/* Custom scrollbar for table */
+.ant-table-body::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.ant-table-body::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb {
+    background: #d9d9d9;
+    border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb:hover {
+    background: #bfbfbf;
+}
+
+/* Status indicator animations */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.ant-tag[data-status="active"] {
+    animation: pulse 2s infinite ease-in-out;
+}
+
+/* Enhanced focus states for accessibility */
+.ant-btn:focus,
+.ant-input:focus,
+.ant-select-selector:focus {
+    outline: 2px solid #1890ff;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .ant-btn,
+    .ant-pagination,
+    .ant-table-column-sorters,
+    .ant-dropdown-trigger {
+        display: none !important;
+    }
+    
+    .ant-table {
+        border: 1px solid #000;
+    }
+    
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+        border: 1px solid #000;
+        padding: 4px;
+        font-size: 10px;
+    }
+    
+    .ant-tag {
+        border: 1px solid #000;
+        background: #fff !important;
+        color: #000 !important;
+    }
+}

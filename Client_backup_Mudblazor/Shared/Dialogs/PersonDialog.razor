@@ -1,0 +1,196 @@
+@inherits PersonDialogBase
+
+<MudDialog>
+    <DialogContent>
+        <FluentValidationValidator />
+        <MudForm @ref="form" Model="@Model" Validation="@Validator.ValidateValue">
+            <MudContainer Style="max-height: 70vh; overflow-y: auto;">
+                <MudStack Spacing="3">
+                    <!-- Personal Information Section -->
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Informatii Personale</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="Model.Nume"
+                                            For="@(() => Model.Nume)"
+                                            Label="Nume *"
+                                            Variant="Variant.Outlined"
+                                            Required="true"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="Model.Prenume"
+                                            For="@(() => Model.Prenume)"
+                                            Label="Prenume *"
+                                            Variant="Variant.Outlined"
+                                            Required="true"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="Model.CNP"
+                                            For="@(() => Model.CNP)"
+                                            Label="CNP"
+                                            Variant="Variant.Outlined"
+                                            Mask="@CnpMask"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="Model.DataNasterii"
+                                             Label="Data Nasterii"
+                                             Variant="Variant.Outlined"
+                                             DateFormat="dd.MM.yyyy"
+                                             MaxDate="DateTime.Today"
+                                             Editable="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="Gen?" @bind-Value="Model.Gen"
+                                         Label="Gen"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem T="Gen?" Value="@((Gen?)null)">Nu este specificat</MudSelectItem>
+                                    <MudSelectItem T="Gen?" Value="@Gen.Masculin">Masculin</MudSelectItem>
+                                    <MudSelectItem T="Gen?" Value="@Gen.Feminin">Feminin</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="StareCivila?" @bind-Value="Model.StareCivila"
+                                         Label="Stare Civila"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem T="StareCivila?" Value="@((StareCivila?)null)">Nu este specificata</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Necasatorit">Necasatorit(a)</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Casatorit">Casatorit(a)</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Divortit">Divortat(a)</MudSelectItem>
+                                    <MudSelectItem T="StareCivila?" Value="@StareCivila.Vaduv">Vaduv(a)</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+
+                    <!-- Identity Document Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Act de Identitate</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="4">
+                                <MudSelect T="TipActIdentitate?" @bind-Value="Model.TipActIdentitate"
+                                         Label="Tip Act"
+                                         Variant="Variant.Outlined"
+                                         AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem T="TipActIdentitate?" Value="@((TipActIdentitate?)null)">Nu este specificat</MudSelectItem>
+                                    <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.CarteIdentitate">Carte de Identitate</MudSelectItem>
+                                    <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.Pasaport">Pasaport</MudSelectItem>
+                                    <MudSelectItem T="TipActIdentitate?" Value="@TipActIdentitate.PermisConducere">Permis de Conducere</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="Model.SerieActIdentitate"
+                                            For="@(() => Model.SerieActIdentitate)"
+                                            Label="Serie"
+                                            Variant="Variant.Outlined"
+                                            MaxLength="2"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="Model.NumarActIdentitate"
+                                            For="@(() => Model.NumarActIdentitate)"
+                                            Label="Numar"
+                                            Variant="Variant.Outlined"
+                                            MaxLength="6"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+
+                    <!-- Address Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Adresa</MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="Model.Judet"
+                                            For="@(() => Model.Judet)"
+                                            Label="Judet"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="Model.Localitate"
+                                            For="@(() => Model.Localitate)"
+                                            Label="Localitate"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudGrid>
+                            <MudItem xs="12" md="8">
+                                <MudTextField @bind-Value="Model.Strada"
+                                            For="@(() => Model.Strada)"
+                                            Label="Strada"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="Model.NumarStrada"
+                                            For="@(() => Model.NumarStrada)"
+                                            Label="Numar"
+                                            Variant="Variant.Outlined"
+                                            Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+
+                        <MudTextField @bind-Value="Model.CodPostal"
+                                    For="@(() => Model.CodPostal)"
+                                    Label="Cod Postal"
+                                    Variant="Variant.Outlined"
+                                    Immediate="true" />
+                    </MudStack>
+
+                    <!-- Professional Information Section -->
+                    <MudDivider />
+                    <MudStack Spacing="2">
+                        <MudText Typo="Typo.h6" Color="Color.Primary">Informatii Profesionale</MudText>
+                        
+                        <MudTextField @bind-Value="Model.PozitieOrganizatie"
+                                    For="@(() => Model.PozitieOrganizatie)"
+                                    Label="Pozitie in Organizatie"
+                                    Variant="Variant.Outlined"
+                                    Immediate="true" />
+                    </MudStack>
+                </MudStack>
+            </MudContainer>
+        </MudForm>
+    </DialogContent>
+    
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Secondary">Anuleaza</MudButton>
+        <MudButton OnClick="Submit" 
+                  Color="Color.Primary" 
+                  Variant="Variant.Filled"
+                  Disabled="@IsSubmitting"
+                  StartIcon="@(IsSubmitting ? Icons.Material.Filled.HourglassEmpty : (IsEditMode ? Icons.Material.Filled.Save : Icons.Material.Filled.Add))">
+            @if (IsSubmitting)
+            {
+                @:Se proceseaza...
+            }
+            else if (IsEditMode)
+            {
+                @:Actualizeaza
+            }
+            else
+            {
+                @:Adauga
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>

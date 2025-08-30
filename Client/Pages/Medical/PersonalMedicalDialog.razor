@@ -1,0 +1,322 @@
+@using global::Shared.DTOs.Medical
+@using Radzen
+@using Radzen.Blazor
+@using Client.Services.Medical
+@inject Radzen.NotificationService NotificationService
+@inject Radzen.DialogService DialogService
+@inject IPersonalMedicalApiService PersonalMedicalApiService
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+    <RadzenTemplateForm TItem="CreatePersonalMedicalRequest" Data="@Model" Submit="@OnSubmit">
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+            
+            <!-- Nume si Prenume -->
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Nume *" Variant="Radzen.Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@Model.Nume" 
+                                       Name="Nume"
+                                       Placeholder="Introduceti numele"
+                                       Disabled="@(IsViewMode)"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Nume" Text="Numele este obligatoriu" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Prenume *" Variant="Radzen.Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@Model.Prenume" 
+                                       Name="Prenume"
+                                       Placeholder="Introduceti prenumele"
+                                       Disabled="@(IsViewMode)"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Prenume" Text="Prenumele este obligatoriu" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <!-- Pozitie si Specializare -->
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Pozitie *" Variant="Radzen.Variant.Outlined">
+                        <RadzenDropDown @bind-Value="@Model.Pozitie"
+                                        Data="@_pozitii"
+                                        Name="Pozitie"
+                                        Placeholder="Selecteaza pozitie"
+                                        Disabled="@(IsViewMode)"
+                                        AllowFiltering="true"
+                                        Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenRequiredValidator Component="Pozitie" Text="Pozitia este obligatorie" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Specializare" Variant="Radzen.Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@Model.Specializare" 
+                                       Placeholder="Introduceti specializarea"
+                                       Disabled="@(IsViewMode)"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <!-- Departament si Numar Licenta -->
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Departament" Variant="Radzen.Variant.Outlined">
+                        <RadzenDropDown @bind-Value="@Model.Departament"
+                                        Data="@_departamente"
+                                        AllowClear="true"
+                                        AllowFiltering="true"
+                                        Placeholder="Selecteaza departament"
+                                        Disabled="@(IsViewMode)"
+                                        Style="width: 100%;" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Numar Licenta" Variant="Radzen.Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@Model.NumarLicenta" 
+                                       Placeholder="Introduceti numarul de licenta"
+                                       Disabled="@(IsViewMode)"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <!-- Telefon si Email -->
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Telefon" Variant="Radzen.Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@Model.Telefon" 
+                                       Placeholder="Ex: 0721123456"
+                                       Disabled="@(IsViewMode)"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Email" Variant="Radzen.Variant.Outlined">
+                        <RadzenTextBox @bind-Value="@Model.Email" 
+                                       Name="Email"
+                                       Placeholder="Ex: nume@valyanmed.ro"
+                                       Disabled="@(IsViewMode)"
+                                       Style="width: 100%;" />
+                    </RadzenFormField>
+                    <RadzenEmailValidator Component="Email" Text="Formatul email-ului nu este valid" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <!-- Status -->
+            <RadzenRow>
+                <RadzenColumn Size="12">
+                    <RadzenFormField Text="Status" Variant="Radzen.Variant.Outlined">
+                        <RadzenCheckBox @bind-Value="@Model.EsteActiv" 
+                                        Name="Status" 
+                                        Disabled="@(IsViewMode)" />
+                        <RadzenLabel Text="Activ" Component="Status" Style="margin-left: 8px;" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+        </RadzenStack>
+
+        <!-- Form Actions -->
+        @if (!IsViewMode)
+        {
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-4">
+                <RadzenButton Text="Anuleaza" 
+                             ButtonStyle="ButtonStyle.Light" 
+                             Click="@Cancel" />
+                <RadzenButton Text="@(IsEditing ? "Actualizeaza" : "Salveaza")" 
+                             ButtonType="Radzen.ButtonType.Submit" 
+                             ButtonStyle="ButtonStyle.Primary" 
+                             IsBusy="@_isSubmitting" />
+            </RadzenStack>
+        }
+        else
+        {
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-4">
+                <RadzenButton Text="Inchide" 
+                             ButtonStyle="ButtonStyle.Secondary" 
+                             Click="@Cancel" />
+            </RadzenStack>
+        }
+    </RadzenTemplateForm>
+</RadzenStack>
+
+@code {
+    [Parameter] public bool IsEditing { get; set; } = false;
+    [Parameter] public bool IsViewMode { get; set; } = false;
+    [Parameter] public CreatePersonalMedicalRequest Model { get; set; } = new();
+    [Parameter] public Guid? PersonalId { get; set; }
+
+    private bool _isSubmitting = false;
+
+    // Dynamic dropdown options - load from database
+    private string[] _pozitii = Array.Empty<string>();
+    private string[] _departamente = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDropdownOptions();
+    }
+
+    private async Task LoadDropdownOptions()
+    {
+        try
+        {
+            // Get all data to populate dropdowns
+            var allDataQuery = new PersonalMedicalSearchQuery { PageSize = 1000 };
+            var result = await PersonalMedicalApiService.GetPagedAsync(allDataQuery);
+            
+            if (result.IsSuccess && result.Value != null)
+            {
+                // Extract unique values
+                var uniqueDepartamente = result.Value.Items
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Departament))
+                    .Select(x => x.Departament!)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToArray();
+
+                var uniquePozitii = result.Value.Items
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Pozitie))
+                    .Select(x => x.Pozitie)
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToArray();
+
+                _departamente = uniqueDepartamente;
+                _pozitii = uniquePozitii;
+            }
+            else
+            {
+                // Fallback to hardcoded values
+                _departamente = new[] {
+                    "Cardiologie", "Neurologie", "Pediatrie", "Chirurgie", 
+                    "Medicina interna", "Radiologie", "Laborator", "Recuperare", "Receptie"
+                };
+
+                _pozitii = new[] {
+                    "Doctor", "Medic specialist", "Asistent medical", 
+                    "Tehnician medical", "Kinetoterapeut", "Psiholog", "Nutritionist",
+                    "Doctor Primar", "Doctor Specialist", "Asistent Medical", 
+                    "Receptioner Principal"
+                };
+            }
+        }
+        catch
+        {
+            // Fallback to hardcoded values if API fails
+            _departamente = new[] {
+                "Cardiologie", "Neurologie", "Pediatrie", "Chirurgie", 
+                "Medicina interna", "Radiologie", "Laborator", "Recuperare", "Receptie"
+            };
+
+            _pozitii = new[] {
+                "Doctor", "Medic specialist", "Asistent medical", 
+                "Tehnician medical", "Kinetoterapeut", "Psiholog", "Nutritionist",
+                "Doctor Primar", "Doctor Specialist", "Asistent Medical", 
+                "Receptioner Principal"
+            };
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task OnSubmit(CreatePersonalMedicalRequest model)
+    {
+        if (IsViewMode) return;
+
+        _isSubmitting = true;
+        try
+        {
+            if (IsEditing && PersonalId.HasValue)
+            {
+                // Update existing personal medical
+                var updateRequest = new UpdatePersonalMedicalRequest
+                {
+                    PersonalID = PersonalId.Value,
+                    Nume = model.Nume,
+                    Prenume = model.Prenume,
+                    Pozitie = model.Pozitie,
+                    Specializare = model.Specializare,
+                    Departament = model.Departament,
+                    NumarLicenta = model.NumarLicenta,
+                    Telefon = model.Telefon,
+                    Email = model.Email,
+                    EsteActiv = model.EsteActiv
+                };
+
+                var updateResult = await PersonalMedicalApiService.UpdateAsync(PersonalId.Value, updateRequest);
+                
+                if (updateResult.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Succes",
+                        Detail = $"Personal medical '{model.Nume} {model.Prenume}' a fost actualizat cu succes",
+                        Duration = 3000
+                    });
+
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Eroare",
+                        Detail = string.Join(", ", updateResult.Errors),
+                        Duration = 4000
+                    });
+                }
+            }
+            else
+            {
+                // Create new personal medical
+                var createResult = await PersonalMedicalApiService.CreateAsync(model);
+                
+                if (createResult.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Succes",
+                        Detail = $"Personal medical '{model.Nume} {model.Prenume}' a fost adaugat cu succes",
+                        Duration = 3000
+                    });
+
+                    DialogService.Close(true);
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Eroare",
+                        Detail = string.Join(", ", createResult.Errors),
+                        Duration = 4000
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare neasteptata: {ex.Message}",
+                Duration = 4000
+            });
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        DialogService.Close(false);
+    }
+}

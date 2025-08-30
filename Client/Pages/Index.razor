@@ -4,7 +4,7 @@
 
 <div class="redirect-container">
     <div class="redirect-spinner"></div>
-    <p>Se încarc? aplica?ia...</p>
+    <p>Se incarca aplicatia...</p>
 </div>
 
 <style>
@@ -41,15 +41,17 @@
                 // Wait a bit for everything to initialize
                 await Task.Delay(500);
                 
-                // Check if there's a token in localStorage
-                var token = await JS.InvokeAsync<string>("localStorage.getItem", "authToken");
+                // Check if there's a token in localStorage (updated for ValyanMed)
+                var token = await JS.InvokeAsync<string>("localStorage.getItem", "valyanmed_auth_token");
                 
                 if (string.IsNullOrEmpty(token))
                 {
+                    // No token found, redirect to login
                     Navigation.NavigateTo("/login");
                 }
                 else
                 {
+                    // Token found, redirect to dashboard
                     Navigation.NavigateTo("/dashboard");
                 }
             }

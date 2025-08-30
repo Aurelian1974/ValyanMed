@@ -1,0 +1,318 @@
+@page "/medical/pacienti/nou"
+@using global::Shared.DTOs.Medical
+@using global::Shared.Validators.Medical
+@using global::FluentValidation
+@using MudBlazor
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Pacient nou - ValyanMed</PageTitle>
+
+<link href="~/css/pages/patient-registration.css" rel="stylesheet" />
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4 patient-reg-fade-in">
+    <!-- Header -->
+    <MudPaper Class="pa-4 mb-4 patient-registration-header" Elevation="2">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h4" Color="Color.Primary">
+                    <MudIcon Icon="Icons.Material.Filled.PersonAdd" Class="mr-3 section-icon" />
+                    Inregistrare pacient nou
+                </MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Completati formularul pentru a inregistra un pacient nou in sistem
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Secondary" 
+                          StartIcon="Icons.Material.Filled.ArrowBack"
+                          OnClick="@(() => Navigation.NavigateTo("/medical/pacienti"))"
+                          Class="patient-reg-back-btn">
+                    Inapoi la lista
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Form -->
+    <div class="patient-reg-form @(_isProcessing ? "patient-reg-processing" : "")">
+        <MudForm @ref="_form" Model="_pacientRequest" Validation="_validator">
+            <MudGrid Class="patient-reg-grid">
+                <!-- Informatii personale -->
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4 form-section" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="form-section-title">
+                            <MudIcon Icon="Icons.Material.Filled.Person" Class="section-icon" />
+                            Informatii personale
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.Nume"
+                                             Label="Nume *"
+                                             Placeholder="Introduceti numele"
+                                             Variant="Variant.Outlined"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="Icons.Material.Filled.Person"
+                                             For="@(() => _pacientRequest.Nume)"
+                                             Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.Prenume"
+                                             Label="Prenume *"
+                                             Placeholder="Introduceti prenumele"
+                                             Variant="Variant.Outlined"
+                                             For="@(() => _pacientRequest.Prenume)"
+                                             Immediate="true" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="_pacientRequest.CNP"
+                                             ValueChanged="EventCallback.Factory.Create<string>(this, OnCNPValueChanged)"
+                                             Label="CNP"
+                                             Placeholder="1234567890123"
+                                             Variant="Variant.Outlined"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="Icons.Material.Filled.Badge"
+                                             For="@(() => _pacientRequest.CNP)"
+                                             MaxLength="13"
+                                             Immediate="true"
+                                             InputType="InputType.Text"
+                                             HelperText="@GetCNPHelperText()"
+                                             Class="cnp-field" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="_selectedDate"
+                                              Label="Data nasterii *"
+                                              Variant="Variant.Outlined"
+                                              MaxDate="DateTime.Today"
+                                              MinDate="DateTime.Today.AddYears(-150)"
+                                              Culture="@System.Globalization.CultureInfo.GetCultureInfo("ro-RO")" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="_pacientRequest.Gen"
+                                          Label="Gen *"
+                                          Variant="Variant.Outlined"
+                                          For="@(() => _pacientRequest.Gen)"
+                                          AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var genOption in GetGenderOptions())
+                                    {
+                                        <MudSelectItem Value="@(genOption.Value)">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@(GetGenderIcon(genOption.Value))" Class="mr-2" />
+                                                @genOption.Description
+                                            </div>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Informatii de contact -->
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4 form-section" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="form-section-title">
+                            <MudIcon Icon="Icons.Material.Filled.ContactPhone" Class="section-icon" />
+                            Informatii de contact
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.Telefon"
+                                             Label="Telefon"
+                                             Placeholder="0721234567"
+                                             Variant="Variant.Outlined"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="Icons.Material.Filled.Phone"
+                                             For="@(() => _pacientRequest.Telefon)"
+                                             Immediate="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.Email"
+                                             Label="Email"
+                                             Placeholder="nume@exemplu.ro"
+                                             Variant="Variant.Outlined"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="Icons.Material.Filled.Email"
+                                             For="@(() => _pacientRequest.Email)"
+                                             Immediate="true" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Adresa -->
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4 form-section" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="form-section-title">
+                            <MudIcon Icon="Icons.Material.Filled.LocationOn" Class="section-icon" />
+                            Adresa
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_pacientRequest.Adresa"
+                                             Label="Adresa completa"
+                                             Placeholder="Strada, numarul, etc."
+                                             Variant="Variant.Outlined"
+                                             Lines="2"
+                                             For="@(() => _pacientRequest.Adresa)" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_pacientRequest.Oras"
+                                             Label="Oras"
+                                             Placeholder="Bucuresti"
+                                             Variant="Variant.Outlined"
+                                             For="@(() => _pacientRequest.Oras)" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudSelect @bind-Value="_pacientRequest.Judet"
+                                          Label="Judet"
+                                          Variant="Variant.Outlined"
+                                          For="@(() => _pacientRequest.Judet)"
+                                          Clearable="true">
+                                    <MudSelectItem Value="@("")">Selectati judetul</MudSelectItem>
+                                    <MudSelectItem Value="@("Bucuresti")">Bucuresti</MudSelectItem>
+                                    <MudSelectItem Value="@("Cluj")">Cluj</MudSelectItem>
+                                    <MudSelectItem Value="@("Timis")">Timis</MudSelectItem>
+                                    <MudSelectItem Value="@("Iasi")">Iasi</MudSelectItem>
+                                    <MudSelectItem Value="@("Constanta")">Constanta</MudSelectItem>
+                                    <MudSelectItem Value="@("Brasov")">Brasov</MudSelectItem>
+                                    <MudSelectItem Value="@("Dolj")">Dolj</MudSelectItem>
+                                    <MudSelectItem Value="@("Galati")">Galati</MudSelectItem>
+                                    <MudSelectItem Value="@("Prahova")">Prahova</MudSelectItem>
+                                    <MudSelectItem Value="@("Bihor")">Bihor</MudSelectItem>
+                                    <MudSelectItem Value="@("Sibiu")">Sibiu</MudSelectItem>
+                                    <MudSelectItem Value="@("Arges")">Arges</MudSelectItem>
+                                    <MudSelectItem Value="@("Bacau")">Bacau</MudSelectItem>
+                                    <MudSelectItem Value="@("Maramures")">Maramures</MudSelectItem>
+                                    <MudSelectItem Value="@("Suceava")">Suceava</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_pacientRequest.CodPostal"
+                                             Label="Cod postal"
+                                             Placeholder="012345"
+                                             Variant="Variant.Outlined"
+                                             For="@(() => _pacientRequest.CodPostal)"
+                                             MaxLength="6" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Contact de urgenta -->
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4 form-section" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="form-section-title">
+                            <MudIcon Icon="Icons.Material.Filled.Emergency" Class="section-icon" />
+                            Contact de urgenta
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.NumeContactUrgenta"
+                                             Label="Nume contact urgenta"
+                                             Placeholder="Nume si prenume"
+                                             Variant="Variant.Outlined"
+                                             For="@(() => _pacientRequest.NumeContactUrgenta)" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.TelefonContactUrgenta"
+                                             Label="Telefon contact urgenta"
+                                             Placeholder="0721234567"
+                                             Variant="Variant.Outlined"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="Icons.Material.Filled.Phone"
+                                             For="@(() => _pacientRequest.TelefonContactUrgenta)" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Asigurare medicala -->
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4 form-section" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="form-section-title">
+                            <MudIcon Icon="Icons.Material.Filled.HealthAndSafety" Class="section-icon" />
+                            Asigurare medicala
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="_pacientRequest.FurnizorAsigurare"
+                                          Label="Furnizor asigurare"
+                                          Variant="Variant.Outlined"
+                                          For="@(() => _pacientRequest.FurnizorAsigurare)"
+                                          Clearable="true">
+                                    <MudSelectItem Value="@("")">Selectati furnizorul</MudSelectItem>
+                                    <MudSelectItem Value="@("CNAS")">CNAS (Casa Nationala de Asigurari de Sanatate)</MudSelectItem>
+                                    <MudSelectItem Value="@("Regina Maria")">Regina Maria</MudSelectItem>
+                                    <MudSelectItem Value="@("Medicover")">Medicover</MudSelectItem>
+                                    <MudSelectItem Value="@("Sanador")">Sanador</MudSelectItem>
+                                    <MudSelectItem Value="@("MedLife")">MedLife</MudSelectItem>
+                                    <MudSelectItem Value="@("Europ Assistance")">Europ Assistance</MudSelectItem>
+                                    <MudSelectItem Value="@("Fara asigurare")">Fara asigurare</MudSelectItem>
+                                    <MudSelectItem Value="@("Altul")">Altul</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_pacientRequest.NumarAsigurare"
+                                             Label="Numar asigurare"
+                                             Placeholder="Numarul cardului de asigurare"
+                                             Variant="Variant.Outlined"
+                                             For="@(() => _pacientRequest.NumarAsigurare)" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                <!-- Action Buttons -->
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4 action-section" Elevation="2">
+                        <MudGrid AlignItems="Center">
+                            <MudItem xs="12" md="6">
+                                <MudText Typo="Typo.body2" Class="required-field-info">
+                                    <MudIcon Icon="Icons.Material.Filled.Info" Size="Size.Small" />
+                                    Campurile marcate cu * sunt obligatorii
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6" Class="d-flex justify-end">
+                                <MudButtonGroup Variant="Variant.Filled">
+                                    <MudButton Color="Color.Secondary"
+                                              StartIcon="Icons.Material.Filled.Cancel"
+                                              OnClick="Cancel"
+                                              Disabled="_isProcessing"
+                                              Class="patient-reg-cancel-btn">
+                                        Anuleaza
+                                    </MudButton>
+                                    <MudButton Color="Color.Primary"
+                                              StartIcon="@(_isProcessing ? null : Icons.Material.Filled.Save)"
+                                              OnClick="SavePacient"
+                                              Disabled="_isProcessing"
+                                              Class="@GetSaveButtonClass()">
+                                        @if (_isProcessing)
+                                        {
+                                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                            <span class="ml-2">Se salveaza...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Salveaza pacientul</span>
+                                        }
+                                    </MudButton>
+                                </MudButtonGroup>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </div>
+</MudContainer>

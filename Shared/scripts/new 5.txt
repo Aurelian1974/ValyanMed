@@ -1,0 +1,475 @@
+Exemplu 1
+
+Problema vine din modul în care Radzen DataGrid (ca și DevExpress, Syncfusion etc.) face gruparea implicită în client: se aplică doar pe datele deja încărcate (cele 10 din pagină).
+Dacă vrei să faci grupare pe toată tabela din SQL, trebuie să activezi Virtualization / LoadData și să faci server-side grouping și paging.
+
+Pașii de urmat:
+
+Activează AllowGrouping="true" și LoadData pe DataGrid, dar nu te baza pe gruparea internă a Radzen → folosește LoadData pentru a trimite criteriile de grupare la backend.
+
+<RadzenDataGrid TItem="ProdusDTO" 
+                Data="@produse" 
+                Count="@count" 
+                AllowPaging="true" 
+                PageSize="10"
+                AllowGrouping="true"
+                LoadData="@OnLoadData">
+</RadzenDataGrid>
+
+
+Capturează evenimentul LoadData – aici ai parametri precum args.Skip, args.Top, args.OrderBy, args.Filters, dar și args.Groups.
+
+private async Task OnLoadData(LoadDataArgs args)
+{
+    // extragi info despre grupare
+    var groupDescriptor = args.Groups?.FirstOrDefault();
+
+    // apelezi API-ul către server cu paging + grouping
+    var rezultat = await _http.GetFromJsonAsync<DataGridResult<ProdusDTO>>(
+        $"api/produse?skip={args.Skip}&take={args.Top}&groupBy={groupDescriptor?.Property}");
+
+    produse = rezultat.Items;
+    count = rezultat.Count;
+}
+
+
+Pe backend (WebAPI sau direct Blazor server) faci query în SQL cu GROUP BY + agregări și aplici Skip/Take pentru paginare.
+Exemplu cu Dapper:
+
+[HttpGet("api/produse")]
+public async Task<ActionResult<DataGridResult<ProdusDTO>>> GetProduse(
+    int skip, int take, string? groupBy)
+{
+    using var con = new SqlConnection(_connectionString);
+
+    string sql;
+    if (!string.IsNullOrEmpty(groupBy))
+    {
+        sql = $@"
+            SELECT {groupBy}, COUNT(*) as Count
+            FROM Produse
+            GROUP BY {groupBy}
+            ORDER BY {groupBy}
+            OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
+
+            SELECT COUNT(DISTINCT {groupBy}) FROM Produse;
+        ";
+    }
+    else
+    {
+        sql = @"
+            SELECT * FROM Produse
+            ORDER BY Id
+            OFFSET @skip ROWS FETCH NEXT @take ROWS ONLY;
+
+            SELECT COUNT(*) FROM Produse;
+        ";
+    }
+
+    using var multi = await con.QueryMultipleAsync(sql, new { skip, take });
+    var items = (await multi.ReadAsync<ProdusDTO>()).ToList();
+    var total = await multi.ReadFirstAsync<int>();
+
+    return new DataGridResult<ProdusDTO>
+    {
+        Items = items,
+        Count = total
+    };
+}
+
+
+Model pentru rezultat:
+
+public class DataGridResult<T>
+{
+    public IEnumerable<T> Items { get; set; }
+    public int Count { get; set; }
+}
+
+
+🔑 Ideea e că Radzen îți expune gruparea prin args.Groups, dar nu o aplică automat pe SQL. Tu trebuie să o traduci într-un GROUP BY pe backend și să returnezi datele deja grupate + numărul total de grupuri.
+
+Exemplu 2
+
+// 1. Model pentru parametrii de grupare și paginare
+public class DataGridRequest
+{
+    public int Skip { get; set; }
+    public int Top { get; set; }
+    public string Filter { get; set; }
+    public string OrderBy { get; set; }
+    public List<GroupDescriptor> Groups { get; set; } = new List<GroupDescriptor>();
+}
+
+public class GroupDescriptor
+{
+    public string Property { get; set; }
+    public string SortOrder { get; set; } = "asc";
+}
+
+public class DataGridResult<T>
+{
+    public IEnumerable<T> Data { get; set; }
+    public int Count { get; set; }
+    public List<GroupResult> Groups { get; set; }
+}
+
+public class GroupResult
+{
+    public object Key { get; set; }
+    public int Count { get; set; }
+    public List<GroupResult> Items { get; set; }
+    public object Data { get; set; }
+}
+
+// 2. Service pentru gestionarea datelor
+public class DataService
+{
+    private readonly DbContext _context;
+
+    public DataService(DbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<DataGridResult<T>> GetDataAsync<T>(
+        IQueryable<T> query, 
+        DataGridRequest request) where T : class
+    {
+        var result = new DataGridResult<T>();
+
+        // Aplicăm filtrele dacă există
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            // Implementează logica de filtrare conform necesităților
+            query = ApplyFilters(query, request.Filter);
+        }
+
+        // Dacă avem grupare
+        if (request.Groups.Any())
+        {
+            result.Groups = await BuildGroupsAsync(query, request.Groups, request.Skip, request.Top);
+            result.Count = await GetGroupedCountAsync(query, request.Groups);
+            result.Data = new List<T>(); // Datele sunt în groups
+        }
+        else
+        {
+            // Logica standard pentru paginare fără grupare
+            result.Count = await query.CountAsync();
+            
+            if (!string.IsNullOrEmpty(request.OrderBy))
+            {
+                query = ApplyOrdering(query, request.OrderBy);
+            }
+            
+            result.Data = await query
+                .Skip(request.Skip)
+                .Take(request.Top)
+                .ToListAsync();
+        }
+
+        return result;
+    }
+
+    private async Task<List<GroupResult>> BuildGroupsAsync<T>(
+        IQueryable<T> query, 
+        List<GroupDescriptor> groups, 
+        int skip, 
+        int take) where T : class
+    {
+        if (!groups.Any()) return new List<GroupResult>();
+
+        var firstGroup = groups.First();
+        var remainingGroups = groups.Skip(1).ToList();
+
+        // Construim gruparea folosind LINQ to Entities
+        var groupQuery = BuildGroupQuery(query, firstGroup);
+        
+        // Aplicăm paginarea la nivel de grup
+        var pagedGroups = await groupQuery
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
+
+        var result = new List<GroupResult>();
+
+        foreach (var group in pagedGroups)
+        {
+            var groupResult = new GroupResult
+            {
+                Key = group.Key,
+                Count = group.Count()
+            };
+
+            if (remainingGroups.Any())
+            {
+                // Grupare recursivă pentru nivelurile următoare
+                var subQuery = query.Where(BuildGroupFilter<T>(firstGroup.Property, group.Key));
+                groupResult.Items = await BuildGroupsAsync(subQuery, remainingGroups, 0, int.MaxValue);
+            }
+            else
+            {
+                // La ultimul nivel, returnăm datele efective
+                var items = query.Where(BuildGroupFilter<T>(firstGroup.Property, group.Key))
+                                .ToList();
+                groupResult.Data = items;
+            }
+
+            result.Add(groupResult);
+        }
+
+        return result;
+    }
+
+    private IQueryable<IGrouping<object, T>> BuildGroupQuery<T>(
+        IQueryable<T> query, 
+        GroupDescriptor group) where T : class
+    {
+        // Folosim reflection pentru a construi expresia de grupare
+        var parameter = Expression.Parameter(typeof(T), "x");
+        var property = Expression.Property(parameter, group.Property);
+        var conversion = Expression.Convert(property, typeof(object));
+        var lambda = Expression.Lambda<Func<T, object>>(conversion, parameter);
+
+        var groupedQuery = query.GroupBy(lambda);
+
+        // Aplicăm sortarea pe cheie
+        if (group.SortOrder.ToLower() == "desc")
+        {
+            return groupedQuery.OrderByDescending(g => g.Key);
+        }
+        else
+        {
+            return groupedQuery.OrderBy(g => g.Key);
+        }
+    }
+
+    private Expression<Func<T, bool>> BuildGroupFilter<T>(string propertyName, object value)
+    {
+        var parameter = Expression.Parameter(typeof(T), "x");
+        var property = Expression.Property(parameter, propertyName);
+        var constant = Expression.Constant(value);
+        var equal = Expression.Equal(property, constant);
+        return Expression.Lambda<Func<T, bool>>(equal, parameter);
+    }
+
+    private async Task<int> GetGroupedCountAsync<T>(
+        IQueryable<T> query, 
+        List<GroupDescriptor> groups) where T : class
+    {
+        var firstGroup = groups.First();
+        var groupQuery = BuildGroupQuery(query, firstGroup);
+        return await groupQuery.CountAsync();
+    }
+
+    private IQueryable<T> ApplyFilters<T>(IQueryable<T> query, string filter)
+    {
+        // Implementează logica de filtrare conform necesităților tale
+        // Poți folosi Dynamic LINQ sau alte librării
+        return query;
+    }
+
+    private IQueryable<T> ApplyOrdering<T>(IQueryable<T> query, string orderBy)
+    {
+        // Implementează logica de sortare
+        return query;
+    }
+}
+
+// 3. Controller pentru API
+[ApiController]
+[Route("api/[controller]")]
+public class DataController : ControllerBase
+{
+    private readonly DataService _dataService;
+
+    public DataController(DataService dataService)
+    {
+        _dataService = dataService;
+    }
+
+    [HttpPost("products")]
+    public async Task<ActionResult<DataGridResult<Product>>> GetProducts(
+        [FromBody] DataGridRequest request)
+    {
+        var query = _context.Products.AsQueryable();
+        var result = await _dataService.GetDataAsync(query, request);
+        return Ok(result);
+    }
+}
+
+// 4. Componenta Blazor
+@page "/products"
+@inject HttpClient Http
+
+<RadzenDataGrid @ref="grid" 
+                Data="@data" 
+                Count="@count" 
+                LoadData="@LoadData"
+                AllowPaging="true" 
+                PageSize="10"
+                AllowGrouping="true"
+                GroupHeaderTemplate="@GroupHeaderTemplate"
+                TItem="Product">
+    
+    <Columns>
+        <RadzenDataGridColumn TItem="Product" Property="Name" Title="Nume" />
+        <RadzenDataGridColumn TItem="Product" Property="Category" Title="Categorie" Groupable="true" />
+        <RadzenDataGridColumn TItem="Product" Property="Price" Title="Preț" />
+        <RadzenDataGridColumn TItem="Product" Property="Stock" Title="Stoc" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    RadzenDataGrid<Product> grid;
+    IEnumerable<Product> data;
+    int count;
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        var request = new DataGridRequest
+        {
+            Skip = args.Skip ?? 0,
+            Top = args.Top ?? 10,
+            Filter = args.Filter,
+            OrderBy = args.OrderBy
+        };
+
+        // Convertim grupurile Radzen la formatul nostru
+        if (args.Groups != null)
+        {
+            request.Groups = args.Groups.Select(g => new GroupDescriptor
+            {
+                Property = g.Property,
+                SortOrder = g.SortOrder?.ToString().ToLower() ?? "asc"
+            }).ToList();
+        }
+
+        var response = await Http.PostAsJsonAsync("api/data/products", request);
+        var result = await response.Content.ReadFromJsonAsync<DataGridResult<Product>>();
+        
+        if (result.Groups?.Any() == true)
+        {
+            // Pentru grupare, setăm datele ca fiind grupurile
+            data = ConvertGroupsToFlatData(result.Groups);
+        }
+        else
+        {
+            data = result.Data;
+        }
+        
+        count = result.Count;
+    }
+
+    RenderFragment<RadzenDataGridGroup<Product>> GroupHeaderTemplate = (context) => @<Template>
+        <strong>@context.GroupDescriptor.Property: @context.Data.Key (@context.Data.Count înregistrări)</strong>
+    </Template>;
+
+    private IEnumerable<Product> ConvertGroupsToFlatData(List<GroupResult> groups)
+    {
+        var result = new List<Product>();
+        
+        foreach (var group in groups)
+        {
+            if (group.Data is IEnumerable<Product> products)
+            {
+                result.AddRange(products);
+            }
+            else if (group.Items != null)
+            {
+                result.AddRange(ConvertGroupsToFlatData(group.Items));
+            }
+        }
+        
+        return result;
+    }
+}
+
+// 5. Model Product (exemplu)
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Category { get; set; }
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+}
+
+Exemplu 3
+@using RadzenBlazorDemos.Data
+@using RadzenBlazorDemos.Models.Northwind
+@using Microsoft.EntityFrameworkCore
+
+@inherits DbContextPage
+
+<RadzenCard Variant="Variant.Outlined" class="rz-my-4">
+    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" AlignItems="AlignItems.Center">
+        <RadzenCheckBox @bind-Value=@groupsExpanded Name="CheckBox1" TValue="bool?" TriState="true" />
+        <RadzenLabel Text="All groups expanded" Component="CheckBox1" />
+    </RadzenStack>
+</RadzenCard>
+
+<RadzenDataGrid @ref="ordersGrid" ColumnWidth="220px" AllowGrouping="true" AllowFiltering="true" AllowPaging="true" AllowSorting="true" 
+        Data="@orders" Render="@OnRender" GroupRowRender="OnGroupRowRender">
+    <GroupHeaderTemplate>
+        @context.GroupDescriptor.GetTitle(): @(context.Data.Key ?? ""), Group items count: @context.Data.Count, Last order date: @(context.Data.Items.Cast<Order>().OrderByDescending(o => o.OrderDate).FirstOrDefault()?.OrderDate)
+    </GroupHeaderTemplate>
+    <Columns>
+        <RadzenDataGridColumn Width="80px" Title="#" Filterable="false" Sortable="false" TextAlign="TextAlign.Center">
+            <Template>
+                @(orders.IndexOf(context) + 1)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="OrderID" Title="Order ID">
+            <FooterTemplate>
+                Displayed orders: <b>@ordersGrid.View.Count()</b> of <b>@orders.Count()</b>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Order.Freight)" Title="Freight">
+            <Template Context="order">
+                @String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", order.Freight)
+            </Template>
+            <FooterTemplate>
+                Total amount: <b>@String.Format(new System.Globalization.CultureInfo("en-US"), "{0:C}", orders.Sum(o => o.Freight))</b>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Order.OrderDate)" Title="Order Date" FormatString="{0:d}">
+            <FooterTemplate>
+                Last order date: <b>@String.Format("{0:d}", orders.OrderByDescending(o => o.OrderDate).LastOrDefault()?.OrderDate)</b>
+            </FooterTemplate>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(Order.ShipName)" Title="Ship Name" />
+        <RadzenDataGridColumn Property="Employee.LastName" Title="Employee">
+            <Template Context="order">
+                @order.Employee?.FirstName @order.Employee?.LastName
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    bool? groupsExpanded;
+    IList<Order> orders;
+    RadzenDataGrid<Order> ordersGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        orders = dbContext.Orders.Include("Customer").Include("Employee").ToList();
+    }
+
+    void OnRender(DataGridRenderEventArgs<Order> args)
+    {
+        if(args.FirstRender)
+        {
+            args.Grid.Groups.Add(new GroupDescriptor(){ Title = "Customer", Property = "Customer.CompanyName", SortOrder = SortOrder.Descending });
+            StateHasChanged();
+        }
+    }
+
+    void OnGroupRowRender(GroupRowRenderEventArgs args)
+    {
+       args.Expanded = groupsExpanded;
+    }
+}

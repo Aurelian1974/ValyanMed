@@ -21,10 +21,10 @@
                 <MudCardContent>
                     <div class="d-flex justify-space-between">
                         <div>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Pacienti inregistrati</MudText>
+                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Pacienti inregistrati</MudText>
                             <MudText Typo="Typo.h4">1,234</MudText>
                         </div>
-                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Primary" />
+                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="MudColor.Primary" />
                     </div>
                 </MudCardContent>
             </MudCard>
@@ -35,10 +35,10 @@
                 <MudCardContent>
                     <div class="d-flex justify-space-between">
                         <div>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Consultatii Astazi</MudText>
+                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Consultatii Astazi</MudText>
                             <MudText Typo="Typo.h4">45</MudText>
                         </div>
-                        <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Color="Color.Success" />
+                        <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Color="MudColor.Success" />
                     </div>
                 </MudCardContent>
             </MudCard>
@@ -49,10 +49,10 @@
                 <MudCardContent>
                     <div class="d-flex justify-space-between">
                         <div>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Stoc Medicamente</MudText>
+                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Stoc Medicamente</MudText>
                             <MudText Typo="Typo.h4">892</MudText>
                         </div>
-                        <MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Large" Color="Color.Warning" />
+                        <MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Large" Color="MudColor.Warning" />
                     </div>
                 </MudCardContent>
             </MudCard>
@@ -63,10 +63,10 @@
                 <MudCardContent>
                     <div class="d-flex justify-space-between">
                         <div>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Venit Luna Curenta</MudText>
+                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Venit Luna Curenta</MudText>
                             <MudText Typo="Typo.h4">€15,450</MudText>
                         </div>
-                        <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Size="Size.Large" Color="Color.Tertiary" />
+                        <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Size="Size.Large" Color="MudColor.Tertiary" />
                     </div>
                 </MudCardContent>
             </MudCard>
@@ -100,32 +100,32 @@
                 </MudCardHeader>
                 <MudCardContent>
                     <MudStack Spacing="3">
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Primary" 
+                        <MudButton Variant="MudVariant.Filled" 
+                                   Color="MudColor.Primary" 
                                    StartIcon="@Icons.Material.Filled.PersonAdd"
                                    FullWidth="true"
                                    Href="/pacienti">
                             Adauga Pacient
                         </MudButton>
                         
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Secondary" 
+                        <MudButton Variant="MudVariant.Filled" 
+                                   Color="MudColor.Secondary" 
                                    StartIcon="@Icons.Material.Filled.Event"
                                    FullWidth="true"
                                    Href="/programari">
                             Programeaza Consultatie
                         </MudButton>
                         
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Tertiary" 
+                        <MudButton Variant="MudVariant.Filled" 
+                                   Color="MudColor.Tertiary" 
                                    StartIcon="@Icons.Material.Filled.LocalPharmacy"
                                    FullWidth="true"
                                    Href="/farmacie/medicamente">
                             Gestioneaza Medicamente
                         </MudButton>
                         
-                        <MudButton Variant="Variant.Filled" 
-                                   Color="Color.Success" 
+                        <MudButton Variant="MudVariant.Filled" 
+                                   Color="MudColor.Success" 
                                    StartIcon="@Icons.Material.Filled.Assessment"
                                    FullWidth="true"
                                    Href="/rapoarte">
@@ -134,30 +134,8 @@
                         
                         <MudDivider />
                         
-                        <!-- Debug Tools pentru dezvoltare -->
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Debug Tools:</MudText>
-                        
-                        <MudStack Row Spacing="1">
-                            <MudButton Variant="Variant.Text" 
-                                       Color="Color.Info" 
-                                       Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.BugReport"
-                                       Href="/auth-debug">
-                                Auth Debug
-                            </MudButton>
-                            
-                            <MudButton Variant="Variant.Text" 
-                                       Color="Color.Warning" 
-                                       Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.Science"
-                                       Href="/test-simple">
-                                Debug Suite
-                            </MudButton>
-                        </MudStack>
-                        
-                        <MudDivider />
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Error"
+                        <MudButton Variant="MudVariant.Outlined"
+                                   Color="MudColor.Error"
                                    StartIcon="@Icons.Material.Filled.Logout"
                                    FullWidth="true"
                                    OnClick="@LogoutNow">

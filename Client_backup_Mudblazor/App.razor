@@ -1,0 +1,64 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject IServiceProvider ServiceProvider
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User?.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <div style="padding: 20px; text-align: center;">
+                            <h4>Acces interzis</h4>
+                            <p>Nu aveți permisiunea de a accesa această pagină.</p>
+                            <a href="/dashboard">Înapoi la Dashboard</a>
+                        </div>
+                    }
+                </NotAuthorized>
+                <Authorizing>
+                    <div style="padding: 40px; text-align: center;">
+                        <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                        <p>Se verifică autentificarea...</p>
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Pagină negăsită - ValyanMed</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <div style="padding: 40px; text-align: center;">
+                    <h4>Pagina nu a fost găsită</h4>
+                    <p>Pagina pe care o căutați nu există sau a fost mutată.</p>
+                    <a href="/dashboard" style="color: #1976d2; text-decoration: none;">← Înapoi la Dashboard</a>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("App component with authentication initialized");
+            
+            // Force authentication state initialization
+            var authStateProvider = ServiceProvider.GetRequiredService<AuthenticationStateProvider>();
+            var authState = await authStateProvider.GetAuthenticationStateAsync();
+            
+            Console.WriteLine($"App: Initial auth state - IsAuthenticated: {authState.User?.Identity?.IsAuthenticated}");
+            
+            await base.OnInitializedAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"App initialization error: {ex.Message}");
+        }
+    }
+}

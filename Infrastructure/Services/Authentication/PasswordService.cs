@@ -11,16 +11,8 @@ public class PasswordService : IPasswordService
 
     public string HashPassword(string password)
     {
-        using var algorithm = new Rfc2898DeriveBytes(
-            password,
-            SaltSize,
-            Iterations,
-            HashAlgorithmName.SHA256);
-
-        var key = Convert.ToBase64String(algorithm.GetBytes(KeySize));
-        var salt = Convert.ToBase64String(algorithm.Salt);
-
-        return $"{Iterations}.{salt}.{key}";
+        // Folosim BCrypt pentru noile parole
+        return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
     public bool VerifyPassword(string password, string hash)
@@ -30,17 +22,34 @@ public class PasswordService : IPasswordService
 
         try
         {
+            // Verific?m dac? este bcrypt hash (începe cu $2a$, $2b$, $2x$, $2y$)
+            if (hash.StartsWith("$2"))
+            {
+                return BCrypt.Net.BCrypt.Verify(password, hash);
+            }
+
+            // Fallback pentru formatul vechi PBKDF2
+            return VerifyPbkdf2Password(password, hash);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool VerifyPbkdf2Password(string password, string hash)
+    {
+        try
+        {
             var parts = hash.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length != 3)
             {
-                // Unknown/legacy format -> treat as mismatch instead of throwing
                 return false;
             }
 
             if (!int.TryParse(parts[0], out var iterations) || iterations <= 0)
                 return false;
 
-            // Parse salt/key; if invalid Base64, treat as mismatch (no exception leak)
             if (!TryFromBase64(parts[1], out var salt))
                 return false;
             if (!TryFromBase64(parts[2], out var key))
@@ -56,13 +65,11 @@ public class PasswordService : IPasswordService
 #if NET6_0_OR_GREATER
             return CryptographicOperations.FixedTimeEquals(keyToCheck, key);
 #else
-            // Fallback without FixedTimeEquals (still safe enough for our case)
             return keyToCheck.SequenceEqual(key);
 #endif
         }
         catch
         {
-            // Any parsing/crypto error -> do not crash the API; simply report mismatch
             return false;
         }
     }

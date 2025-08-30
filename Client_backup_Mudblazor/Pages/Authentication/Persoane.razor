@@ -1,0 +1,214 @@
+@page "/authentication/persoane"
+@page "/persoane"
+@page "/test-persoane"
+@inherits PersoaneBase
+@*@attribute [Authorize]*@
+
+<PageTitle>Gestionare Persoane - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudStack Spacing="3">
+        <!-- Debug Info -->
+        <MudAlert Severity="MudSeverity.Info">
+            <strong>Debug Info:</strong> Pagina Persoane s-a incarcat cu succes! 
+            <br />Ruta accesata: @GetCurrentRoute()
+            <br />Total persoane: @State.Persons.Count
+            <br />Persoane filtrate: @State.FilteredPersons.Count
+            <br />Status loading: @State.IsLoading
+        </MudAlert>
+
+        <!-- Header Section -->
+        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4">Gestionare Persoane</MudText>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                      Color="Color.Primary" 
+                      Variant="Variant.Filled"
+                      OnClick="@OpenCreatePersonDialog">
+                Adauga Persoana
+            </MudButton>
+        </MudStack>
+
+        <!-- Search and Filters -->
+        <MudPaper Class="pa-4">
+            <MudStack Row Spacing="2" AlignItems="AlignItems.Center">
+                <MudTextField @bind-Value="State.SearchTerm" 
+                             Label="Cauta persoane..." 
+                             Variant="Variant.Outlined" 
+                             Adornment="Adornment.End" 
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             OnAdornmentClick="@FilterPersons"
+                             OnKeyUp="@OnSearchKeyUp"
+                             Immediate="false"
+                             Class="flex-grow-1" />
+
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
+                          Color="Color.Secondary" 
+                          Variant="Variant.Outlined"
+                          OnClick="@ResetFilters">
+                    Reset
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Results Summary -->
+        @if (!State.IsLoading && State.Persons.Any())
+        {
+            <MudAlert Severity="MudSeverity.Info" Dense="true">
+                Afisati: @State.FilteredPersons.Count() din @State.Persons.Count() persoane totale
+            </MudAlert>
+        }
+
+        <!-- Data Grid -->
+        <MudDataGrid T="Persoana" 
+                    Items="@State.FilteredPersons" 
+                    Loading="@State.IsLoading"
+                    Dense="true"
+                    Hover="true"
+                    ReadOnly="true"
+                    Filterable="false"
+                    Hideable="true"
+                    ColumnResizeMode="ResizeMode.Container"
+                    SortMode="SortMode.Multiple">
+            
+            <Columns>
+                <PropertyColumn Property="x => x.Id" Title="ID" Sortable="true" />
+                <PropertyColumn Property="x => x.NumeComplet" Title="Nume Complet" Sortable="true" />
+                
+                <TemplateColumn Title="CNP" Sortable="true" SortBy="@(x => x.CNP)">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.CNP))
+                        {
+                            @context.Item.CNP
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                
+                <TemplateColumn Title="Data Nasterii" Sortable="true" SortBy="@(x => x.DataNasterii)">
+                    <CellTemplate>
+                        @if (context.Item.DataNasterii.HasValue)
+                        {
+                            @context.Item.DataNasterii.Value.ToString("dd.MM.yyyy")
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Locatie" Sortable="true" SortBy="@(x => x.Localitate)">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.Localitate) || !string.IsNullOrEmpty(context.Item.Judet))
+                        {
+                            <MudText>
+                                @if (!string.IsNullOrEmpty(context.Item.Localitate))
+                                {
+                                    @context.Item.Localitate
+                                }
+                                @if (!string.IsNullOrEmpty(context.Item.Judet) && !string.IsNullOrEmpty(context.Item.Localitate))
+                                {
+                                    @:, 
+                                }
+                                @if (!string.IsNullOrEmpty(context.Item.Judet))
+                                {
+                                    @context.Item.Judet
+                                }
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Pozitie" Sortable="true" SortBy="@(x => x.PozitieOrganizatie)">
+                    <CellTemplate>
+                        @if (!string.IsNullOrEmpty(context.Item.PozitieOrganizatie))
+                        {
+                            @context.Item.PozitieOrganizatie
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                
+                <TemplateColumn Title="Data Creare" Sortable="true" SortBy="@(x => x.DataCreare)">
+                    <CellTemplate>
+                        @if (context.Item.DataCreare.HasValue)
+                        {
+                            @context.Item.DataCreare.Value.ToString("dd.MM.yyyy HH:mm")
+                        }
+                        else
+                        {
+                            <MudText Color="Color.Surface">-</MudText>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Actiuni" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudStack Row Spacing="1">
+                            <MudTooltip Text="Editeaza persoana">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                              Size="Size.Small" 
+                                              Color="Color.Primary"
+                                              OnClick="@(() => OpenEditPersonDialog(context.Item))" />
+                            </MudTooltip>
+                            <MudTooltip Text="Sterge persoana">
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                              Size="Size.Small" 
+                                              Color="Color.Error"
+                                              OnClick="@(() => DeletePerson(context.Item))" />
+                            </MudTooltip>
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+
+            <NoRecordsContent>
+                <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Surface" />
+                    <MudText Typo="Typo.body1" Color="Color.Surface">
+                        @if (string.IsNullOrEmpty(State.SearchTerm))
+                        {
+                            @:Nu au fost gasite persoane
+                        }
+                        else
+                        {
+                            @:Nu au fost gasite persoane care sa corespunda criteriilor de cautare
+                        }
+                    </MudText>
+                    @if (!string.IsNullOrEmpty(State.SearchTerm))
+                    {
+                        <MudButton StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ResetFilters">
+                            Reseteaza filtrele
+                        </MudButton>
+                    }
+                </MudStack>
+            </NoRecordsContent>
+
+            <LoadingContent>
+                <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="pa-8">
+                    <MudProgressCircular Indeterminate="true" />
+                    <MudText Typo="Typo.body1">Se incarca persoanele...</MudText>
+                </MudStack>
+            </LoadingContent>
+        </MudDataGrid>
+    </MudStack>
+</MudContainer>
+
+@code {
+    [Inject] NavigationManager Navigation { get; set; } = null!;
+
+    private string GetCurrentRoute()
+    {
+        return Navigation.Uri;
+    }
+}

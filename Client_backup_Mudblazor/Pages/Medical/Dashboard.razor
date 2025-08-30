@@ -1,0 +1,290 @@
+@page "/medical/dashboard"
+@using global::Shared.DTOs.Medical
+@using global::Shared.Models.Medical
+@using MudBlazor
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard Medical - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <!-- Header -->
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h4" Color="Color.Primary">
+                    <MudIcon Icon="Icons.Material.Filled.Dashboard" Class="mr-3" />
+                    Dashboard Medical
+                </MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Vizualizare general? a activit??ii clinicii - @DateTime.Now.ToString("dd MMMM yyyy")
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          StartIcon="Icons.Material.Filled.Refresh"
+                          OnClick="RefreshData">
+                    Actualizeaz?
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Loading State -->
+    @if (_isLoading)
+    {
+        <MudPaper Class="pa-8 text-center" Elevation="1">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            <MudText Typo="Typo.h6" Class="mt-4">Se încarc? datele...</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <!-- Statistics Cards -->
+        <MudGrid Class="mb-4">
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="pa-4" Style="height: 120px;">
+                    <MudCardContent Class="pa-0">
+                        <MudGrid AlignItems="Center" Spacing="0">
+                            <MudItem xs="8">
+                                <MudText Typo="Typo.h4" Color="Color.Primary">
+                                    @_statistici.PacientiTotal
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Pacien?i total
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="4" Class="text-right">
+                                <MudIcon Icon="Icons.Material.Filled.People" 
+                                        Size="Size.Large" 
+                                        Color="Color.Primary" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="pa-4" Style="height: 120px;">
+                    <MudCardContent Class="pa-0">
+                        <MudGrid AlignItems="Center" Spacing="0">
+                            <MudItem xs="8">
+                                <MudText Typo="Typo.h4" Color="Color.Warning">
+                                    @_statistici.ProgramariAzi
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Program?ri ast?zi
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="4" Class="text-right">
+                                <MudIcon Icon="Icons.Material.Filled.Event" 
+                                        Size="Size.Large" 
+                                        Color="Color.Warning" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="pa-4" Style="height: 120px;">
+                    <MudCardContent Class="pa-0">
+                        <MudGrid AlignItems="Center" Spacing="0">
+                            <MudItem xs="8">
+                                <MudText Typo="Typo.h4" Color="Color.Success">
+                                    @_statistici.ConsultatiiLunaAceasta
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Consulta?ii luna aceasta
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="4" Class="text-right">
+                                <MudIcon Icon="Icons.Material.Filled.MedicalServices" 
+                                        Size="Size.Large" 
+                                        Color="Color.Success" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudCard Class="pa-4" Style="height: 120px;">
+                    <MudCardContent Class="pa-0">
+                        <MudGrid AlignItems="Center" Spacing="0">
+                            <MudItem xs="8">
+                                <MudText Typo="Typo.h4" Color="Color.Info">
+                                    @_statistici.PersonalActiv
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Personal activ
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="4" Class="text-right">
+                                <MudIcon Icon="Icons.Material.Filled.Badge" 
+                                        Size="Size.Large" 
+                                        Color="Color.Info" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <!-- Quick Actions -->
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-3">Ac?iuni rapide</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                              Color="Color.Primary"
+                              StartIcon="Icons.Material.Filled.PersonAdd"
+                              FullWidth="true"
+                              Class="pa-4"
+                              Href="/medical/pacienti/nou">
+                        Pacient nou
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                              Color="Color.Secondary"
+                              StartIcon="Icons.Material.Filled.EventAvailable"
+                              FullWidth="true"
+                              Class="pa-4"
+                              Href="/medical/programari/noua">
+                        Programare nou?
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                              Color="Color.Tertiary"
+                              StartIcon="Icons.Material.Filled.Search"
+                              FullWidth="true"
+                              Class="pa-4"
+                              Href="/medical/pacienti">
+                        C?utare pacient
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Outlined"
+                              Color="Color.Success"
+                              StartIcon="Icons.Material.Filled.Assignment"
+                              FullWidth="true"
+                              Class="pa-4"
+                              Href="/medical/rapoarte">
+                        Rapoarte
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <!-- Today's Appointments -->
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudGrid AlignItems="Center" Class="mb-3">
+                <MudItem xs="12" md="8">
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="Icons.Material.Filled.Today" Class="mr-2" />
+                        Program?rile de ast?zi
+                    </MudText>
+                </MudItem>
+                <MudItem xs="12" md="4" Class="d-flex justify-end">
+                    <MudButton Variant="Variant.Text"
+                              Color="Color.Primary"
+                              StartIcon="Icons.Material.Filled.Visibility"
+                              Href="/medical/programari">
+                        Vezi toate
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+
+            @if (_statistici.ProgramariAstazi?.Any() == true)
+            {
+                <MudTable Items="_statistici.ProgramariAstazi" 
+                         Hover="true" 
+                         Striped="true"
+                         Dense="true">
+                    <HeaderContent>
+                        <MudTh>Ora</MudTh>
+                        <MudTh>Pacient</MudTh>
+                        <MudTh>Doctor</MudTh>
+                        <MudTh>Tip</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Telefon</MudTh>
+                        <MudTh>Ac?iuni</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">
+                                @context.DataProgramare.ToString("HH:mm")
+                            </MudText>
+                        </MudTd>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">
+                                @context.NumePacient
+                            </MudText>
+                            @if (!string.IsNullOrEmpty(context.CNPPacient))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    CNP: @context.CNPPacient
+                                </MudText>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">@context.NumeDoctor</MudText>
+                            @if (!string.IsNullOrEmpty(context.SpecializareDoctor))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @context.SpecializareDoctor
+                                </MudText>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" 
+                                    Color="Color.Default">
+                                @(context.TipProgramare ?? "Consulta?ie")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" 
+                                    Color="@GetStatusColor(context.Status)">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>
+                            @if (!string.IsNullOrEmpty(context.TelefonPacient))
+                            {
+                                <MudLink Href="@($"tel:{context.TelefonPacient}")">
+                                    @context.TelefonPacient
+                                </MudLink>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudButtonGroup Size="Size.Small" Variant="Variant.Text">
+                                <MudButton StartIcon="Icons.Material.Filled.Edit"
+                                          Color="Color.Primary"
+                                          Href="@($"/medical/programari/{context.ProgramareID}")">
+                                    Editeaz?
+                                </MudButton>
+                                <MudButton StartIcon="Icons.Material.Filled.MedicalServices"
+                                          Color="Color.Success"
+                                          Href="@($"/medical/consultatii/noua/{context.ProgramareID}")">
+                                    Consulta?ie
+                                </MudButton>
+                            </MudButtonGroup>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            else
+            {
+                <MudAlert Severity="MudBlazor.Severity.Info" Class="mt-4">
+                    <MudText Typo="Typo.body1">
+                        Nu sunt program?ri pentru ast?zi.
+                    </MudText>
+                </MudAlert>
+            }
+        </MudPaper>
+    }
+</MudContainer>

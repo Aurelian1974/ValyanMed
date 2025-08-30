@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="#2563eb">
+  <!-- Caduceus Symbol -->
+  <g transform="translate(100,100)">
+    <!-- Central Staff -->
+    <rect x="-2" y="-80" width="4" height="160" fill="currentColor"/>
+    
+    <!-- Wings -->
+    <path d="M-5,-70 Q-25,-60 -30,-45 Q-25,-30 -15,-35 Q-10,-38 -5,-40 Z" fill="currentColor"/>
+    <path d="M5,-70 Q25,-60 30,-45 Q25,-30 15,-35 Q10,-38 5,-40 Z" fill="currentColor"/>
+    
+    <!-- Serpents -->
+    <path d="M-2,-60 Q-20,-50 -15,-30 Q-10,-10 -25,10 Q-20,30 -5,20 Q10,10 5,30 Q0,50 15,40 Q30,30 25,50 Q20,70 5,60" 
+          stroke="currentColor" stroke-width="3" fill="none"/>
+    <path d="M2,-60 Q20,-50 15,-30 Q10,-10 25,10 Q20,30 5,20 Q-10,10 -5,30 Q0,50 -15,40 Q-30,30 -25,50 Q-20,70 -5,60" 
+          stroke="currentColor" stroke-width="3" fill="none"/>
+    
+    <!-- Top Circle -->
+    <circle cx="0" cy="-75" r="6" fill="currentColor"/>
+  </g>
+</svg>

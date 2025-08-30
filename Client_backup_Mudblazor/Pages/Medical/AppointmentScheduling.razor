@@ -1,0 +1,352 @@
+@page "/medical/programari"
+@using global::Shared.DTOs.Medical
+@using global::Shared.Models.Medical
+@using global::Shared.Common
+@using MudBlazor
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+
+<PageTitle>Program?ri - ValyanMed</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <!-- Header -->
+    <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="8">
+                <MudText Typo="Typo.h4" Color="Color.Primary">
+                    <MudIcon Icon="Icons.Material.Filled.Event" Class="mr-3" />
+                    Gestionare Program?ri
+                </MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Vizualizare ?i gestionare program?ri pacien?i
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="4" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          StartIcon="Icons.Material.Filled.EventAvailable"
+                          OnClick="@(() => Navigation.NavigateTo("/medical/programari/noua"))">
+                    Programare nou?
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Quick Stats -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="3">
+            <MudCard Class="pa-3">
+                <MudCardContent Class="pa-0">
+                    <MudGrid AlignItems="Center" Spacing="0">
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h6" Color="Color.Primary">@_statsToday.Total</MudText>
+                            <MudText Typo="Typo.caption">Ast?zi</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="text-right">
+                            <MudIcon Icon="Icons.Material.Filled.Today" Color="Color.Primary" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudCard Class="pa-3">
+                <MudCardContent Class="pa-0">
+                    <MudGrid AlignItems="Center" Spacing="0">
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h6" Color="Color.Success">@_statsToday.Finalizate</MudText>
+                            <MudText Typo="Typo.caption">Finalizate</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="text-right">
+                            <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudCard Class="pa-3">
+                <MudCardContent Class="pa-0">
+                    <MudGrid AlignItems="Center" Spacing="0">
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h6" Color="Color.Warning">@_statsToday.InAsteptare</MudText>
+                            <MudText Typo="Typo.caption">În a?teptare</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="text-right">
+                            <MudIcon Icon="Icons.Material.Filled.Schedule" Color="Color.Warning" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudCard Class="pa-3">
+                <MudCardContent Class="pa-0">
+                    <MudGrid AlignItems="Center" Spacing="0">
+                        <MudItem xs="8">
+                            <MudText Typo="Typo.h6" Color="Color.Error">@_statsToday.Anulate</MudText>
+                            <MudText Typo="Typo.caption">Anulate</MudText>
+                        </MudItem>
+                        <MudItem xs="4" Class="text-right">
+                            <MudIcon Icon="Icons.Material.Filled.Cancel" Color="Color.Error" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Filters -->
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                <MudDateRangePicker @bind-DateRange="_dateRange"
+                                   Label="Interval de date"
+                                   Variant="Variant.Outlined"
+                                   Culture="@System.Globalization.CultureInfo.GetCultureInfo("ro-RO")" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="_searchQuery.DoctorID"
+                          Label="Doctor"
+                          Variant="Variant.Outlined"
+                          Clearable="true">
+                    <MudSelectItem Value="@((Guid?)null)">To?i doctorii</MudSelectItem>
+                    @foreach (var doctor in _doctori)
+                    {
+                        <MudSelectItem Value="@doctor.PersonalID">
+                            @doctor.NumeComplet - @doctor.SpecializareCompleta
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect @bind-Value="_searchQuery.Status"
+                          Label="Status"
+                          Variant="Variant.Outlined"
+                          Clearable="true">
+                    <MudSelectItem Value="@("")">Toate statusurile</MudSelectItem>
+                    <MudSelectItem Value="@("Programata")">Programat?</MudSelectItem>
+                    <MudSelectItem Value="@("Confirmata")">Confirmat?</MudSelectItem>
+                    <MudSelectItem Value="@("In Asteptare")">În a?teptare</MudSelectItem>
+                    <MudSelectItem Value="@("In Consultatie")">În consulta?ie</MudSelectItem>
+                    <MudSelectItem Value="@("Finalizata")">Finalizat?</MudSelectItem>
+                    <MudSelectItem Value="@("Anulata")">Anulat?</MudSelectItem>
+                    <MudSelectItem Value="@("Nu s-a prezentat")">Nu s-a prezentat</MudSelectItem>
+                    <MudSelectItem Value="@("Amanata")">Amânat?</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3" Class="d-flex align-center">
+                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Medium">
+                    <MudButton StartIcon="Icons.Material.Filled.Search"
+                              Color="Color.Primary"
+                              OnClick="SearchProgramari">
+                        Caut?
+                    </MudButton>
+                    <MudButton StartIcon="Icons.Material.Filled.Clear"
+                              Color="Color.Secondary"
+                              OnClick="ClearFilters">
+                        Reseteaz?
+                    </MudButton>
+                </MudButtonGroup>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Calendar View Toggle -->
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.h6">
+                    Program?ri
+                    @if (_pagedResult?.TotalCount > 0)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">
+                            @_pagedResult.TotalCount rezultate
+                        </MudChip>
+                    }
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end">
+                <MudToggleGroup @bind-Value="_viewMode" T="string" SelectionMode="SelectionMode.SingleSelection">
+                    <MudToggleItem Value="@("list")" Text="List?">
+                        <MudIcon Icon="Icons.Material.Filled.List" />
+                    </MudToggleItem>
+                    <MudToggleItem Value="@("calendar")" Text="Calendar">
+                        <MudIcon Icon="Icons.Material.Filled.CalendarMonth" />
+                    </MudToggleItem>
+                </MudToggleGroup>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Results -->
+    <MudPaper Class="pa-4" Elevation="2">
+        <!-- Loading State -->
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+        }
+
+        <!-- List View -->
+        @if (_viewMode == "list")
+        {
+            @if (_pagedResult?.Items?.Any() == true)
+            {
+                <MudTable Items="_pagedResult.Items" 
+                         Hover="true" 
+                         Striped="true"
+                         Dense="@_isDenseTable"
+                         FixedHeader="true"
+                         Height="600px">
+                    <ToolBarContent>
+                        <MudSpacer />
+                        <MudTooltip Text="Comutare mod dens">
+                            <MudIconButton Icon="@(_isDenseTable ? Icons.Material.Filled.ViewCompact : Icons.Material.Filled.ViewAgenda)"
+                                          OnClick="() => _isDenseTable = !_isDenseTable" />
+                        </MudTooltip>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Data ?i ora</MudTh>
+                        <MudTh>Pacient</MudTh>
+                        <MudTh>Doctor</MudTh>
+                        <MudTh>Tip</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Contact</MudTh>
+                        <MudTh>Observa?ii</MudTh>
+                        <MudTh Style="width: 150px;">Ac?iuni</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">
+                                <strong>@context.DataProgramare.ToString("dd.MM.yyyy")</strong>
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @context.DataProgramare.ToString("HH:mm")
+                            </MudText>
+                        </MudTd>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">
+                                <strong>@context.NumePacient</strong>
+                            </MudText>
+                            @if (!string.IsNullOrEmpty(context.CNPPacient))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-family: monospace;">
+                                    CNP: @context.CNPPacient
+                                </MudText>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudText Typo="Typo.body2">@context.NumeDoctor</MudText>
+                            @if (!string.IsNullOrEmpty(context.SpecializareDoctor))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @context.SpecializareDoctor
+                                </MudText>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default">
+                                @(context.TipProgramare ?? "Consulta?ie")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>
+                            @if (!string.IsNullOrEmpty(context.TelefonPacient))
+                            {
+                                <MudLink Href="@($"tel:{context.TelefonPacient}")" Typo="Typo.body2">
+                                    @context.TelefonPacient
+                                </MudLink>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            @if (!string.IsNullOrEmpty(context.Observatii))
+                            {
+                                <MudTooltip Text="@context.Observatii">
+                                    <MudText Typo="Typo.caption">
+                                        @(context.Observatii.Length > 30 ? context.Observatii.Substring(0, 30) + "..." : context.Observatii)
+                                    </MudText>
+                                </MudTooltip>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <MudMenu Icon="Icons.Material.Filled.MoreVert" Size="Size.Small">
+                                <MudMenuItem Icon="Icons.Material.Filled.Edit"
+                                            OnClick="() => EditProgramare(context.ProgramareID)">
+                                    Editeaz?
+                                </MudMenuItem>
+                                <MudMenuItem Icon="Icons.Material.Filled.MedicalServices"
+                                            OnClick="() => StartConsultation(context.ProgramareID)"
+                                            Disabled="@(context.Status != "Confirmata" && context.Status != "In Asteptare")">
+                                    Începe consulta?ia
+                                </MudMenuItem>
+                                <MudMenuItem Icon="Icons.Material.Filled.CheckCircle"
+                                            OnClick="@(() => ConfirmAppointment(context.ProgramareID))"
+                                            Disabled="@(context.Status == "Finalizata" || context.Status == "Anulata")">
+                                    Confirm?
+                                </MudMenuItem>
+                                <MudMenuItem Icon="Icons.Material.Filled.Cancel"
+                                            OnClick="@(() => CancelAppointment(context.ProgramareID))"
+                                            Disabled="@(context.Status == "Finalizata" || context.Status == "Anulata")">
+                                    Anuleaz?
+                                </MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem Icon="Icons.Material.Filled.Print"
+                                            OnClick="() => PrintAppointment(context.ProgramareID)">
+                                    Imprim?
+                                </MudMenuItem>
+                            </MudMenu>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+
+                <!-- Pagination -->
+                @if (_pagedResult.TotalPages > 1)
+                {
+                    <MudDivider Class="my-4" />
+                    <MudPagination Count="_pagedResult.TotalPages" 
+                                  Selected="_searchQuery.Page"
+                                  SelectedChanged="OnPageChanged"
+                                  ShowFirstButton="true"
+                                  ShowLastButton="true"
+                                  ShowPreviousButton="true"
+                                  ShowNextButton="true"
+                                  BoundaryCount="2"
+                                  MiddleCount="3"
+                                  Class="d-flex justify-center" />
+                }
+            }
+            else if (!_isLoading)
+            {
+                <!-- No Results -->
+                <MudAlert Severity="MudBlazor.Severity.Info">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="Icons.Material.Filled.EventBusy" Class="mr-3" />
+                        <div>
+                            <MudText Typo="Typo.body1">
+                                <strong>Nu au fost g?site program?ri</strong>
+                            </MudText>
+                            <MudText Typo="Typo.body2">
+                                Încerca?i s? modifica?i criteriile de c?utare sau s? ad?uga?i o programare nou?.
+                            </MudText>
+                        </div>
+                    </div>
+                </MudAlert>
+            }
+        }
+
+        <!-- Calendar View -->
+        @if (_viewMode == "calendar")
+        {
+            <MudText Typo="Typo.h6" Class="mb-4">Vizualizare calendar</MudText>
+            <MudAlert Severity="MudBlazor.Severity.Info">
+                Vizualizarea calendar va fi implementat? în curând.
+            </MudAlert>
+        }
+    </MudPaper>
+</MudContainer>

@@ -10,7 +10,7 @@
 
 <MudLayout>
     <!-- Header Bar -->
-    <MudAppBar Elevation="1" Color="Color.Primary" Dense="true">
+    <MudAppBar Elevation="1" Color="MudColor.Primary" Dense="true">
         <div class="app-logo">
             <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" />
             <MudText Typo="Typo.h6">ValyanMed</MudText>
@@ -18,7 +18,7 @@
         <MudSpacer />
         
         <!-- User menu and logout -->
-        <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
+        <MudMenu Color="MudColor.Inherit" Icon="@Icons.Material.Filled.AccountCircle" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
             <MudMenuItem Href="/profil" Icon="@Icons.Material.Filled.ManageAccounts">Profil</MudMenuItem>
             <MudMenuItem OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Delogare</MudMenuItem>
         </MudMenu>
@@ -26,9 +26,9 @@
         <MudButton 
             OnClick="Logout" 
             StartIcon="@Icons.Material.Filled.Logout" 
-            Color="Color.Inherit" 
+            Color="MudColor.Inherit" 
             Class="ml-2" 
-            Variant="Variant.Text">
+            Variant="MudVariant.Text">
             Delogare
         </MudButton>
     </MudAppBar>
@@ -40,13 +40,13 @@
         </MudDrawerHeader>
         
         <div style="padding: 8px;">
-            <!-- Medical System Dashboard - NOW CONSISTENT -->
+            <!-- Medical System Dashboard -->
             <div class="admin-nav-link" @onclick="@NavigateToDashboard">
                 <MudIcon Icon="@Icons.Material.Filled.Dashboard" style="margin-right: 12px;" />
                 Dashboard Medical
             </div>
 
-            <!-- Medical System Main Menu - Simplified Structure -->
+            <!-- Medical System Main Menu -->
             <div class="admin-nav-link" @onclick="@ToggleMedicalMenu">
                 <MudIcon Icon="@Icons.Material.Filled.MedicalServices" style="margin-right: 12px;" />
                 Sistemul Medical
@@ -172,25 +172,6 @@
                             </MudNavLink>
                         </div>
                     }
-
-                    <!-- Personal Medical -->
-                    <MudNavLink @onclick="@TogglePersonalMenu" Icon="@Icons.Material.Filled.Badge" style="font-size: 13px; cursor: pointer;">
-                        Personal Medical
-                    </MudNavLink>
-                    @if (_personalExpanded)
-                    {
-                        <div style="margin-left:32px; padding: 2px 0;">
-                            <MudNavLink Href="/medical/personal" Icon="@Icons.Material.Filled.Group">
-                                Personal medical
-                            </MudNavLink>
-                            <MudNavLink Href="/medical/calendar-programari" Icon="@Icons.Material.Filled.CalendarMonth">
-                                Calendar programari
-                            </MudNavLink>
-                            <MudNavLink Href="/medical/gestionare-personal" Icon="@Icons.Material.Filled.ManageAccounts">
-                                Gestionare personal
-                            </MudNavLink>
-                        </div>
-                    }
                 </div>
             }
 
@@ -220,19 +201,19 @@
                 </div>
             }
 
-            <!-- Reports - ALIGNED CORRECTLY -->
+            <!-- Reports -->
             <div class="admin-nav-link" @onclick="@NavigateToRapoarte">
                 <MudIcon Icon="@Icons.Material.Filled.Assessment" style="margin-right: 12px;" />
                 Rapoarte
             </div>
 
-            <!-- Settings - ALIGNED CORRECTLY -->
+            <!-- Settings -->
             <div class="admin-nav-link" @onclick="@NavigateToSetari">
                 <MudIcon Icon="@Icons.Material.Filled.Settings" style="margin-right: 12px;" />
                 Setari clinica
             </div>
 
-            <!-- Admin menu -->
+            <!-- Admin menu - UPDATED cu Personal Medical -->
             <div class="admin-nav-link" @onclick="@ToggleAdminMenu">
                 <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" style="margin-right: 12px;" />
                 Administrare
@@ -246,18 +227,29 @@
                     <MudNavLink Href="/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">
                         Utilizatori
                     </MudNavLink>
+                    
+                    <!-- Personal Medical moved here -->
+                    <MudNavLink @onclick="@TogglePersonalMenu" Icon="@Icons.Material.Filled.Badge" style="font-size: 13px; cursor: pointer;">
+                        Personal Medical
+                    </MudNavLink>
+                    @if (_personalExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/medical/personal" Icon="@Icons.Material.Filled.Group">
+                                Personal medical
+                            </MudNavLink>
+                            <MudNavLink Href="/medical/gestionare-personal" Icon="@Icons.Material.Filled.ManageAccounts">
+                                Gestionare personal
+                            </MudNavLink>
+                            <!-- Calendar programari removed -->
+                        </div>
+                    }
+                    
                     <MudNavLink Href="/administrare/parteneri" Icon="@Icons.Material.Filled.Business">
                         Parteneri
                     </MudNavLink>
                     <MudNavLink Href="/administrare/roluri" Icon="@Icons.Material.Filled.GroupWork">
                         Roluri
-                    </MudNavLink>
-                    <MudDivider Style="margin: 8px 0;" />
-                    <MudNavLink Href="/auth-debug" Icon="@Icons.Material.Filled.BugReport">
-                        Auth Debug
-                    </MudNavLink>
-                    <MudNavLink Href="/test-simple" Icon="@Icons.Material.Filled.Science">
-                        Debug Tools
                     </MudNavLink>
                 </div>
             }
@@ -311,7 +303,7 @@
     void ToggleMonitorizareMenu() => _monitorizareExpanded = !_monitorizareExpanded;
     void TogglePersonalMenu() => _personalExpanded = !_personalExpanded;
 
-    // Navigation methods for consistent alignment
+    // Navigation methods
     void NavigateToRapoarte() => NavigationManager.NavigateTo("/medical/rapoarte");
     void NavigateToSetari() => NavigationManager.NavigateTo("/medical/setari-clinica");
     void NavigateToDashboard() => NavigationManager.NavigateTo("/medical/dashboard");

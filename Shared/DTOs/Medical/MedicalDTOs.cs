@@ -17,7 +17,7 @@ public class CreatePacientRequest
     [StringLength(13, MinimumLength = 13)] 
     public string? CNP { get; set; }
     
-    [Required(ErrorMessage = "Data na?terii este obligatorie")]
+    [Required(ErrorMessage = "Data na?terii este obligatoriu")]
     public DateTime DataNasterii { get; set; } = DateTime.Today.AddYears(-30);
     
     [Required(ErrorMessage = "Genul este obligatoriu")] 
@@ -183,14 +183,20 @@ public class PersonalMedicalListDto
     public string? Departament { get; set; }
     public string Pozitie { get; set; } = string.Empty;
     public bool EsteActiv { get; set; }
+    public DateTime DataCreare { get; set; }
     
     // Computed properties
     public string NumeComplet => $"{Nume} {Prenume}";
-    public string SpecializareCompleta => !string.IsNullOrEmpty(Specializare) ? $"{Specializare}" : Pozitie;
+    public string StatusText => EsteActiv ? "Activ" : "Inactiv";
+    public string SpecializareCompleta => !string.IsNullOrEmpty(Specializare) && !string.IsNullOrEmpty(Pozitie) 
+        ? $"{Pozitie} - {Specializare}" 
+        : Pozitie ?? Specializare ?? "Nu este specificata";
 }
 
 public class ProgramareListDto
 {
+    public ProgramareListDto() { }
+    
     public Guid ProgramareID { get; set; }
     public DateTime DataProgramare { get; set; }
     public string? TipProgramare { get; set; }
@@ -208,6 +214,8 @@ public class ProgramareListDto
 
 public class ConsultatieListDto
 {
+    public ConsultatieListDto() { }
+    
     public Guid ConsultatieID { get; set; }
     public string? PlangereaPrincipala { get; set; }
     public DateTime DataConsultatie { get; set; }
@@ -293,6 +301,21 @@ public class PersonalMedicalSearchQuery
     public string? Search { get; set; }
     public string? Departament { get; set; }
     public string? Pozitie { get; set; }
+    public bool? EsteActiv { get; set; }
+
+    // Per-column text filters
+    public string? Nume { get; set; }
+    public string? Prenume { get; set; }
+    public string? Specializare { get; set; }
+    public string? NumarLicenta { get; set; }
+    public string? Telefon { get; set; }
+    public string? Email { get; set; }
+
+    // Multi-select filters for Advanced filtering (Radzen DropDown Multiple)
+    public IEnumerable<string>? Specializari { get; set; }
+    public IEnumerable<string>? Departamente { get; set; }
+    public IEnumerable<string>? Pozitii { get; set; }
+
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 25;
     public string? Sort { get; set; }
@@ -309,6 +332,39 @@ public class ProgramariSearchQuery
     public string? Sort { get; set; }
 }
 
+// DTOs pentru agregari/grupari PersonalMedical
+public class PersonalMedicalGroupAggregateQuery
+{
+    [Required]
+    public string GroupBy { get; set; } = nameof(PersonalMedicalListDto.Departament);
+
+    // Aceleasi filtre ca PersonalMedicalSearchQuery (fara paging)
+    public string? Search { get; set; }
+    public string? Departament { get; set; }
+    public string? Pozitie { get; set; }
+    public bool? EsteActiv { get; set; }
+
+    public string? Nume { get; set; }
+    public string? Prenume { get; set; }
+    public string? Specializare { get; set; }
+    public string? NumarLicenta { get; set; }
+    public string? Telefon { get; set; }
+    public string? Email { get; set; }
+
+    public IEnumerable<string>? Specializari { get; set; }
+    public IEnumerable<string>? Departamente { get; set; }
+    public IEnumerable<string>? Pozitii { get; set; }
+
+    public string? Sort { get; set; }
+}
+
+public class PersonalMedicalGroupAggregateDto
+{
+    public string Key { get; set; } = string.Empty; // valoarea grupului (string normalizat)
+    public int Count { get; set; }
+    public DateTime? LastDataCreare { get; set; }
+}
+
 // Dashboard DTOs
 
 public class DashboardStatisticiDto
@@ -318,4 +374,123 @@ public class DashboardStatisticiDto
     public int ConsultatiiLunaAceasta { get; set; }
     public int PersonalActiv { get; set; }
     public List<ProgramareListDto> ProgramariAstazi { get; set; } = new();
+}
+
+public class PersonalMedicalDetailDto : PersonalMedicalListDto
+{
+    public PersonalMedicalDetailDto()
+    {
+        ProgramariRecente = new List<ProgramareListDto>();
+        ConsultatiiRecente = new List<ConsultatieListDto>();
+    }
+    
+    public List<ProgramareListDto> ProgramariRecente { get; set; } = new();
+    public List<ConsultatieListDto> ConsultatiiRecente { get; set; } = new();
+    public int TotalProgramari { get; set; }
+    public int TotalConsultatii { get; set; }
+}
+
+public class CreatePersonalMedicalRequest
+{
+    [Required(ErrorMessage = "Numele este obligatoriu")]
+    [StringLength(100, ErrorMessage = "Numele nu poate avea mai mult de 100 de caractere")]
+    public string Nume { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Prenumele este obligatoriu")]
+    [StringLength(100, ErrorMessage = "Prenumele nu poate avea mai mult de 100 de caractere")]
+    public string Prenume { get; set; } = string.Empty;
+    
+    [StringLength(100, ErrorMessage = "Specializarea nu poate avea mai mult de 100 de caractere")]
+    public string? Specializare { get; set; }
+    
+    [StringLength(50, ErrorMessage = "Numarul de licenta nu poate avea mai mult de 50 de caractere")]
+    public string? NumarLicenta { get; set; }
+    
+    [Phone(ErrorMessage = "Formatul telefonului nu este valid")]
+    [StringLength(20, ErrorMessage = "Telefonul nu poate avea mai mult de 20 de caractere")]
+    public string? Telefon { get; set; }
+    
+    [EmailAddress(ErrorMessage = "Formatul email-ului nu este valid")]
+    [StringLength(100, ErrorMessage = "Email-ul nu poate avea mai mult de 100 de caractere")]
+    public string? Email { get; set; }
+    
+    [StringLength(100, ErrorMessage = "Departamentul nu poate avea mai mult de 100 de caractere")]
+    public string? Departament { get; set; }
+    
+    [Required(ErrorMessage = "Pozitia este obligatorie")]
+    [StringLength(50, ErrorMessage = "Pozitia nu poate avea mai mult de 50 de caractere")]
+    public string Pozitie { get; set; } = string.Empty;
+    
+    public bool EsteActiv { get; set; } = true;
+}
+
+public class UpdatePersonalMedicalRequest
+{
+    public Guid PersonalID { get; set; }
+    
+    [Required(ErrorMessage = "Numele este obligatoriu")]
+    [StringLength(100, ErrorMessage = "Numele nu poate avea mai mult de 100 de caractere")]
+    public string Nume { get; set; } = string.Empty;
+    
+    [Required(ErrorMessage = "Prenumele este obligatoriu")]
+    [StringLength(100, ErrorMessage = "Prenumele nu poate avea mai mult de 100 de caractere")]
+    public string Prenume { get; set; } = string.Empty;
+    
+    [StringLength(100, ErrorMessage = "Specializarea nu poate avea mai mult de 100 de caractere")]
+    public string? Specializare { get; set; }
+    
+    [StringLength(50, ErrorMessage = "Numarul de licenta nu poate avea mai mult de 50 de caractere")]
+    public string? NumarLicenta { get; set; }
+    
+    [Phone(ErrorMessage = "Formatul telefonului nu este valid")]
+    [StringLength(20, ErrorMessage = "Telefonul nu poate avea mai mult de 20 de caractere")]
+    public string? Telefon { get; set; }
+    
+    [EmailAddress(ErrorMessage = "Formatul email-ului nu este valid")]
+    [StringLength(100, ErrorMessage = "Email-ul nu poate avea mai mult de 100 de caractere")]
+    public string? Email { get; set; }
+    
+    [StringLength(100, ErrorMessage = "Departamentul nu poate avea mai mult de 100 de caractere")]
+    public string? Departament { get; set; }
+    
+    [Required(ErrorMessage = "Pozitia este obligatorie")]
+    [StringLength(50, ErrorMessage = "Pozitia nu poate avea mai mult de 50 de caractere")]
+    public string Pozitie { get; set; } = string.Empty;
+    
+    public bool EsteActiv { get; set; }
+}
+
+// DTOs pentru DataGrid server-side grouping
+public class DataGridGroupRequest
+{
+    public string Property { get; set; } = string.Empty;
+    public string SortOrder { get; set; } = "asc";
+}
+
+public class PersonalMedicalDataGridRequest : PersonalMedicalSearchQuery
+{
+    public List<DataGridGroupRequest> Groups { get; set; } = new();
+    public int Skip { get; set; } = 0;
+    public int Take { get; set; } = 10;
+}
+
+public class DataGridGroupResult<T>
+{
+    public object Key { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public List<T> Items { get; set; } = new();
+    public List<DataGridGroupResult<T>> SubGroups { get; set; } = new();
+}
+
+public class PersonalMedicalDataGridResult
+{
+    public IEnumerable<PersonalMedicalListDto> Data { get; set; } = new List<PersonalMedicalListDto>();
+    public int Count { get; set; } // Pentru DataGrid - num?rul de înregistr?ri din grupul curent
+    public List<DataGridGroupResult<PersonalMedicalListDto>> Groups { get; set; } = new();
+    public bool IsGrouped { get; set; }
+    public int TotalItems { get; set; } // Total înregistr?ri din grupul afi?at în pagina curent?
+    public int TotalItemsOverall { get; set; } // Total general de înregistr?ri (pentru statistici)
+    public int TotalGroups { get; set; } // Total num?rul de grupuri
+    public int CurrentPage { get; set; } // Pagina curent? (pentru grupare)
+    public int TotalPages { get; set; } // Total pagini (pentru grupare)
 }

@@ -1,0 +1,387 @@
+@page "/medical/personal-radzen"
+@using global::Shared.Models.Medical
+@using Microsoft.AspNetCore.Components
+@attribute [Authorize]
+
+<PageTitle>Personal Medical - Radzen Demo</PageTitle>
+
+<!-- This page uses ONLY Radzen components with minimal MudBlazor conflicts -->
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    
+    <!-- Simple Header -->
+    <div style="padding: 20px; margin-bottom: 20px; background: linear-gradient(135deg, #e91e63 0%, #ff6b35 100%); color: white; border-radius: 12px;">
+        <h1 style="margin: 0; display: flex; align-items: center; gap: 15px;">
+            <span style="font-size: 2rem;">??</span>
+            Personal Medical - Demo Radzen Blazor
+        </h1>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">
+            Demonstra?ia capabilit??ilor Radzen pentru gestionarea personalului medical
+        </p>
+    </div>
+
+    <!-- Navigation Links -->
+    <div style="margin-bottom: 20px; padding: 12px; background: #f5f5f5; border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; color: #666; font-size: 14px;">
+            <span>??</span>
+            <a href="/medical/dashboard" style="color: #e91e63; text-decoration: none;">Dashboard</a>
+            <span>?</span>
+            <a href="/medical/pacienti" style="color: #e91e63; text-decoration: none;">Lista Pacien?i</a>
+            <span>?</span>
+            <a href="/medical/personal-demo" style="color: #e91e63; text-decoration: none;">Framework Comparison</a>
+            <span>?</span>
+            <span style="color: #333; font-weight: 500;">Demo Radzen</span>
+        </div>
+    </div>
+
+    <!-- Search Section using Radzen -->
+    <Radzen.Blazor.RadzenCard Style="margin-bottom: 20px;">
+        <h3 style="color: #e91e63; margin-top: 0;">?? C?utare ?i Filtrare Personal</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 200px 150px auto; gap: 15px; margin-bottom: 15px; align-items: end;">
+            <Radzen.Blazor.RadzenFormField Text="C?utare general:">
+                <Radzen.Blazor.RadzenTextBox @bind-Value="@searchTerm" Placeholder="Nume, email..." Style="width: 100%;" />
+            </Radzen.Blazor.RadzenFormField>
+            
+            <Radzen.Blazor.RadzenFormField Text="Specialitate:">
+                <Radzen.Blazor.RadzenDropDown @bind-Value="@selectedSpecialty" Data="@specialties" 
+                                             TextProperty="Text" ValueProperty="Value" 
+                                             Placeholder="Toate" AllowClear="true" Style="width: 100%;" />
+            </Radzen.Blazor.RadzenFormField>
+            
+            <Radzen.Blazor.RadzenFormField Text="Status:">
+                <Radzen.Blazor.RadzenDropDown @bind-Value="@selectedStatus" Data="@statusOptions" 
+                                             TextProperty="Text" ValueProperty="Value" 
+                                             Placeholder="Toate" AllowClear="true" Style="width: 100%;" />
+            </Radzen.Blazor.RadzenFormField>
+            
+            <div style="display: flex; gap: 10px;">
+                <Radzen.Blazor.RadzenButton Text="C?utare" Icon="search" 
+                                           ButtonStyle="Radzen.ButtonStyle.Primary" 
+                                           Click="@SearchStaff" />
+                <Radzen.Blazor.RadzenButton Text="Reset" Icon="refresh" 
+                                           ButtonStyle="Radzen.ButtonStyle.Light" 
+                                           Click="@ResetSearch" />
+            </div>
+        </div>
+    </Radzen.Blazor.RadzenCard>
+
+    <!-- Statistics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <Radzen.Blazor.RadzenCard Style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center;">
+            <div style="padding: 20px;">
+                <div style="font-size: 3rem; margin-bottom: 10px;">??</div>
+                <div style="font-size: 2rem; font-weight: bold;">@totalStaff</div>
+                <div style="opacity: 0.8;">Total Personal</div>
+            </div>
+        </Radzen.Blazor.RadzenCard>
+
+        <Radzen.Blazor.RadzenCard Style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-align: center;">
+            <div style="padding: 20px;">
+                <div style="font-size: 3rem; margin-bottom: 10px;">?????</div>
+                <div style="font-size: 2rem; font-weight: bold;">@activeDoctors</div>
+                <div style="opacity: 0.8;">Medici Activi</div>
+            </div>
+        </Radzen.Blazor.RadzenCard>
+
+        <Radzen.Blazor.RadzenCard Style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-align: center;">
+            <div style="padding: 20px;">
+                <div style="font-size: 3rem; margin-bottom: 10px;">?????</div>
+                <div style="font-size: 2rem; font-weight: bold;">@activeNurses</div>
+                <div style="opacity: 0.8;">Asistente Active</div>
+            </div>
+        </Radzen.Blazor.RadzenCard>
+    </div>
+
+    <!-- Main Staff Table -->
+    <Radzen.Blazor.RadzenCard>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="color: #e91e63; margin: 0;">?? Lista Personalului Medical</h3>
+            <Radzen.Blazor.RadzenButton Text="Adaug? Personal" Icon="add" 
+                                       ButtonStyle="Radzen.ButtonStyle.Primary" 
+                                       Click="@OpenAddStaffDialog" />
+        </div>
+
+        <!-- Radzen DataGrid -->
+        <Radzen.Blazor.RadzenDataGrid Data="@filteredStaff" 
+                                     TItem="StaffMember" 
+                                     AllowPaging="true" 
+                                     PageSize="10"
+                                     AllowSorting="true" 
+                                     AllowFiltering="true"
+                                     Style="height: 500px;">
+            <Columns>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Property="FullName" Title="Nume Complet" Width="200px">
+                    <Template Context="staff">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: #e91e63;">@(staff.Gender == "F" ? "??" : "??")</span>
+                            <span style="font-weight: 500;">@staff.FullName</span>
+                        </div>
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Property="Position" Title="Func?ia" Width="150px">
+                    <Template Context="staff">
+                        <Radzen.Blazor.RadzenBadge BadgeStyle="@GetPositionBadgeStyle(staff.Position)" Text="@staff.Position" />
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Property="Specialty" Title="Specialitate" Width="160px" />
+
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Property="Department" Title="Departament" Width="140px" />
+
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Property="Email" Title="Email" Width="200px">
+                    <Template Context="staff">
+                        <a href="mailto:@staff.Email" style="color: #e91e63; text-decoration: none;">@staff.Email</a>
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Property="IsActive" Title="Status" Width="100px">
+                    <Template Context="staff">
+                        <Radzen.Blazor.RadzenBadge BadgeStyle="@(staff.IsActive ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Danger)" 
+                                                  Text="@(staff.IsActive ? "Activ" : "Inactiv")" />
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+
+                <Radzen.Blazor.RadzenDataGridColumn TItem="StaffMember" Title="Ac?iuni" Width="150px" Sortable="false" Filterable="false">
+                    <Template Context="staff">
+                        <div style="display: flex; gap: 5px;">
+                            <Radzen.Blazor.RadzenButton Icon="edit" 
+                                                       ButtonStyle="Radzen.ButtonStyle.Primary" 
+                                                       Size="Radzen.ButtonSize.Small" 
+                                                       Click="@(() => EditStaff(staff))" />
+                            <Radzen.Blazor.RadzenButton Icon="visibility" 
+                                                       ButtonStyle="Radzen.ButtonStyle.Info" 
+                                                       Size="Radzen.ButtonSize.Small" 
+                                                       Click="@(() => ViewStaff(staff))" />
+                            <Radzen.Blazor.RadzenButton Icon="delete" 
+                                                       ButtonStyle="Radzen.ButtonStyle.Danger" 
+                                                       Size="Radzen.ButtonSize.Small" 
+                                                       Click="@(() => DeleteStaff(staff))" />
+                        </div>
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+            </Columns>
+        </Radzen.Blazor.RadzenDataGrid>
+    </Radzen.Blazor.RadzenCard>
+
+    <!-- Quick Actions -->
+    <Radzen.Blazor.RadzenCard Style="margin-top: 20px;">
+        <h3 style="color: #e91e63; margin-top: 0;">? Ac?iuni Rapide</h3>
+        
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <Radzen.Blazor.RadzenButton Text="Import Personal" Icon="upload" 
+                                       ButtonStyle="Radzen.ButtonStyle.Info" 
+                                       Click="@ImportStaff" />
+            <Radzen.Blazor.RadzenButton Text="Generare Raport" Icon="assessment" 
+                                       ButtonStyle="Radzen.ButtonStyle.Warning" 
+                                       Click="@GenerateReport" />
+            <Radzen.Blazor.RadzenButton Text="Export Excel" Icon="file_download" 
+                                       ButtonStyle="Radzen.ButtonStyle.Success" 
+                                       Click="@ExportToExcel" />
+            <Radzen.Blazor.RadzenButton Text="Backup Date" Icon="backup" 
+                                       ButtonStyle="Radzen.ButtonStyle.Light" 
+                                       Click="@BackupData" />
+        </div>
+    </Radzen.Blazor.RadzenCard>
+
+    <!-- Footer -->
+    <Radzen.Blazor.RadzenCard Style="margin-top: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+            <div>
+                <h3 style="margin: 0; color: white;">?? Demo Radzen Blazor pentru ValyanMed</h3>
+                <p style="margin: 5px 0 0 0; opacity: 0.8;">
+                    Acest demo arat? capabilit??ile avansate ale Radzen pentru gestionarea personalului medical
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <Radzen.Blazor.RadzenButton Text="Framework Comparison" Icon="compare" 
+                                           ButtonStyle="Radzen.ButtonStyle.Light" 
+                                           Click="@(() => navigationManager.NavigateTo("/medical/personal-demo"))" />
+                <Radzen.Blazor.RadzenButton Text="Lista Pacien?i" Icon="people" 
+                                           ButtonStyle="Radzen.ButtonStyle.Light" 
+                                           Click="@(() => navigationManager.NavigateTo("/medical/pacienti"))" />
+            </div>
+        </div>
+    </Radzen.Blazor.RadzenCard>
+
+</div>
+
+@code {
+    [Inject] private NavigationManager navigationManager { get; set; } = default!;
+    [Inject] private Radzen.DialogService dialogService { get; set; } = default!;
+    [Inject] private Radzen.NotificationService notificationService { get; set; } = default!;
+    
+    // Search and filter properties
+    private string searchTerm = "";
+    private string? selectedSpecialty;
+    private string? selectedStatus;
+    
+    // Statistics
+    private int totalStaff = 47;
+    private int activeDoctors = 12;
+    private int activeNurses = 23;
+    
+    // Data collections
+    private List<StaffMember> allStaff = new();
+    private List<StaffMember> filteredStaff = new();
+    
+    // Dropdown options
+    private List<DropdownOption> specialties = new()
+    {
+        new("Cardiologie", "cardiologie"),
+        new("Neurologie", "neurologie"),
+        new("Pediatrie", "pediatrie"),
+        new("Chirurgie", "chirurgie"),
+        new("Medicina de Familie", "medicina-familie"),
+        new("ATI", "ati"),
+        new("Radiologie", "radiologie")
+    };
+    
+    private List<DropdownOption> statusOptions = new()
+    {
+        new("Activ", "active"),
+        new("Inactiv", "inactive"),
+        new("În concediu", "on-leave")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStaffData();
+        ApplyFilters();
+    }
+
+    private async Task LoadStaffData()
+    {
+        // Simulate API call with sample data
+        allStaff = new List<StaffMember>
+        {
+            new() { Id = 1, FullName = "Dr. Ion Popescu", Position = "Medic Primar", Specialty = "Cardiologie", 
+                    Department = "Cardiologie", Email = "ion.popescu@valyanmed.ro", Phone = "0721234567", 
+                    HireDate = new DateTime(2020, 3, 15), IsActive = true, Gender = "M" },
+            new() { Id = 2, FullName = "Dr. Maria Ionescu", Position = "Medic Specialist", Specialty = "Neurologie", 
+                    Department = "Neurologie", Email = "maria.ionescu@valyanmed.ro", Phone = "0721234568", 
+                    HireDate = new DateTime(2021, 6, 10), IsActive = true, Gender = "F" },
+            new() { Id = 3, FullName = "As. Med. Elena Popescu", Position = "Asistent? Medical?", Specialty = "Chirurgie", 
+                    Department = "Chirurgie", Email = "elena.popescu@valyanmed.ro", Phone = "0721234569", 
+                    HireDate = new DateTime(2019, 9, 5), IsActive = true, Gender = "F" },
+            new() { Id = 4, FullName = "Dr. Alexandru Georgescu", Position = "Medic Rezident", Specialty = "Pediatrie", 
+                    Department = "Pediatrie", Email = "alex.georgescu@valyanmed.ro", Phone = "0721234570", 
+                    HireDate = new DateTime(2022, 1, 20), IsActive = false, Gender = "M" },
+            new() { Id = 5, FullName = "As. Med. Ana Dumitrescu", Position = "Asistent? ?ef", Specialty = "ATI", 
+                    Department = "ATI", Email = "ana.dumitrescu@valyanmed.ro", Phone = "0721234571", 
+                    HireDate = new DateTime(2018, 4, 12), IsActive = true, Gender = "F" },
+            new() { Id = 6, FullName = "Dr. Cristian Moldovan", Position = "Medic Primar", Specialty = "Radiologie", 
+                    Department = "Radiologie", Email = "cristian.moldovan@valyanmed.ro", Phone = "0721234572", 
+                    HireDate = new DateTime(2019, 11, 8), IsActive = true, Gender = "M" },
+            new() { Id = 7, FullName = "As. Med. Gabriela Stan", Position = "Asistent? Medical?", Specialty = "Medicina de Familie", 
+                    Department = "Medicina de Familie", Email = "gabriela.stan@valyanmed.ro", Phone = "0721234573", 
+                    HireDate = new DateTime(2021, 2, 14), IsActive = true, Gender = "F" }
+        };
+        
+        await Task.Delay(500); // Simulate loading time
+    }
+
+    private void ApplyFilters()
+    {
+        filteredStaff = allStaff.Where(staff =>
+            (string.IsNullOrEmpty(searchTerm) || 
+             staff.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+             staff.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(selectedSpecialty) || staff.Specialty.Contains(selectedSpecialty, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(selectedStatus) || 
+             (selectedStatus == "active" && staff.IsActive) ||
+             (selectedStatus == "inactive" && !staff.IsActive))
+        ).ToList();
+    }
+
+    private void SearchStaff()
+    {
+        ApplyFilters();
+        notificationService.Notify(Radzen.NotificationSeverity.Success, "C?utare complet?", 
+            $"G?site {filteredStaff.Count} rezultate din {allStaff.Count} total");
+    }
+
+    private void ResetSearch()
+    {
+        searchTerm = "";
+        selectedSpecialty = null;
+        selectedStatus = null;
+        ApplyFilters();
+        notificationService.Notify(Radzen.NotificationSeverity.Info, "Filtre resetate", "Toate înregistr?rile sunt afi?ate");
+    }
+    
+    private Radzen.BadgeStyle GetPositionBadgeStyle(string position) => position switch
+    {
+        "Medic Primar" => Radzen.BadgeStyle.Primary,
+        "Medic Specialist" => Radzen.BadgeStyle.Secondary,
+        "Medic Rezident" => Radzen.BadgeStyle.Info,
+        "Asistent? ?ef" => Radzen.BadgeStyle.Success,
+        "Asistent? Medical?" => Radzen.BadgeStyle.Light,
+        _ => Radzen.BadgeStyle.Light
+    };
+
+    // Action methods
+    private void OpenAddStaffDialog()
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Info, "Add Staff", "Deschidere dialog pentru ad?ugare personal nou");
+    }
+
+    private void EditStaff(StaffMember staff)
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Info, "Edit Staff", $"Editare: {staff.FullName}");
+    }
+
+    private void ViewStaff(StaffMember staff)
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Info, "View Staff", $"Vizualizare: {staff.FullName}");
+    }
+
+    private async Task DeleteStaff(StaffMember staff)
+    {
+        var result = await dialogService.Confirm("Sigur dori?i s? ?terge?i acest membru al personalului?", 
+            "Confirmare ?tergere", new Radzen.ConfirmOptions() { OkButtonText = "Da", CancelButtonText = "Nu" });
+        
+        if (result == true)
+        {
+            notificationService.Notify(Radzen.NotificationSeverity.Warning, "?tergere", $"?ters: {staff.FullName}");
+        }
+    }
+
+    private void ExportToExcel()
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Success, "Export", "Exportul în Excel va fi implementat în versiunea final?");
+    }
+
+    private void ImportStaff()
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Info, "Import", "Importul personalului va fi implementat în versiunea final?");
+    }
+
+    private void GenerateReport()
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Info, "Raport", "Generarea raportului va fi implementat? în versiunea final?");
+    }
+
+    private void BackupData()
+    {
+        notificationService.Notify(Radzen.NotificationSeverity.Success, "Backup", "Backup-ul datelor va fi implementat în versiunea final?");
+    }
+
+    // Models
+    public class StaffMember
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; } = "";
+        public string Position { get; set; } = "";
+        public string Specialty { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public DateTime HireDate { get; set; }
+        public bool IsActive { get; set; }
+        public string Gender { get; set; } = "M";
+    }
+
+    public record DropdownOption(string Text, string Value);
+}
