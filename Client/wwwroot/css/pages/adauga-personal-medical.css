@@ -1,0 +1,34 @@
+﻿/* 
+ * AdaugaPersonalMedical.razor - CSS MINIMAL conform Plan_refactoring.txt
+ * Principiu: CSS doar pentru ce NU poate face Radzen
+ * Maxim 2 culori: #0d6efd (primary) si #dc3545 (danger)
+ */
+
+/* Stelute obligatorii - Radzen nu are built-in pentru aceasta functionalitate */
+.required-field .rz-formfield-label::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Business warnings - functionalitate custom care nu exista in Radzen */
+.business-warning {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 8px 12px;
+    margin-top: 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.business-warning .rz-icon {
+    color: #856404;
+}
+
+.form-control-uniform {
+    width: 400% !important;
+    max-width: 10500px; /* poți ajusta după nevoie */
+}
+
+
+/* NO MORE CSS - Radzen handles everything else natively */

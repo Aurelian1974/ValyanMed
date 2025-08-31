@@ -16,6 +16,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
     [Inject] private NotificationService NotificationService { get; set; } = null!;
     [Inject] private DialogService DialogService { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
 
     // PUBLIC PROPERTIES FOR RAZOR BINDING
     public Radzen.Blazor.RadzenDataGrid<PersonalMedicalListDto> _dataGrid = null!;
@@ -57,18 +58,6 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
     // Group state tracking for sync with manual expand/collapse
     private Dictionary<string, bool> _groupStates = new();
     private bool _isUpdatingGroupStates = false;
-
-    private int GetGroupItemCount(Group group)
-    {
-        // G?sim num?rul de items din grupul curent prin GroupedPagedView
-        if (_dataGrid?.GroupedPagedView?.Any() == true)
-        {
-            var matchingGroup = _dataGrid.GroupedPagedView.FirstOrDefault(g => 
-                g.Key?.ToString() == group.Data?.ToString());
-            return matchingGroup?.Count ?? 0;
-        }
-        return 0;
-    }
 
     private class EnhancedGroupInfo
     {
@@ -525,25 +514,8 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
 
     public async Task CreateNewPersonal()
     {
-        var result = await DialogService.OpenAsync<PersonalMedicalDialog>("Adauga Personal Medical Nou",
-            new Dictionary<string, object>()
-            {
-                { "IsEditing", false },
-                { "Model", new CreatePersonalMedicalRequest() }
-            },
-            new DialogOptions() { Width = "600px", Height = "600px", Resizable = true, Draggable = true });
-
-        if (result == true)
-        {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Success,
-                Summary = "Succes",
-                Detail = "Personal medical adaugat cu succes",
-                Duration = 3000
-            });
-            if (_dataGrid != null) await _dataGrid.Reload();
-        }
+        // Navigate to dedicated add page instead of dialog - following refactoring plan
+        Navigation.NavigateTo("/medical/personal/nou");
     }
 
     public async Task EditPersonal(Guid personalId)
@@ -589,32 +561,8 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
 
     public async Task ViewPersonal(Guid personalId)
     {
-        var existing = _data.FirstOrDefault(x => x.PersonalID == personalId);
-        if (existing != null)
-        {
-            var model = new CreatePersonalMedicalRequest
-            {
-                Nume = existing.Nume,
-                Prenume = existing.Prenume,
-                Pozitie = existing.Pozitie,
-                Specializare = existing.Specializare,
-                Departament = existing.Departament,
-                NumarLicenta = existing.NumarLicenta,
-                Telefon = existing.Telefon,
-                Email = existing.Email,
-                EsteActiv = existing.EsteActiv
-            };
-
-            await DialogService.OpenAsync<PersonalMedicalDialog>("Vizualizeaza Personal Medical",
-                new Dictionary<string, object>()
-                {
-                    { "IsEditing", false },
-                    { "Model", model },
-                    { "PersonalId", personalId },
-                    { "IsViewMode", true }
-                },
-                new DialogOptions() { Width = "600px", Height = "600px", Resizable = true, Draggable = true });
-        }
+        // Navigare c?tre pagina de vizualizare dedicat?
+        Navigation.NavigateTo($"/medical/personal-view/{personalId}");
     }
 
     public async Task DeletePersonal(Guid personalId, string numeComplet)
