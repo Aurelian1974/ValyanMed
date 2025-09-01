@@ -89,6 +89,12 @@ public partial class PersonalMedicalDetails : ComponentBase, IDisposable
         });
     }
 
+    private void EditPersonal(Guid personalId)
+    {
+        // Navigare direct? la pagina de editare
+        Navigation.NavigateTo($"/medical/personal/editare/{personalId}");
+    }
+
     private void GoBack()
     {
         Navigation.NavigateTo("/medical/personal");

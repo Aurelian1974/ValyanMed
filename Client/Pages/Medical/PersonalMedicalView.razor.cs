@@ -79,55 +79,10 @@ public partial class PersonalMedicalView : ComponentBase
         Navigation.NavigateTo("/medical/gestionare-personal");
     }
 
-    private async Task EditPersonal(Guid personalId)
+    private void EditPersonal(Guid personalId)
     {
-        try
-        {
-            // Navigare c?tre pagina de editare sau deschidere dialog
-            var existing = _personalDetail;
-            if (existing != null)
-            {
-                var model = new CreatePersonalMedicalRequest
-                {
-                    Nume = existing.Nume,
-                    Prenume = existing.Prenume,
-                    Pozitie = existing.Pozitie,
-                    Specializare = existing.Specializare,
-                    Departament = existing.Departament,
-                    NumarLicenta = existing.NumarLicenta,
-                    Telefon = existing.Telefon,
-                    Email = existing.Email,
-                    EsteActiv = existing.EsteActiv
-                };
-
-                var result = await DialogService.OpenAsync<PersonalMedicalDialog>("Editeaza Personal Medical",
-                    new Dictionary<string, object>()
-                    {
-                        { "IsEditing", true },
-                        { "Model", model },
-                        { "PersonalId", personalId }
-                    },
-                    new DialogOptions() { Width = "600px", Height = "600px", Resizable = true, Draggable = true });
-
-                if (result == true)
-                {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Succes",
-                        Detail = $"Personal medical '{existing.NumeComplet}' actualizat cu succes",
-                        Duration = 3000
-                    });
-                    
-                    // Reload data after successful edit
-                    await LoadPersonalDetails();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            ShowErrorNotification($"Eroare la editarea personalului medical: {ex.Message}");
-        }
+        // Navigare direct? la pagina de editare
+        Navigation.NavigateTo($"/medical/personal/editare/{personalId}");
     }
 
     private void ShowErrorNotification(string message)

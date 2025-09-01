@@ -124,23 +124,24 @@ public class PersonDialogBase : ComponentBase, IDisposable
 
     private async Task CreatePersonAsync()
     {
-        var request = new CreatePersoanaRequest(
-            Model.Nume,
-            Model.Prenume,
-            Model.Judet,
-            Model.Localitate,
-            Model.Strada,
-            Model.NumarStrada,
-            Model.CodPostal,
-            Model.PozitieOrganizatie,
-            Model.DataNasterii,
-            Model.CNP,
-            Model.TipActIdentitate,
-            Model.SerieActIdentitate,
-            Model.NumarActIdentitate,
-            Model.StareCivila,
-            Model.Gen
-        );
+        var request = new CreatePersoanaRequest
+        {
+            Nume = Model.Nume,
+            Prenume = Model.Prenume,
+            Judet = Model.Judet,
+            Localitate = Model.Localitate,
+            Strada = Model.Strada,
+            NumarStrada = Model.NumarStrada,
+            CodPostal = Model.CodPostal,
+            PozitieOrganizatie = Model.PozitieOrganizatie,
+            DataNasterii = Model.DataNasterii,
+            CNP = Model.CNP,
+            TipActIdentitate = Model.TipActIdentitate,
+            SerieActIdentitate = Model.SerieActIdentitate,
+            NumarActIdentitate = Model.NumarActIdentitate,
+            StareCivila = Model.StareCivila,
+            Gen = Model.Gen
+        };
 
         try
         {
@@ -170,24 +171,25 @@ public class PersonDialogBase : ComponentBase, IDisposable
     {
         if (Persoana == null) return;
 
-        var request = new UpdatePersoanaRequest(
-            Persoana.Id,
-            Model.Nume,
-            Model.Prenume,
-            Model.Judet,
-            Model.Localitate,
-            Model.Strada,
-            Model.NumarStrada,
-            Model.CodPostal,
-            Model.PozitieOrganizatie,
-            Model.DataNasterii,
-            Model.CNP,
-            Model.TipActIdentitate,
-            Model.SerieActIdentitate,
-            Model.NumarActIdentitate,
-            Model.StareCivila,
-            Model.Gen
-        );
+        var request = new UpdatePersoanaRequest
+        {
+            Id = Persoana.Id,
+            Nume = Model.Nume,
+            Prenume = Model.Prenume,
+            Judet = Model.Judet,
+            Localitate = Model.Localitate,
+            Strada = Model.Strada,
+            NumarStrada = Model.NumarStrada,
+            CodPostal = Model.CodPostal,
+            PozitieOrganizatie = Model.PozitieOrganizatie,
+            DataNasterii = Model.DataNasterii,
+            CNP = Model.CNP,
+            TipActIdentitate = Model.TipActIdentitate,
+            SerieActIdentitate = Model.SerieActIdentitate,
+            NumarActIdentitate = Model.NumarActIdentitate,
+            StareCivila = Model.StareCivila,
+            Gen = Model.Gen
+        };
 
         try
         {

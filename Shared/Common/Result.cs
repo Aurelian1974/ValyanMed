@@ -1,17 +1,26 @@
+using System.Text.Json.Serialization;
+
 namespace Shared.Common;
 
 public class Result<T>
 {
-    public bool IsSuccess { get; }
-    public T? Value { get; }
-    public List<string> Errors { get; }
-    public string? SuccessMessage { get; }
+    public bool IsSuccess { get; set; }
+    public T? Value { get; set; }
+    public List<string> Errors { get; set; } = new();
+    public string? SuccessMessage { get; set; }
+
+    // Constructor pentru serializare JSON
+    [JsonConstructor]
+    public Result()
+    {
+        Errors = new List<string>();
+    }
 
     protected Result(bool isSuccess, T? value, List<string> errors, string? successMessage)
     {
         IsSuccess = isSuccess;
         Value = value;
-        Errors = errors;
+        Errors = errors ?? new List<string>();
         SuccessMessage = successMessage;
     }
 
@@ -27,6 +36,12 @@ public class Result<T>
 
 public class Result : Result<object>
 {
+    // Constructor pentru serializare JSON
+    [JsonConstructor]
+    public Result() : base()
+    {
+    }
+
     protected Result(bool isSuccess, List<string> errors, string? successMessage)
         : base(isSuccess, null, errors, successMessage)
     {

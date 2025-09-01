@@ -1,205 +1,200 @@
-@page "/authentication/persoane"
-@page "/persoane"
-@inherits PersoaneBase
-@attribute [Authorize]
+@page "/administrare/persoane"
+@using global::Shared.DTOs.Authentication
+@using global::Shared.Common
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen
+@using Radzen.Blazor
 
-<PageTitle>Gestionare Persoane - ValyanMed</PageTitle>
+<PageTitle>Persoane - ValyanMed</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudStack Spacing="3">
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+    
+    <!-- Header -->
+    <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Persoane</RadzenText>
+    
+    <!-- Search and Filters -->
+    <RadzenCard Class="mb-4">
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
+            <RadzenRow Gap="1rem">
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenLabel Text="Cautare globala" />
+                    <RadzenTextBox @bind-Value="_searchQuery.Search"
+                                   Placeholder="Nume, prenume, email, telefon..."
+                                   @oninput="OnSearchInput"
+                                   Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Text="Judet" />
+                    <RadzenDropDown @bind-Value="_searchQuery.Judet"
+                                    Data="@_judete"
+                                    AllowClear="true"
+                                    Placeholder="Selecteaza judet"
+                                    Change="@OnFilterChanged"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="3">
+                    <RadzenLabel Text="Localitate" />
+                    <RadzenDropDown @bind-Value="_searchQuery.Localitate"
+                                    Data="@_localitati"
+                                    AllowClear="true"
+                                    Placeholder="Selecteaza localitate"
+                                    Change="@OnFilterChanged"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="2">
+                    <RadzenLabel Text="Status" />
+                    <RadzenDropDown @bind-Value="_searchQuery.EsteActiv"
+                                    Data="@_statusOptions"
+                                    TextProperty="Text"
+                                    ValueProperty="Value"
+                                    AllowClear="true"
+                                    Placeholder="Status"
+                                    Change="@OnFilterChanged"
+                                    Style="width: 100%;" />
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+    </RadzenCard>
 
-        <!-- Header Section -->
-        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="MudAlignItems.Center">
-            <MudText Typo="Typo.h4">Gestionare Persoane</MudText>
-            <MudButton StartIcon="@Icons.Material.Filled.Add" 
-                      Color="MudColor.Primary" 
-                      Variant="MudVariant.Filled"
-                      OnClick="@OpenCreatePersonDialog">
-                Adauga Persoana
-            </MudButton>
-        </MudStack>
+    <!-- Debug info -->
+    @if (_isLoading)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Radzen.Variant.Filled">
+            Se incarca datele...
+        </RadzenAlert>
+    }
 
-        <!-- Search and Filters -->
-        <MudPaper Class="pa-4">
-            <MudStack Row Spacing="2" AlignItems="MudAlignItems.Center">
-                <MudTextField @bind-Value="State.SearchTerm" 
-                             Label="Cauta persoane..." 
-                             Variant="MudVariant.Outlined" 
-                             Adornment="Adornment.End" 
-                             AdornmentIcon="@Icons.Material.Filled.Search"
-                             OnAdornmentClick="@FilterPersons"
-                             OnKeyUp="@OnSearchKeyUp"
-                             Immediate="false"
-                             Class="flex-grow-1" />
-
-                <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
-                          Color="MudColor.Secondary" 
-                          Variant="MudVariant.Outlined"
-                          OnClick="@ResetFilters">
-                    Reset
-                </MudButton>
-            </MudStack>
-        </MudPaper>
-
-        <!-- Results Summary -->
-        @if (!State.IsLoading && State.Persons.Any())
-        {
-            <MudAlert Severity="MudSeverity.Info" Dense="true">
-                Afisati: @State.FilteredPersons.Count() din @State.Persons.Count() persoane totale
-            </MudAlert>
-        }
-
-        <!-- Data Grid -->
-        <MudDataGrid T="Persoana" 
-                    Items="@State.FilteredPersons" 
-                    Loading="@State.IsLoading"
-                    Dense="true"
-                    Hover="true"
-                    ReadOnly="true"
-                    Filterable="false"
-                    Hideable="true"
-                    ColumnResizeMode="ResizeMode.Container"
-                    SortMode="SortMode.Multiple">
+    <!-- Data Grid -->
+    <RadzenCard>
+        <RadzenDataGrid @ref="_dataGrid"
+                        Data="@_data"
+                        Count="@_totalCount"
+                        LoadData="@LoadDataAsync"
+                        AllowPaging="true"
+                        AllowSorting="true"
+                        AllowColumnResize="true"
+                        PageSize="10"
+                        PagerHorizontalAlign="Radzen.HorizontalAlign.Left"
+                        ShowPagingSummary="true"
+                        PagingSummaryFormat="Pagina {0} din {1} ({2} inregistrari)"
+                        IsLoading="@_isLoading"
+                        ExpandMode="Radzen.DataGridExpandMode.Single"
+                        Style="height: 600px">
             
+            <!-- Columns -->
             <Columns>
-                <PropertyColumn Property="x => x.Id" Title="ID" Sortable="true" />
-                <PropertyColumn Property="x => x.NumeComplet" Title="Nume Complet" Sortable="true" />
-                
-                <TemplateColumn Title="CNP" Sortable="true" SortBy="@(x => x.CNP)">
-                    <CellTemplate>
-                        @if (!string.IsNullOrEmpty(context.Item.CNP))
-                        {
-                            @context.Item.CNP
-                        }
-                        else
-                        {
-                            <MudText Color="MudColor.Surface">-</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                
-                <TemplateColumn Title="Data Nasterii" Sortable="true" SortBy="@(x => x.DataNasterii)">
-                    <CellTemplate>
-                        @if (context.Item.DataNasterii.HasValue)
-                        {
-                            @context.Item.DataNasterii.Value.ToString("dd.MM.yyyy")
-                        }
-                        else
-                        {
-                            <MudText Color="MudColor.Surface">-</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Locatie" Sortable="true" SortBy="@(x => x.Localitate)">
-                    <CellTemplate>
-                        @if (!string.IsNullOrEmpty(context.Item.Localitate) || !string.IsNullOrEmpty(context.Item.Judet))
-                        {
-                            <MudText>
-                                @if (!string.IsNullOrEmpty(context.Item.Localitate))
-                                {
-                                    @context.Item.Localitate
-                                }
-                                @if (!string.IsNullOrEmpty(context.Item.Judet) && !string.IsNullOrEmpty(context.Item.Localitate))
-                                {
-                                    @:, 
-                                }
-                                @if (!string.IsNullOrEmpty(context.Item.Judet))
-                                {
-                                    @context.Item.Judet
-                                }
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudText Color="MudColor.Surface">-</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Pozitie" Sortable="true" SortBy="@(x => x.PozitieOrganizatie)">
-                    <CellTemplate>
-                        @if (!string.IsNullOrEmpty(context.Item.PozitieOrganizatie))
-                        {
-                            @context.Item.PozitieOrganizatie
-                        }
-                        else
-                        {
-                            <MudText Color="MudColor.Surface">-</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                
-                <TemplateColumn Title="Data Creare" Sortable="true" SortBy="@(x => x.DataCreare)">
-                    <CellTemplate>
-                        @if (context.Item.DataCreare.HasValue)
-                        {
-                            @context.Item.DataCreare.Value.ToString("dd.MM.yyyy HH:mm")
-                        }
-                        else
-                        {
-                            <MudText Color="MudColor.Surface">-</MudText>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Actiuni" Sortable="false" Filterable="false">
-                    <CellTemplate>
-                        <MudStack Row Spacing="1">
-                            <MudTooltip Text="Editeaza persoana">
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" 
-                                              Size="Size.Small" 
-                                              Color="MudColor.Primary"
-                                              OnClick="@(() => OpenEditPersonDialog(context.Item))" />
-                            </MudTooltip>
-                            <MudTooltip Text="Sterge persoana">
-                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                              Size="Size.Small" 
-                                              Color="MudColor.Error"
-                                              OnClick="@(() => DeletePerson(context.Item))" />
-                            </MudTooltip>
-                        </MudStack>
-                    </CellTemplate>
-                </TemplateColumn>
+                <RadzenDataGridColumn Property="NumeComplet" Title="Nume complet" Width="200px" />
+                <RadzenDataGridColumn Property="CNP" Title="CNP" Width="150px" />
+                <RadzenDataGridColumn Property="DataNasterii" Title="Data nasterii" Width="120px" FormatString="{0:dd.MM.yyyy}" />
+                <RadzenDataGridColumn Property="Varsta" Title="Varsta" Width="80px" />
+                <RadzenDataGridColumn Property="Gen" Title="Gen" Width="100px" />
+                <RadzenDataGridColumn Property="Telefon" Title="Telefon" Width="130px" />
+                <RadzenDataGridColumn Property="Email" Title="Email" Width="200px" />
+                <RadzenDataGridColumn Property="Judet" Title="Judet" Width="120px" />
+                <RadzenDataGridColumn Property="Localitate" Title="Localitate" Width="150px" />
+                <RadzenDataGridColumn Property="StatusText" Title="Status" Width="80px">
+                    <Template Context="persoana">
+                        <RadzenBadge Text="@persoana.StatusText" 
+                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                     Variant="Radzen.Variant.Filled" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn Property="DataCreare" Title="Data creare" Width="120px" FormatString="{0:dd.MM.yyyy}" />
+                <RadzenDataGridColumn Title="Actiuni" Width="120px" Sortable="false">
+                    <Template Context="persoana">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Icon="visibility" 
+                                          ButtonStyle="Radzen.ButtonStyle.Primary" 
+                                          Variant="Radzen.Variant.Outlined" 
+                                          Size="Radzen.ButtonSize.Small"
+                                          Title="Vizualizeaza detalii"
+                                          Click="@(() => ViewDetails(persoana.Id))" />
+                            <RadzenButton Icon="edit" 
+                                          ButtonStyle="Radzen.ButtonStyle.Info" 
+                                          Variant="Radzen.Variant.Outlined" 
+                                          Size="Radzen.ButtonSize.Small"
+                                          Title="Editeaza"
+                                          Click="@(() => EditPersoana(persoana.Id))" />
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
 
-            <NoRecordsContent>
-                <MudStack AlignItems="MudAlignItems.Center" Spacing="2" Class="pa-8">
-                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="MudColor.Surface" />
-                    <MudText Typo="Typo.body1" Color="MudColor.Surface">
-                        @if (string.IsNullOrEmpty(State.SearchTerm))
-                        {
-                            @:Nu au fost gasite persoane
-                        }
-                        else
-                        {
-                            @:Nu au fost gasite persoane care sa corespunda criteriilor de cautare
-                        }
-                    </MudText>
-                    @if (!string.IsNullOrEmpty(State.SearchTerm))
-                    {
-                        <MudButton StartIcon="@Icons.Material.Filled.ClearAll" OnClick="@ResetFilters">
-                            Reseteaza filtrele
-                        </MudButton>
-                    }
-                </MudStack>
-            </NoRecordsContent>
-
-            <LoadingContent>
-                <MudStack AlignItems="MudAlignItems.Center" Spacing="2" Class="pa-8">
-                    <MudProgressCircular Indeterminate="true" />
-                    <MudText Typo="Typo.body1">Se incarca persoanele...</MudText>
-                </MudStack>
-            </LoadingContent>
-        </MudDataGrid>
-    </MudStack>
-</MudContainer>
-
-@code {
-    [Inject] NavigationManager Navigation { get; set; } = null!;
-
-    private string GetCurrentRoute()
-    {
-        return Navigation.Uri;
-    }
-}
+            <!-- Detail Row Template -->
+            <Template Context="persoana">
+                <RadzenCard Class="m-3">
+                    <RadzenRow Gap="2rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                                <RadzenIcon Icon="person" Class="me-2" />
+                                Informatii personale
+                            </RadzenText>
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Nume complet:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@persoana.NumeComplet</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>CNP:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@(persoana.CNP ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Data nasterii:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@persoana.DataNasterii?.ToString("dd.MM.yyyy")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Varsta:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@persoana.Varsta ani</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="5"><strong>Gen:</strong></RadzenColumn>
+                                    <RadzenColumn Size="7">@persoana.Gen</RadzenColumn>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                                <RadzenIcon Icon="contact_phone" Class="me-2" />
+                                Contact si locatie
+                            </RadzenText>
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Telefon:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(persoana.Telefon ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Email:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(persoana.Email ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Judet:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(persoana.Judet ?? "Nu este specificat")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Localitate:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(persoana.Localitate ?? "Nu este specificata")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Adresa:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@(persoana.Adresa ?? "Nu este specificata")</RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Status:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">
+                                        <RadzenBadge Text="@persoana.StatusText" 
+                                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                                     Variant="Radzen.Variant.Filled" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+                                <RadzenRow>
+                                    <RadzenColumn Size="4"><strong>Data creare:</strong></RadzenColumn>
+                                    <RadzenColumn Size="8">@persoana.DataCreare?.ToString("dd.MM.yyyy HH:mm")</RadzenColumn>
+                                </RadzenRow>
+                            </RadzenStack>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenCard>
+            </Template>
+        </RadzenDataGrid>
+    </RadzenCard>
+</RadzenStack>

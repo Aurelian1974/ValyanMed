@@ -157,10 +157,37 @@ public class PersonalMedicalController : ControllerBase
     {
         try
         {
+            _logger.LogInformation("Create PersonalMedical called with request: {@Request}", request);
+            
             var result = await _personalMedicalService.CreateAsync(request);
+            
+            _logger.LogInformation("PersonalMedical create result: {@Result}", new {
+                IsSuccess = result.IsSuccess,
+                Value = result.Value,
+                ErrorsCount = result.Errors?.Count ?? 0,
+                Errors = result.Errors
+            });
             
             if (result.IsSuccess)
             {
+                _logger.LogInformation("PersonalMedical created successfully with ID: {PersonalId}", result.Value);
+                
+                // Test serializare înainte de a returna
+                try
+                {
+                    var serialized = System.Text.Json.JsonSerializer.Serialize(result, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+                    });
+                    _logger.LogInformation("Serialization test successful: {SerializedResult}", serialized);
+                }
+                catch (Exception serEx)
+                {
+                    _logger.LogError(serEx, "Serialization test failed");
+                }
+                
                 return CreatedAtAction(nameof(GetById), new { id = result.Value }, result);
             }
 

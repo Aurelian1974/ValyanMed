@@ -64,10 +64,10 @@ WHERE 1=1
   AND (@Pozitie IS NULL OR @Pozitie = '' OR @Pozitie = 'toate' OR UPPER(Pozitie) LIKE '%' + UPPER(@Pozitie) + '%')
   AND (@Nume IS NULL OR @Nume = '' OR UPPER(Nume) LIKE '%' + UPPER(@Nume) + '%')
   AND (@Prenume IS NULL OR @Prenume = '' OR UPPER(Prenume) LIKE '%' + UPPER(@Prenume) + '%')
-  AND (@Specializare IS NULL OR @Specializare = '' OR UPPER(Specializare) LIKE '%' + UPPER(@Specializare) + '%')
-  AND (@NumarLicenta IS NULL OR @NumarLicenta = '' OR UPPER(NumarLicenta) LIKE '%' + UPPER(@NumarLicenta) + '%')
-  AND (@Telefon IS NULL OR @Telefon = '' OR Telefon LIKE '%' + @Telefon + '%')
-  AND (@Email IS NULL OR @Email = '' OR UPPER(Email) LIKE '%' + UPPER(@Email) + '%')
+  AND (@Specializare IS NULL OR @Specializare = '' OR UPPER(Specializare) LIKE '%' + UPPER(@Search) + '%')
+  AND (@NumarLicenta IS NULL OR @NumarLicenta = '' OR UPPER(NumarLicenta) LIKE '%' + UPPER(@Search) + '%')
+  AND (@Telefon IS NULL OR @Telefon = '' OR Telefon LIKE '%' + @Search + '%')
+  AND (@Email IS NULL OR @Email = '' OR UPPER(Email) LIKE '%' + UPPER(@Search) + '%')
   AND ( @Search IS NULL OR @Search = ''
         OR UPPER(Nume) LIKE '%' + UPPER(@Search) + '%'
         OR UPPER(Prenume) LIKE '%' + UPPER(@Search) + '%'
@@ -302,11 +302,14 @@ WHERE PersonalID = @PersonalID";
             
             var personalId = Guid.NewGuid();
             
+            Console.WriteLine($"[PersonalMedicalRepository] Creating personal with ID: {personalId}");
+            Console.WriteLine($"[PersonalMedicalRepository] Request data: {request.Nume} {request.Prenume}, {request.Pozitie}");
+            
             var sql = @"
 INSERT INTO PersonalMedical (PersonalID, Nume, Prenume, Specializare, NumarLicenta, Telefon, Email, Departament, Pozitie, EsteActiv, DataCreare)
 VALUES (@PersonalID, @Nume, @Prenume, @Specializare, @NumarLicenta, @Telefon, @Email, @Departament, @Pozitie, @EsteActiv, @DataCreare)";
 
-            await connection.ExecuteAsync(sql, new
+            var parameters = new
             {
                 PersonalID = personalId,
                 Nume = request.Nume,
@@ -319,12 +322,30 @@ VALUES (@PersonalID, @Nume, @Prenume, @Specializare, @NumarLicenta, @Telefon, @E
                 Pozitie = request.Pozitie,
                 EsteActiv = request.EsteActiv,
                 DataCreare = DateTime.UtcNow
-            });
+            };
 
-            return Result<Guid>.Success(personalId);
+            Console.WriteLine($"[PersonalMedicalRepository] SQL: {sql}");
+            Console.WriteLine($"[PersonalMedicalRepository] Parameters: {System.Text.Json.JsonSerializer.Serialize(parameters)}");
+
+            var rowsAffected = await connection.ExecuteAsync(sql, parameters);
+            
+            Console.WriteLine($"[PersonalMedicalRepository] Rows affected: {rowsAffected}");
+
+            if (rowsAffected > 0)
+            {
+                Console.WriteLine($"[PersonalMedicalRepository] Success! Created personal with ID: {personalId}");
+                return Result<Guid>.Success(personalId);
+            }
+            else
+            {
+                Console.WriteLine("[PersonalMedicalRepository] No rows were affected - insert failed");
+                return Result<Guid>.Failure("Nu s-au putut salva datele - niciun rand afectat");
+            }
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[PersonalMedicalRepository] Exception: {ex.Message}");
+            Console.WriteLine($"[PersonalMedicalRepository] Stack trace: {ex.StackTrace}");
             return Result<Guid>.Failure($"Eroare la crearea personalului medical: {ex.Message}");
         }
     }

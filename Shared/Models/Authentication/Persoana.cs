@@ -24,6 +24,11 @@ public class Persoana
     public StareCivila? StareCivila { get; set; }
     public Gen? Gen { get; set; }
 
+    // New fields for UI compatibility
+    public string? Telefon { get; set; }
+    public string? Email { get; set; }
+    public bool EsteActiva { get; set; } = true;
+
     public string NumeComplet => $"{Nume} {Prenume}";
     
     public string AdresaCompleta

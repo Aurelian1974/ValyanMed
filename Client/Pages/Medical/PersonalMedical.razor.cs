@@ -158,6 +158,11 @@ public partial class PersonalMedical : ComponentBase, IDisposable
         Navigation.NavigateTo($"/medical/personal/{personalId}");
     }
 
+    public void EditPersonal(Guid personalId)
+    {
+        Navigation.NavigateTo($"/medical/personal/editare/{personalId}");
+    }
+
     private void ShowErrorNotification(string message)
     {
         NotificationService.Notify(new Radzen.NotificationMessage

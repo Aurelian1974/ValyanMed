@@ -63,7 +63,10 @@ public class PersoanaService : IPersoanaService
             SerieActIdentitate = request.SerieActIdentitate,
             NumarActIdentitate = request.NumarActIdentitate,
             StareCivila = request.StareCivila,
-            Gen = request.Gen
+            Gen = request.Gen,
+            Telefon = request.Telefon,
+            Email = request.Email,
+            EsteActiva = request.EsteActiva
         };
 
         var result = await _repository.CreateAsync(persoana);
@@ -157,6 +160,9 @@ public class PersoanaService : IPersoanaService
         existingPersoana.NumarActIdentitate = request.NumarActIdentitate;
         existingPersoana.StareCivila = request.StareCivila;
         existingPersoana.Gen = request.Gen;
+        existingPersoana.Telefon = request.Telefon;
+        existingPersoana.Email = request.Email;
+        existingPersoana.EsteActiva = request.EsteActiva;
 
         var updateResult = await _repository.UpdateAsync(existingPersoana);
         if (!updateResult.IsSuccess)
@@ -189,6 +195,41 @@ public class PersoanaService : IPersoanaService
         return Result.Success("Persoana a fost ?tears? cu succes");
     }
 
+    public async Task<Result<PersoanaListDto?>> GetByIdForDisplayAsync(int id)
+    {
+        var result = await _repository.GetByIdAsync(id);
+        if (!result.IsSuccess)
+        {
+            return Result<PersoanaListDto?>.Failure(result.Errors);
+        }
+
+        if (result.Value == null)
+        {
+            return Result<PersoanaListDto?>.Success(null);
+        }
+
+        var dto = MapToListDto(result.Value);
+        return Result<PersoanaListDto?>.Success(dto);
+    }
+
+    public async Task<Result<PagedResult<PersoanaListDto>>> GetPagedAsync(PersoanaSearchQuery query)
+    {
+        try
+        {
+            var result = await _repository.GetPagedAsync(query);
+            if (!result.IsSuccess)
+            {
+                return Result<PagedResult<PersoanaListDto>>.Failure(result.Errors);
+            }
+
+            return Result<PagedResult<PersoanaListDto>>.Success(result.Value);
+        }
+        catch (Exception ex)
+        {
+            return Result<PagedResult<PersoanaListDto>>.Failure($"Eroare la obtinerea persoanelor paginate: {ex.Message}");
+        }
+    }
+
     private static PersoanaDto MapToDto(Persoana persoana)
     {
         var dto = new PersoanaDto
@@ -218,5 +259,36 @@ public class PersoanaService : IPersoanaService
         dto.AdresaCompleta = persoana.AdresaCompleta;
         
         return dto;
+    }
+
+    private static PersoanaListDto MapToListDto(Persoana persoana)
+    {
+        var varsta = 0;
+        if (persoana.DataNasterii.HasValue)
+        {
+            var today = DateTime.Today;
+            varsta = today.Year - persoana.DataNasterii.Value.Year;
+            if (persoana.DataNasterii.Value.Date > today.AddYears(-varsta))
+                varsta--;
+        }
+
+        return new PersoanaListDto
+        {
+            Id = persoana.Id,
+            Nume = persoana.Nume,
+            Prenume = persoana.Prenume,
+            NumeComplet = persoana.NumeComplet,
+            CNP = persoana.CNP,
+            DataNasterii = persoana.DataNasterii,
+            Varsta = varsta,
+            Gen = persoana.Gen?.ToString(),
+            Telefon = persoana.Telefon,
+            Email = persoana.Email,
+            Judet = persoana.Judet,
+            Localitate = persoana.Localitate,
+            Adresa = persoana.AdresaCompleta,
+            EsteActiva = persoana.EsteActiva,
+            DataCreare = persoana.DataCreare
+        };
     }
 }

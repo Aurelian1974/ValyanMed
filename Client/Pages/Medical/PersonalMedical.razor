@@ -97,14 +97,22 @@
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="DataCreare" Title="Data creare" Width="120px" FormatString="{0:dd.MM.yyyy}" />
-                <RadzenDataGridColumn Title="Actiuni" Width="80px" Sortable="false">
+                <RadzenDataGridColumn Title="Actiuni" Width="120px" Sortable="false">
                     <Template Context="personal">
-                        <RadzenButton Icon="visibility" 
-                                      ButtonStyle="Radzen.ButtonStyle.Primary" 
-                                      Variant="Radzen.Variant.Outlined" 
-                                      Size="Radzen.ButtonSize.Small"
-                                      Title="Vizualizeaza detalii"
-                                      Click="@(() => ViewDetails(personal.PersonalID))" />
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Icon="visibility" 
+                                          ButtonStyle="Radzen.ButtonStyle.Primary" 
+                                          Variant="Radzen.Variant.Outlined" 
+                                          Size="Radzen.ButtonSize.Small"
+                                          Title="Vizualizeaza detalii"
+                                          Click="@(() => ViewDetails(personal.PersonalID))" />
+                            <RadzenButton Icon="edit" 
+                                          ButtonStyle="Radzen.ButtonStyle.Info" 
+                                          Variant="Radzen.Variant.Outlined" 
+                                          Size="Radzen.ButtonSize.Small"
+                                          Title="Editeaza"
+                                          Click="@(() => EditPersonal(personal.PersonalID))" />
+                        </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>

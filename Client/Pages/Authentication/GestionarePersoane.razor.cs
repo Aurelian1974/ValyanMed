@@ -1,27 +1,26 @@
 using Microsoft.AspNetCore.Components;
-using global::Shared.DTOs.Medical;
+using global::Shared.DTOs.Authentication;
 using global::Shared.Common;
 using Radzen;
 using Radzen.Blazor;
-using Client.Services.Medical;
-using System.Linq;
-using Microsoft.JSInterop;
+using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.JSInterop;
 
-namespace Client.Pages.Medical;
+namespace Client.Pages.Authentication;
 
-public partial class GestionarePersonal : ComponentBase, IDisposable
+public partial class GestionarePersoane : ComponentBase, IDisposable
 {
-    [Inject] private IPersonalMedicalApiService PersonalMedicalApiService { get; set; } = null!;
+    [Inject] private HttpClient Http { get; set; } = null!;
     [Inject] private NotificationService NotificationService { get; set; } = null!;
     [Inject] private DialogService DialogService { get; set; } = null!;
-    [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
 
     // PUBLIC PROPERTIES FOR RAZOR BINDING
-    public Radzen.Blazor.RadzenDataGrid<PersonalMedicalListDto> _dataGrid = null!;
-    public IEnumerable<PersonalMedicalListDto> _data = new List<PersonalMedicalListDto>();
-    public PersonalMedicalSearchQuery _searchQuery = new() { PageSize = 10 };
+    public Radzen.Blazor.RadzenDataGrid<PersoanaListDto> _dataGrid = null!;
+    public IEnumerable<PersoanaListDto> _data = new List<PersoanaListDto>();
+    public PersoanaSearchQuery _searchQuery = new() { PageSize = 10 };
     public int _totalCount = 0;
     public bool _isLoading = false;
     public bool _hasError = false;
@@ -40,12 +39,11 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
     // Filters
     private string? _filterNume;
     private string? _filterPrenume;
-    private string? _filterSpecializare;
-    private string? _filterNumarLicenta;
+    private string? _filterCNP;
     private string? _filterTelefon;
     private string? _filterEmail;
-    private string? _selectedDepartament;
-    private string? _selectedPozitie;
+    private string? _selectedJudet;
+    private string? _selectedLocalitate;
     private bool? _selectedStatus;
 
     // Enhanced Grouping info using native RadzenDataGrid data
@@ -53,7 +51,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
     
     // Settings persistence
     private DataGridSettings? _gridSettings;
-    private const string GRID_SETTINGS_KEY = "gestionare_personal_grid_settings";
+    private const string GRID_SETTINGS_KEY = "gestionare_persoane_grid_settings";
     
     // Group state tracking for sync with manual expand/collapse
     private Dictionary<string, bool> _groupStates = new();
@@ -77,16 +75,23 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         public bool IsExpanded { get; set; } = true;
     }
 
+    private class DataGridGroupRequest
+    {
+        public string Property { get; set; } = string.Empty;
+        public string SortOrder { get; set; } = "asc";
+    }
+
     private string GetGroupDisplayName(string property)
     {
         return property?.ToLower() switch
         {
-            "departament" => "Departament",
-            "pozitie" => "Pozitie", 
-            "specializare" => "Specializare",
-            "esteactiv" => "Status",
+            "judet" => "Judet",
+            "localitate" => "Localitate", 
+            "gen" => "Gen",
+            "esteactiva" => "Status",
             "nume" => "Nume",
             "prenume" => "Prenume",
+            "cnp" => "CNP",
             _ => property ?? "Unknown"
         };
     }
@@ -97,7 +102,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         await LoadGridSettings();
         
         // Initialize search query
-        _searchQuery = new PersonalMedicalSearchQuery 
+        _searchQuery = new PersoanaSearchQuery 
         { 
             PageSize = _pageSize,
             Page = 1,
@@ -164,10 +169,10 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
             var uniqueGroups = _data.Select(item => 
                 groupProperty.ToLower() switch
                 {
-                    "departament" => item.Departament ?? "Nu este specificat",
-                    "pozitie" => item.Pozitie ?? "Nu este specificat", 
-                    "specializare" => item.Specializare ?? "Nu este specificat",
-                    "esteactiv" => item.EsteActiv ? "Activ" : "Inactiv",
+                    "judet" => item.Judet ?? "Nu este specificat",
+                    "localitate" => item.Localitate ?? "Nu este specificat", 
+                    "gen" => item.Gen ?? "Nu este specificat",
+                    "esteactiva" => item.EsteActiva ? "Activa" : "Inactiva",
                     _ => "Unknown"
                 }).Distinct().Count();
 
@@ -209,32 +214,6 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
             _allGroupsExpanded = false;
             StateHasChanged();
         }
-    }
-
-    public async Task OnGroupChanged(DataGridColumnGroupEventArgs<PersonalMedicalListDto> args)
-    {
-        // Reset group states when grouping changes
-        _groupStates.Clear();
-        
-        if (args.GroupDescriptor != null)
-        {
-            // New group added
-            _isGrouped = true;
-            await UpdateCurrentGroups();
-        }
-        else
-        {
-            // Group removed
-            if (!_dataGrid.Groups.Any())
-            {
-                _isGrouped = false;
-                _currentGroups.Clear();
-                _currentGroupInfo = null;
-            }
-        }
-        
-        await UpdateGroupInfo();
-        StateHasChanged();
     }
 
     public async Task OnAllGroupsExpandedChanged(bool? value)
@@ -294,18 +273,6 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         return false;
     }
 
-    // Enhanced helper methods
-    private async Task<bool> IsGroupExpanded(string groupKey)
-    {
-        return _groupStates.GetValueOrDefault(groupKey, _allGroupsExpanded);
-    }
-
-    private async Task SetGroupExpanded(string groupKey, bool expanded)
-    {
-        _groupStates[groupKey] = expanded;
-        await UpdateGroupInfo();
-    }
-
     public async Task LoadDataAsync(LoadDataArgs args)
     {
         _isLoading = true;
@@ -314,96 +281,71 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
 
         try
         {
-            var apiQuery = new PersonalMedicalSearchQuery
-            {
-                Search = _searchQuery.Search,
-                Departament = _selectedDepartament,
-                Pozitie = _selectedPozitie,
-                EsteActiv = _selectedStatus,
-                Nume = _filterNume,
-                Prenume = _filterPrenume,
-                Specializare = _filterSpecializare,
-                NumarLicenta = _filterNumarLicenta,
-                Telefon = _filterTelefon,
-                Email = _filterEmail,
-                Page = 1,
-                PageSize = _pageSize,
-                Sort = _searchQuery.Sort
-            };
-
+            // Update search query from args
             if (args != null)
             {
-                apiQuery.Page = ((args.Skip ?? 0) / (args.Top ?? _pageSize)) + 1;
-                apiQuery.PageSize = args.Top ?? _pageSize;
-
-                // Pentru grupare, modific?m Sort s? includ? coloana de grupare PRIMA
-                if (_isGrouped && _currentGroups.Any())
+                _searchQuery.Page = ((args.Skip ?? 0) / (args.Top ?? _pageSize)) + 1;
+                _searchQuery.PageSize = args.Top ?? _pageSize;
+                _pageSize = _searchQuery.PageSize;
+                
+                if (!string.IsNullOrEmpty(args.OrderBy))
                 {
-                    var groupByColumns = string.Join(",", _currentGroups.Select(g => 
-                    {
-                        var direction = g.SortOrder?.ToLower() == "desc" ? "desc" : "asc";
-                        return $"{g.Property}:{direction}";
-                    }));
-                    
-                    // Combin?m gruparea cu sortarea existent?
-                    if (!string.IsNullOrEmpty(args.OrderBy))
-                    {
-                        apiQuery.Sort = $"{groupByColumns},{args.OrderBy}";
-                    }
-                    else if (!string.IsNullOrEmpty(_searchQuery.Sort))
-                    {
-                        apiQuery.Sort = $"{groupByColumns},{_searchQuery.Sort}";
-                    }
-                    else
-                    {
-                        apiQuery.Sort = groupByColumns;
-                    }
-                }
-                else if (!string.IsNullOrEmpty(args.OrderBy))
-                {
-                    apiQuery.Sort = args.OrderBy;
+                    _searchQuery.Sort = args.OrderBy.ToLower();
                 }
 
-                if (args.Filters != null && args.Filters.Any())
+                // Handle filters
+                if (args.Filters?.Any() == true)
                 {
-                    ApplyDataGridFilters(args.Filters);
-                    
-                    apiQuery.Departament = _selectedDepartament;
-                    apiQuery.Pozitie = _selectedPozitie;
-                    apiQuery.EsteActiv = _selectedStatus;
-                    apiQuery.Nume = _filterNume;
-                    apiQuery.Prenume = _filterPrenume;
-                    apiQuery.Specializare = _filterSpecializare;
-                    apiQuery.NumarLicenta = _filterNumarLicenta;
-                    apiQuery.Telefon = _filterTelefon;
-                    apiQuery.Email = _filterEmail;
+                    foreach (var filter in args.Filters)
+                    {
+                        ApplyFilter(filter);
+                    }
                 }
             }
 
-            var result = await PersonalMedicalApiService.GetPagedAsync(apiQuery);
-            if (result.IsSuccess && result.Value != null)
+            var queryString = BuildQueryString();
+            var response = await Http.GetAsync($"api/Persoane{queryString}");
+            
+            if (response.IsSuccessStatusCode)
             {
-                _data = result.Value.Items;
-                _totalCount = result.Value.TotalCount;
+                var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<PersoanaListDto>>();
                 
-                if (_isGrouped)
+                if (pagedResult != null)
                 {
-                    UpdateGroupingStatistics();
+                    _data = pagedResult.Items;
+                    _totalCount = pagedResult.TotalCount;
+                    
+                    if (_isGrouped)
+                    {
+                        UpdateGroupingStatistics();
+                    }
+                }
+                else
+                {
+                    _data = new List<PersoanaListDto>();
+                    _totalCount = 0;
                 }
             }
             else
             {
                 _hasError = true;
-                _errorMessage = string.Join(", ", result.Errors);
-                _data = new List<PersonalMedicalListDto>();
+                _errorMessage = "Eroare la incarcarea datelor de persoane";
+                _data = new List<PersoanaListDto>();
                 _totalCount = 0;
             }
+        }
+        catch (HttpRequestException)
+        {
+            _hasError = true;
+            _errorMessage = "Nu se poate conecta la server";
+            _data = new List<PersoanaListDto>();
+            _totalCount = 0;
         }
         catch (Exception ex)
         {
             _hasError = true;
-            _errorMessage = $"Eroare: {ex.Message}";
-            _data = new List<PersonalMedicalListDto>();
+            _errorMessage = $"Eroare nespecificata: {ex.Message}";
+            _data = new List<PersoanaListDto>();
             _totalCount = 0;
         }
         finally
@@ -413,33 +355,58 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
     }
 
-    private void ApplyDataGridFilters(IEnumerable<FilterDescriptor> filters)
+    private void ApplyFilter(FilterDescriptor filter)
     {
-        _selectedDepartament = null;
-        _selectedPozitie = null;
-        _selectedStatus = null;
-        _filterNume = _filterPrenume = _filterSpecializare = _filterNumarLicenta = _filterTelefon = _filterEmail = null;
+        // Basic filter implementation - can be extended
+        var property = filter.Property?.ToLower();
+        var value = filter.FilterValue?.ToString();
 
-        foreach (var filter in filters)
+        if (string.IsNullOrEmpty(property) || string.IsNullOrEmpty(value))
+            return;
+
+        switch (property)
         {
-            var prop = filter.Property?.ToLower();
-            if (string.IsNullOrWhiteSpace(prop)) continue;
-            var valText = filter.FilterValue?.ToString();
-            if (string.IsNullOrWhiteSpace(valText)) continue;
-
-            switch (prop)
-            {
-                case "departament": _selectedDepartament = valText; break;
-                case "pozitie": _selectedPozitie = valText; break;
-                case "esteactiv": if (bool.TryParse(valText, out bool b)) _selectedStatus = b; break;
-                case "nume": _filterNume = valText; break;
-                case "prenume": _filterPrenume = valText; break;
-                case "specializare": _filterSpecializare = valText; break;
-                case "numarlicenta": _filterNumarLicenta = valText; break;
-                case "telefon": _filterTelefon = valText; break;
-                case "email": _filterEmail = valText; break;
-            }
+            case "numecomplet":
+                if (string.IsNullOrEmpty(_searchQuery.Search))
+                    _searchQuery.Search = value;
+                break;
+            case "judet":
+                _searchQuery.Judet = value;
+                break;
+            case "localitate":
+                _searchQuery.Localitate = value;
+                break;
+            case "esteactiva":
+                if (bool.TryParse(value, out bool status))
+                    _searchQuery.EsteActiv = status;
+                break;
         }
+    }
+
+    private string BuildQueryString()
+    {
+        var queryParams = new List<string>
+        {
+            $"Page={_searchQuery.Page}",
+            $"PageSize={_searchQuery.PageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery.Search))
+            queryParams.Add($"Search={Uri.EscapeDataString(_searchQuery.Search)}");
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery.Judet))
+            queryParams.Add($"Judet={Uri.EscapeDataString(_searchQuery.Judet)}");
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery.Localitate))
+            queryParams.Add($"Localitate={Uri.EscapeDataString(_searchQuery.Localitate)}");
+
+        if (_searchQuery.EsteActiv.HasValue)
+            queryParams.Add($"EsteActiva={_searchQuery.EsteActiv.Value}");
+
+        if (!string.IsNullOrWhiteSpace(_searchQuery.Sort))
+            queryParams.Add($"Sort={_searchQuery.Sort}");
+
+        return queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
     }
 
     public async Task OnSearchInput(ChangeEventArgs args)
@@ -454,23 +421,20 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         _searchTimer = new Timer(async _ =>
         {
             _searchQuery.Page = 1;
-            await InvokeAsync(async () =>
+            await InvokeAsync(async () => 
             {
                 if (_dataGrid != null)
                     await _dataGrid.Reload();
                 else
                     await LoadDataAsync(new LoadDataArgs());
+                StateHasChanged();
             });
         }, null, 300, Timeout.Infinite);
     }
 
     public async Task ResetFilters()
     {
-        _searchQuery.Search = string.Empty;
-        _selectedDepartament = null;
-        _selectedPozitie = null;
-        _selectedStatus = null;
-        _filterNume = _filterPrenume = _filterSpecializare = _filterNumarLicenta = _filterTelefon = _filterEmail = null;
+        _searchQuery = new PersoanaSearchQuery { PageSize = _pageSize };
         if (_dataGrid != null)
         {
             _dataGrid.Reset(true);
@@ -512,28 +476,26 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
     }
 
-    public async Task CreateNewPersonal()
+    // Navigation Actions
+    public void CreateNewPersoana()
     {
-        // Navigate to dedicated add page instead of dialog - following refactoring plan
-        Navigation.NavigateTo("/medical/personal/nou");
+        Navigation.NavigateTo("/administrare/persoane/nou");
     }
 
-    public void EditPersonal(Guid personalId)
+    public void EditPersoana(int persoanaId)
     {
-        // Navigare direct? la pagina de editare
-        Navigation.NavigateTo($"/medical/personal/editare/{personalId}");
+        Navigation.NavigateTo($"/administrare/persoane/editare/{persoanaId}");
     }
 
-    public async Task ViewPersonal(Guid personalId)
+    public void ViewPersoana(int persoanaId)
     {
-        // Navigare c?tre pagina de vizualizare dedicat?
-        Navigation.NavigateTo($"/medical/personal-view/{personalId}");
+        Navigation.NavigateTo($"/administrare/persoane-view/{persoanaId}");
     }
 
-    public async Task DeletePersonal(Guid personalId, string numeComplet)
+    public async Task DeletePersoana(int persoanaId, string numeComplet)
     {
         var confirmed = await DialogService.Confirm(
-            $"Esti sigur ca vrei sa stergi personalul medical '{numeComplet}'?",
+            $"Esti sigur ca vrei sa stergi persoana '{numeComplet}'?",
             "Confirmare stergere",
             new ConfirmOptions() { OkButtonText = "Sterge", CancelButtonText = "Anuleaza" });
 
@@ -541,26 +503,27 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         {
             try
             {
-                var result = await PersonalMedicalApiService.DeleteAsync(personalId);
+                var response = await Http.DeleteAsync($"api/Persoane/{persoanaId}");
                 
-                if (result.IsSuccess)
+                if (response.IsSuccessStatusCode)
                 {
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
                         Summary = "Succes",
-                        Detail = $"Personal medical '{numeComplet}' a fost sters cu succes",
+                        Detail = $"Persoana '{numeComplet}' a fost stearsa cu succes",
                         Duration = 3000
                     });
                     if (_dataGrid != null) await _dataGrid.Reload();
                 }
                 else
                 {
+                    var errorContent = await response.Content.ReadAsStringAsync();
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
                         Summary = "Eroare",
-                        Detail = string.Join(", ", result.Errors),
+                        Detail = $"Eroare la stergerea persoanei: {errorContent}",
                         Duration = 4000
                     });
                 }
@@ -571,7 +534,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
                 {
                     Severity = NotificationSeverity.Error,
                     Summary = "Eroare",
-                    Detail = $"Eroare la stergerea personalului: {ex.Message}",
+                    Detail = $"Eroare la stergerea persoanei: {ex.Message}",
                     Duration = 4000
                 });
             }
@@ -679,7 +642,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
     }
 
-    public void OnRender(DataGridRenderEventArgs<PersonalMedicalListDto> args)
+    public void OnRender(DataGridRenderEventArgs<PersoanaListDto> args)
     {
         var hasGroups = args.Grid.Groups?.Any() == true;
         var groupsChanged = hasGroups && GroupsChanged(args.Grid.Groups);

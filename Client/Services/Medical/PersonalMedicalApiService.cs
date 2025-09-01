@@ -3,6 +3,7 @@ using System.Text.Json;
 using Shared.Common;
 using Shared.DTOs.Medical;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Client.Services.Medical;
 
@@ -33,7 +34,9 @@ public class PersonalMedicalApiService : IPersonalMedicalApiService
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Converters = { new JsonStringEnumConverter() }
         };
     }
 
@@ -275,16 +278,26 @@ public class PersonalMedicalApiService : IPersonalMedicalApiService
     {
         try
         {
+            Console.WriteLine($"[PersonalMedicalApiService] Calling CreateAsync API with request: {System.Text.Json.JsonSerializer.Serialize(request)}");
+            Console.WriteLine($"[PersonalMedicalApiService] API URL: {_httpClient.BaseAddress}");
+            
             var response = await _httpClient.PostAsJsonAsync("api/PersonalMedical", request, _jsonOptions);
+
+            Console.WriteLine($"[PersonalMedicalApiService] API Response: StatusCode={response.StatusCode}, IsSuccess={response.IsSuccessStatusCode}");
 
             if (response.IsSuccessStatusCode)
             {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[PersonalMedicalApiService] Response content: {responseContent}");
+                
                 var createResult = await response.Content.ReadFromJsonAsync<Result<Guid>>(_jsonOptions);
+                Console.WriteLine($"[PersonalMedicalApiService] Parsed result: IsSuccess={createResult?.IsSuccess}, Value={createResult?.Value}, Errors={createResult?.Errors?.Count ?? 0}");
+                
                 return createResult!;
             }
 
             var errorContent = await response.Content.ReadAsStringAsync();
-            _logger.LogWarning("API returned error for Create: {StatusCode} - {Content}", response.StatusCode, errorContent);
+            Console.WriteLine($"[PersonalMedicalApiService] API returned error for Create: {response.StatusCode} - {errorContent}");
             
             try
             {
@@ -298,7 +311,8 @@ public class PersonalMedicalApiService : IPersonalMedicalApiService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in CreateAsync");
+            Console.WriteLine($"[PersonalMedicalApiService] Error in CreateAsync: {ex.Message}");
+            Console.WriteLine($"[PersonalMedicalApiService] Stack trace: {ex.StackTrace}");
             return Result<Guid>.Failure($"Eroare neasteptata: {ex.Message}");
         }
     }

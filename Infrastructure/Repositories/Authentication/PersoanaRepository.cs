@@ -2,6 +2,7 @@ using Dapper;
 using Shared.Common;
 using Shared.Enums;
 using Shared.Models.Authentication;
+using Shared.DTOs.Authentication;
 using System.Data;
 using Application.Services.Authentication;
 
@@ -39,10 +40,13 @@ public class PersoanaRepository : IPersoanaRepository
             parameters.Add("@NumarActIdentitate", persoana.NumarActIdentitate);
             parameters.Add("@StareCivila", persoana.StareCivila?.ToString());
             parameters.Add("@Gen", persoana.Gen?.ToString());
+            parameters.Add("@Telefon", persoana.Telefon);
+            parameters.Add("@Email", persoana.Email);
+            parameters.Add("@EsteActiva", persoana.EsteActiva);
 
-            var id = await _connection.QuerySingleAsync<int>("sp_CreatePersoana", parameters, commandType: CommandType.StoredProcedure);
+            var result = await _connection.QueryFirstAsync<int>("sp_CreatePersoana", parameters, commandType: CommandType.StoredProcedure);
             
-            return Result<int>.Success(id, "Persoana a fost creat? cu succes");
+            return Result<int>.Success(result, "Persoana a fost creata cu succes");
         }
         catch (Exception ex)
         {
@@ -77,14 +81,14 @@ public class PersoanaRepository : IPersoanaRepository
     {
         try
         {
-            var persoane = await _connection.QueryAsync<dynamic>("sp_GetAllPersonal", commandType: CommandType.StoredProcedure);
-            
+            var persoane = await _connection.QueryAsync<dynamic>("sp_GetAllPersoane", commandType: CommandType.StoredProcedure);
             var result = persoane.Select(MapDynamicToPersoana);
+            
             return Result<IEnumerable<Persoana>>.Success(result);
         }
         catch (Exception ex)
         {
-            return Result<IEnumerable<Persoana>>.Failure($"Eroare la ob?inerea persoanelor: {ex.Message}");
+            return Result<IEnumerable<Persoana>>.Failure($"Eroare la obtinerea tuturor persoanelor: {ex.Message}");
         }
     }
 
@@ -109,10 +113,13 @@ public class PersoanaRepository : IPersoanaRepository
             parameters.Add("@NumarActIdentitate", persoana.NumarActIdentitate);
             parameters.Add("@StareCivila", persoana.StareCivila?.ToString());
             parameters.Add("@Gen", persoana.Gen?.ToString());
+            parameters.Add("@Telefon", persoana.Telefon);
+            parameters.Add("@Email", persoana.Email);
+            parameters.Add("@EsteActiva", persoana.EsteActiva);
 
             await _connection.ExecuteAsync("sp_UpdatePersoana", parameters, commandType: CommandType.StoredProcedure);
             
-            return Result.Success("Persoana a fost actualizat? cu succes");
+            return Result.Success("Persoana a fost actualizata cu succes");
         }
         catch (Exception ex)
         {
@@ -129,11 +136,11 @@ public class PersoanaRepository : IPersoanaRepository
 
             await _connection.ExecuteAsync("sp_DeletePersoana", parameters, commandType: CommandType.StoredProcedure);
             
-            return Result.Success("Persoana a fost ?tears? cu succes");
+            return Result.Success("Persoana a fost stearsa cu succes");
         }
         catch (Exception ex)
         {
-            return Result.Failure($"Eroare la ?tergerea persoanei: {ex.Message}");
+            return Result.Failure($"Eroare la stergerea persoanei: {ex.Message}");
         }
     }
 
@@ -141,22 +148,20 @@ public class PersoanaRepository : IPersoanaRepository
     {
         try
         {
-            var query = "SELECT COUNT(1) FROM Persoana WHERE CNP = @CNP";
-            if (excludeId.HasValue)
+            // Don't check for empty or null CNP
+            if (string.IsNullOrWhiteSpace(cnp))
             {
-                query += " AND Id != @ExcludeId";
+                return Result<bool>.Success(false);
             }
 
             var parameters = new DynamicParameters();
             parameters.Add("@CNP", cnp);
-            if (excludeId.HasValue)
-            {
-                parameters.Add("@ExcludeId", excludeId.Value);
-            }
+            parameters.Add("@ExcludeId", excludeId);
 
-            var count = await _connection.QuerySingleAsync<int>(query, parameters);
+            var result = await _connection.QueryFirstAsync<dynamic>("sp_CheckCNPExists", parameters, commandType: CommandType.StoredProcedure);
+            var exists = (int)result.ExistsCNP == 1;
             
-            return Result<bool>.Success(count > 0);
+            return Result<bool>.Success(exists);
         }
         catch (Exception ex)
         {
@@ -164,12 +169,119 @@ public class PersoanaRepository : IPersoanaRepository
         }
     }
 
+    public async Task<Result<PagedResult<PersoanaListDto>>> GetPagedAsync(PersoanaSearchQuery query)
+    {
+        try
+        {
+            // Use simple SQL query like PersonalMedical instead of complex stored procedure
+            var whereClause = "WHERE 1=1";
+            var parameters = new DynamicParameters();
+
+            // Build WHERE conditions
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                whereClause += " AND (Nume LIKE @Search OR Prenume LIKE @Search OR CONCAT(Nume, ' ', Prenume) LIKE @Search OR Email LIKE @Search OR Telefon LIKE @Search)";
+                parameters.Add("@Search", $"%{query.Search}%");
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Judet))
+            {
+                whereClause += " AND Judet = @Judet";
+                parameters.Add("@Judet", query.Judet);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Localitate))
+            {
+                whereClause += " AND Localitate = @Localitate";
+                parameters.Add("@Localitate", query.Localitate);
+            }
+
+            if (query.EsteActiv.HasValue)
+            {
+                whereClause += " AND EsteActiva = @EsteActiva";
+                parameters.Add("@EsteActiva", query.EsteActiv.Value);
+            }
+
+            // Build ORDER BY
+            var orderBy = "ORDER BY Nume, Prenume";
+            if (!string.IsNullOrWhiteSpace(query.Sort))
+            {
+                orderBy = $"ORDER BY {query.Sort}";
+            }
+
+            // Calculate pagination
+            var offset = (query.Page - 1) * query.PageSize;
+            parameters.Add("@Offset", offset);
+            parameters.Add("@PageSize", query.PageSize);
+
+            // Count query
+            var countSql = $@"
+                SELECT COUNT(*) 
+                FROM Persoane 
+                {whereClause}";
+
+            // Data query
+            var dataSql = $@"
+                SELECT 
+                    Id,
+                    Nume,
+                    Prenume,
+                    CONCAT(Nume, ' ', Prenume) as NumeComplet,
+                    CNP,
+                    DataNasterii,
+                    CASE 
+                        WHEN DataNasterii IS NOT NULL 
+                        THEN DATEDIFF(YEAR, DataNasterii, GETDATE()) - 
+                             CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, DataNasterii, GETDATE()), DataNasterii) > GETDATE() 
+                                  THEN 1 ELSE 0 END
+                        ELSE 0 
+                    END as Varsta,
+                    Gen,
+                    Telefon,
+                    Email,
+                    Judet,
+                    Localitate,
+                    CASE 
+                        WHEN Strada IS NOT NULL OR NumarStrada IS NOT NULL OR Localitate IS NOT NULL OR Judet IS NOT NULL
+                        THEN CONCAT(
+                            ISNULL(Strada + ' ', ''),
+                            CASE WHEN NumarStrada IS NOT NULL THEN 'nr. ' + NumarStrada + ' ' ELSE '' END,
+                            ISNULL(Localitate + ' ', ''),
+                            CASE WHEN Judet IS NOT NULL THEN 'jud. ' + Judet ELSE '' END
+                        )
+                        ELSE NULL 
+                    END as Adresa,
+                    EsteActiva,
+                    DataCreare
+                FROM Persoane 
+                {whereClause}
+                {orderBy}
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            // Execute queries
+            var totalCount = await _connection.QueryFirstAsync<int>(countSql, parameters);
+            var items = await _connection.QueryAsync<PersoanaListDto>(dataSql, parameters);
+
+            var result = new PagedResult<PersoanaListDto>(
+                items,
+                totalCount,
+                query.Page,
+                query.PageSize);
+
+            return Result<PagedResult<PersoanaListDto>>.Success(result);
+        }
+        catch (Exception ex)
+        {
+            return Result<PagedResult<PersoanaListDto>>.Failure($"Eroare la obtinerea persoanelor paginate: {ex.Message}");
+        }
+    }
+
     private static Persoana MapDynamicToPersoana(dynamic item)
     {
         return new Persoana
         {
-            Id = item.Id,
-            Guid = item.Guid,
+            Id = item.Id ?? 0,
+            Guid = item.Guid ?? Guid.Empty,
             Nume = item.Nume ?? string.Empty,
             Prenume = item.Prenume ?? string.Empty,
             Judet = item.Judet,
@@ -182,11 +294,46 @@ public class PersoanaRepository : IPersoanaRepository
             DataCreare = item.DataCreare,
             DataModificare = item.DataModificare,
             CNP = item.CNP,
-            TipActIdentitate = SafeParseEnum<TipActIdentitate>(item.TipActIdentitate),
+            TipActIdentitate = ParseEnum<TipActIdentitate>(item.TipActIdentitate),
             SerieActIdentitate = item.SerieActIdentitate,
             NumarActIdentitate = item.NumarActIdentitate,
-            StareCivila = SafeParseEnum<StareCivila>(item.StareCivila),
-            Gen = SafeParseEnum<Gen>(item.Gen)
+            StareCivila = ParseEnum<StareCivila>(item.StareCivila),
+            Gen = ParseEnum<Gen>(item.Gen),
+            Telefon = item.Telefon,
+            Email = item.Email,
+            EsteActiva = item.EsteActiva ?? true
+        };
+    }
+
+    private static PersoanaListDto MapDynamicToPersoanaListDto(dynamic item)
+    {
+        var varsta = 0;
+        if (item.DataNasterii != null)
+        {
+            var dataNasterii = (DateTime)item.DataNasterii;
+            var today = DateTime.Today;
+            varsta = today.Year - dataNasterii.Year;
+            if (dataNasterii.Date > today.AddYears(-varsta))
+                varsta--;
+        }
+
+        return new PersoanaListDto
+        {
+            Id = item.Id ?? 0,
+            Nume = item.Nume ?? string.Empty,
+            Prenume = item.Prenume ?? string.Empty,
+            NumeComplet = $"{item.Nume ?? ""} {item.Prenume ?? ""}".Trim(),
+            CNP = item.CNP,
+            DataNasterii = item.DataNasterii,
+            Varsta = varsta,
+            Gen = item.Gen,
+            Telefon = item.Telefon,
+            Email = item.Email,
+            Judet = item.Judet,
+            Localitate = item.Localitate,
+            Adresa = item.Adresa,
+            EsteActiva = item.EsteActiva ?? true,
+            DataCreare = item.DataCreare
         };
     }
 
@@ -194,97 +341,14 @@ public class PersoanaRepository : IPersoanaRepository
     /// Safe enum parsing that handles legacy values and unknown enum values
     /// Updated to handle both short and long enum values for maximum compatibility
     /// </summary>
-    private static T? SafeParseEnum<T>(dynamic value) where T : struct, Enum
+    private static T? ParseEnum<T>(string? value) where T : struct, Enum
     {
-        if (value == null)
+        if (string.IsNullOrEmpty(value))
             return null;
 
-        var stringValue = value.ToString();
-        if (string.IsNullOrEmpty(stringValue))
-            return null;
+        if (Enum.TryParse<T>(value, true, out var result))
+            return result;
 
-        // Handle legacy mappings for specific enums
-        if (typeof(T) == typeof(TipActIdentitate))
-        {
-            return stringValue.ToUpper() switch
-            {
-                // Short values (for DB compatibility)
-                "CI" => (T)(object)TipActIdentitate.CI,
-                "PASAPORT" => (T)(object)TipActIdentitate.Pasaport,
-                "PERMIS" => (T)(object)TipActIdentitate.Permis,
-                "CERTIFICAT" => (T)(object)TipActIdentitate.Certificat,
-                "ALTUL" => (T)(object)TipActIdentitate.Altul,
-                
-                // Long values (for completeness)
-                "CARTEIDENTITATE" => (T)(object)TipActIdentitate.CarteIdentitate,
-                "CARTE IDENTITATE" => (T)(object)TipActIdentitate.CarteIdentitate,
-                "CARTE DE IDENTITATE" => (T)(object)TipActIdentitate.CarteIdentitate,
-                "PERMISCONDUCERE" => (T)(object)TipActIdentitate.PermisConducere,
-                "PERMIS CONDUCERE" => (T)(object)TipActIdentitate.PermisConducere,
-                "PERMIS DE CONDUCERE" => (T)(object)TipActIdentitate.PermisConducere,
-                "CERTIFICATNASTERE" => (T)(object)TipActIdentitate.CertificatNastere,
-                "CERTIFICAT NASTERE" => (T)(object)TipActIdentitate.CertificatNastere,
-                "CERTIFICAT DE NASTERE" => (T)(object)TipActIdentitate.CertificatNastere,
-                
-                // Truncated values (from previous errors)
-                "CARTE" => (T)(object)TipActIdentitate.CI,
-                "PASAP" => (T)(object)TipActIdentitate.Pasaport,
-                "PERMI" => (T)(object)TipActIdentitate.Permis,
-                "CERTI" => (T)(object)TipActIdentitate.Certificat,
-                
-                _ => Enum.TryParse<T>(stringValue, true, out T result) ? result : null
-            };
-        }
-
-        if (typeof(T) == typeof(StareCivila))
-        {
-            return stringValue.ToUpper() switch
-            {
-                // Short values for compatibility
-                "CELIBATAR" => (T)(object)StareCivila.Necasatorit,
-                "CASATORIT" => (T)(object)StareCivila.Casatorit,
-                "DIVORTIT" => (T)(object)StareCivila.Divortit,
-                "VADUV" => (T)(object)StareCivila.Vaduv,
-                "PARTENER" => (T)(object)StareCivila.Concubinaj,
-                
-                // Standard long values
-                "NECASATORIT" => (T)(object)StareCivila.Necasatorit,
-                "NEMARITAT" => (T)(object)StareCivila.Necasatorit,
-                "MARIAJ" => (T)(object)StareCivila.Casatorit,
-                "MARITAT" => (T)(object)StareCivila.Casatorit,
-                "DIVORTAT" => (T)(object)StareCivila.Divortit,
-                "VADOVA" => (T)(object)StareCivila.Vaduv,
-                "VADUVE" => (T)(object)StareCivila.Vaduv,
-                "CONCUBINAJ" => (T)(object)StareCivila.Concubinaj,
-                "PARTENERIAT" => (T)(object)StareCivila.Concubinaj,
-                
-                _ => Enum.TryParse<T>(stringValue, true, out T result) ? result : null
-            };
-        }
-
-        if (typeof(T) == typeof(Gen))
-        {
-            return stringValue.ToUpper() switch
-            {
-                // Short values for compatibility
-                "M" => (T)(object)Gen.Masculin,
-                "F" => (T)(object)Gen.Feminin,
-                "N" => (T)(object)Gen.Neprecizat,
-                
-                // Standard long values
-                "MASCULIN" => (T)(object)Gen.Masculin,
-                "BARBAT" => (T)(object)Gen.Masculin,
-                "MALE" => (T)(object)Gen.Masculin,
-                "FEMININ" => (T)(object)Gen.Feminin,
-                "FEMEIE" => (T)(object)Gen.Feminin,
-                "FEMALE" => (T)(object)Gen.Feminin,
-                "NEPRECIZAT" => (T)(object)Gen.Neprecizat,
-                
-                _ => Enum.TryParse<T>(stringValue, true, out T result) ? result : null
-            };
-        }
-
-        // Default fallback for standard enum parsing
-        return Enum.TryParse<T>(stringValue, true, out T defaultResult) ? defaultResult : null;
+        return null;
     }
 }

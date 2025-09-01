@@ -213,7 +213,7 @@
                 Setari clinica
             </div>
 
-            <!-- Admin menu - UPDATED cu Personal Medical -->
+            <!-- Admin menu - UPDATED cu Personal Medical si Persoane -->
             <div class="admin-nav-link" @onclick="@ToggleAdminMenu">
                 <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" style="margin-right: 12px;" />
                 Administrare
@@ -221,9 +221,22 @@
             @if (_adminExpanded)
             {
                 <div style="margin-left:32px; padding: 4px 0;">
-                    <MudNavLink Href="/persoane" Icon="@Icons.Material.Filled.People">
+                    <!-- Persoane Section -->
+                    <MudNavLink @onclick="@TogglePersoaneMenu" Icon="@Icons.Material.Filled.People" style="font-size: 13px; cursor: pointer;">
                         Persoane
                     </MudNavLink>
+                    @if (_persoaneExpanded)
+                    {
+                        <div style="margin-left:32px; padding: 2px 0;">
+                            <MudNavLink Href="/administrare/persoane" Icon="@Icons.Material.Filled.Group">
+                                Vizualizare persoane
+                            </MudNavLink>
+                            <MudNavLink Href="/administrare/gestionare-persoane" Icon="@Icons.Material.Filled.ManageAccounts">
+                                Gestionare persoane
+                            </MudNavLink>
+                        </div>
+                    }
+                    
                     <MudNavLink Href="/utilizatori" Icon="@Icons.Material.Filled.ManageAccounts">
                         Utilizatori
                     </MudNavLink>
@@ -241,7 +254,6 @@
                             <MudNavLink Href="/medical/gestionare-personal" Icon="@Icons.Material.Filled.ManageAccounts">
                                 Gestionare personal
                             </MudNavLink>
-                            <!-- Calendar programari removed -->
                         </div>
                     }
                     
@@ -274,6 +286,7 @@
     private bool _investigatiiExpanded = false;
     private bool _monitorizareExpanded = false;
     private bool _personalExpanded = false;
+    private bool _persoaneExpanded = false;
 
     private async Task Logout()
     {
@@ -302,6 +315,7 @@
     void ToggleInvestigatiiMenu() => _investigatiiExpanded = !_investigatiiExpanded;
     void ToggleMonitorizareMenu() => _monitorizareExpanded = !_monitorizareExpanded;
     void TogglePersonalMenu() => _personalExpanded = !_personalExpanded;
+    void TogglePersoaneMenu() => _persoaneExpanded = !_persoaneExpanded;
 
     // Navigation methods
     void NavigateToRapoarte() => NavigationManager.NavigateTo("/medical/rapoarte");

@@ -137,7 +137,7 @@ public class UtilizatorService : IUtilizatorService
         }
         if (existingResult.Value == null)
         {
-            return Result.Failure("Utilizatorul nu a fost g?sit");
+            return Result.Failure("Utilizatorul nu a fost gasit");
         }
 
         var existingUtilizator = existingResult.Value;
@@ -161,10 +161,10 @@ public class UtilizatorService : IUtilizatorService
         }
         if (existsEmailResult.Value)
         {
-            return Result.Failure("Email-ul exist? deja");
+            return Result.Failure("Email-ul exista deja");
         }
 
-        // Verificare existen?? persoan?
+        // Verificare existenta persoana
         var persoanaResult = await _persoanaRepository.GetByIdAsync(request.PersoanaId);
         if (!persoanaResult.IsSuccess)
         {
@@ -172,7 +172,7 @@ public class UtilizatorService : IUtilizatorService
         }
         if (persoanaResult.Value == null)
         {
-            return Result.Failure("Persoana specificat? nu exist?");
+            return Result.Failure("Persoana specificata nu exista");
         }
 
         // Actualizare utilizator
@@ -181,7 +181,7 @@ public class UtilizatorService : IUtilizatorService
         existingUtilizator.Email = request.Email;
         existingUtilizator.Telefon = request.Telefon;
 
-        // Actualizare parol? doar dac? este specificat?
+        // Actualizare parola doar daca este specificata
         if (!string.IsNullOrWhiteSpace(request.ParolaNoua))
         {
             existingUtilizator.ParolaHash = _passwordService.HashPassword(request.ParolaNoua);
@@ -198,7 +198,7 @@ public class UtilizatorService : IUtilizatorService
 
     public async Task<Result> DeleteAsync(int id)
     {
-        // Verificare existen??
+        // Verificare existenta
         var existingResult = await _utilizatorRepository.GetByIdAsync(id);
         if (!existingResult.IsSuccess)
         {
@@ -206,7 +206,7 @@ public class UtilizatorService : IUtilizatorService
         }
         if (existingResult.Value == null)
         {
-            return Result.Failure("Utilizatorul nu a fost g?sit");
+            return Result.Failure("Utilizatorul nu a fost gasit");
         }
 
         var deleteResult = await _utilizatorRepository.DeleteAsync(id);

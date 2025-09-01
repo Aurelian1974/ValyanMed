@@ -1,0 +1,325 @@
+@page "/administrare/gestionare-persoane"
+@using global::Shared.DTOs.Authentication
+@using global::Shared.Common
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen
+@using Radzen.Blazor
+
+<PageTitle>Gestionare Persoane - ValyanMed</PageTitle>
+
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+    
+    <!-- Header -->
+    <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Gestionare Persoane</RadzenText>
+    
+    <!-- Header Actions -->
+    <RadzenCard Class="mb-4">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.End">
+                <RadzenFormField Text="Cautare rapida" Style="width: 300px;">
+                    <RadzenTextBox @bind-Value="_searchQuery.Search"
+                                   Placeholder="Cauta persoane..."
+                                   @oninput="OnSearchInput"
+                                   Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenButton Text="Reseteaza filtre" 
+                             Icon="clear" 
+                             ButtonStyle="ButtonStyle.Light" 
+                             Variant="Radzen.Variant.Outlined"
+                             Click="@ResetFilters" />
+            </RadzenStack>
+            <RadzenButton Text="ADAUGA PERSOANA NOUA" 
+                         Icon="add" 
+                         ButtonStyle="ButtonStyle.Primary" 
+                         Click="@CreateNewPersoana" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <!-- Data Grid -->
+    <RadzenCard>
+        @if (_isGrouped && _currentGroups.Any())
+        {
+            <!-- Informa?ii despre grupare -->
+            <RadzenCard Class="mb-3" Style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
+                        <RadzenIcon Icon="view_module" Style="color: #0d6efd; font-size: 1.2rem;" />
+                        <RadzenText TextStyle="TextStyle.Body1">
+                            <strong>Grupat dupa:</strong> @string.Join(", ", _currentGroups.Select(g => g.Property))
+                        </RadzenText>
+                        <RadzenCheckBox @bind-Value="_allGroupsExpanded" 
+                                       Name="allGroupsExpanded" 
+                                       TValue="bool" 
+                                       Change="@OnAllGroupsExpandedChange" />
+                        <RadzenLabel Text="Toate grupurile expandate" Component="allGroupsExpanded" Style="margin-left: 8px;" />
+                    </RadzenStack>
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
+                        <RadzenButton Icon="clear" 
+                                     ButtonStyle="ButtonStyle.Light" 
+                                     Variant="Radzen.Variant.Text" 
+                                     Size="ButtonSize.Small"
+                                     Title="Elimina gruparea"
+                                     Click="@ClearGrouping" />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        }
+
+        <RadzenDataGrid @ref="_dataGrid"
+                        TItem="PersoanaListDto"
+                        class="persoane-grid"
+                        Data="@_data"
+                        Count="@_totalCount"
+                        LoadData="@LoadDataAsync"
+                        Render="@OnRender"
+                        AllowPaging="true"
+                        PagerAlwaysVisible="true"
+                        PagerHorizontalAlign="Radzen.HorizontalAlign.Center"
+                        AllowSorting="true"
+                        AllowColumnResize="true"
+                        AllowFiltering="true"
+                        FilterMode="FilterMode.Advanced"
+                        ShowFilterRow="true"
+                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        LogicalFilterOperator="LogicalFilterOperator.And"
+                        AllowGrouping="true"
+                        AllGroupsExpanded="@_allGroupsExpanded"
+                        GroupRowExpand="@OnGroupRowExpand"
+                        GroupRowCollapse="@OnGroupRowCollapse"
+                        ExpandGroupAriaLabel="Expandeaza grup"
+                        RemoveGroupAriaLabel="Elimina gruparea"
+                        PageSize="@_pageSize"
+                        PageSizeOptions="@_pageSizeOptions"
+                        ShowPagingSummary="true"
+                        IsLoading="@_isLoading"
+                        ExpandMode="Radzen.DataGridExpandMode.Single"
+                        AllowRowSelectOnRowClick="false"
+                        Settings="@_gridSettings"
+                        SettingsChanged="@OnSettingsChanged"
+                        Style="min-height: 600px;">
+
+            <GroupHeaderTemplate>
+                @context.Data.Key: @context.Data.Count inregistrari
+            </GroupHeaderTemplate>
+
+            <Columns>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="NumeComplet" Title="Nume complet" Width="200px" Filterable="true" Sortable="true" Groupable="true" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="CNP" Title="CNP" Width="150px" Filterable="true" Sortable="true" Groupable="true">
+                    <Template Context="persoana">@(persoana.CNP ?? "Nu este specificat")</Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="DataNasterii" Title="Data nasterii" Width="120px" Filterable="true" Sortable="true" FormatString="{0:dd.MM.yyyy}" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="Varsta" Title="Varsta" Width="80px" Filterable="true" Sortable="true" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="Gen" Title="Gen" Width="100px" Filterable="true" Sortable="true" Groupable="true">
+                    <Template Context="persoana">@(persoana.Gen ?? "Nu este specificat")</Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="Telefon" Title="Telefon" Width="120px" Filterable="true" Sortable="true">
+                    <Template Context="persoana">@(persoana.Telefon ?? "Nu este specificat")</Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="Email" Title="Email" Width="200px" Filterable="true" Sortable="true">
+                    <Template Context="persoana">@(persoana.Email ?? "Nu este specificat")</Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="Judet" Title="Judet" Width="120px" Filterable="true" Sortable="true" Groupable="true">
+                    <Template Context="persoana">@(persoana.Judet ?? "Nu este specificat")</Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="Localitate" Title="Localitate" Width="150px" Filterable="true" Sortable="true" Groupable="true">
+                    <Template Context="persoana">@(persoana.Localitate ?? "Nu este specificata")</Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="EsteActiva" Title="Status" Width="100px" Filterable="true" Sortable="true" Groupable="true">
+                    <Template Context="persoana">
+                        <RadzenBadge Text="@(persoana.EsteActiva ? "Activa" : "Inactiva")" 
+                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                     Variant="Radzen.Variant.Filled"
+                                     Style="font-size: 12px; padding: 4px 8px; white-space: nowrap;" />
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="DataCreare" Title="Data crearii" Width="130px" Filterable="true" Sortable="true" FormatString="{0:dd.MM.yyyy}" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Title="Actiuni" Width="220px" Sortable="false" Filterable="false" Groupable="false">
+                    <Template Context="persoana">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Icon="visibility" 
+                                        ButtonStyle="ButtonStyle.Success" 
+                                        Variant="Radzen.Variant.Outlined" 
+                                        Size="ButtonSize.Small" 
+                                        Title="Vizualizeaza" 
+                                        Click="@(() => ViewPersoana(persoana.Id))" />
+                            <RadzenButton Icon="edit" 
+                                        ButtonStyle="ButtonStyle.Info" 
+                                        Variant="Radzen.Variant.Outlined" 
+                                        Size="ButtonSize.Small" 
+                                        Title="Editeaza" 
+                                        Click="@(() => EditPersoana(persoana.Id))" />
+                            <RadzenButton Icon="delete" 
+                                        ButtonStyle="ButtonStyle.Danger" 
+                                        Variant="Radzen.Variant.Outlined" 
+                                        Size="ButtonSize.Small" 
+                                        Title="Sterge" 
+                                        Click="@(async () => await DeletePersoana(persoana.Id, persoana.NumeComplet))" />
+                        </RadzenStack>
+                    </Template>
+                </Radzen.Blazor.RadzenDataGridColumn>
+            </Columns>
+
+            <!-- Master-Detail Template pentru fiecare rând -->
+            <Template Context="persoana">
+                <RadzenCard Class="m-3" Style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
+                        
+                        <!-- Header Detail -->
+                        <RadzenRow>
+                            <RadzenColumn Size="12">
+                                <RadzenText TextStyle="TextStyle.H5" Class="mb-0">
+                                    <RadzenIcon Icon="badge" Class="me-2" Style="color: #0d6efd;" />
+                                    Detalii Complete - @persoana.NumeComplet
+                                </RadzenText>
+                            </RadzenColumn>
+                        </RadzenRow>
+
+                        <!-- Main Details Row -->
+                        <RadzenRow Gap="2rem">
+                            <!-- Personal Information -->
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenCard Style="height: 100%; background-color: white;">
+                                    <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                                        <RadzenIcon Icon="person" Class="me-2" Style="color: #28a745;" />
+                                        Informatii Personale
+                                    </RadzenText>
+                                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                                        <RadzenRow>
+                                            <RadzenColumn Size="5"><strong>Nume complet:</strong></RadzenColumn>
+                                            <RadzenColumn Size="7">@persoana.NumeComplet</RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="5"><strong>CNP:</strong></RadzenColumn>
+                                            <RadzenColumn Size="7">
+                                                <RadzenBadge Text="@(persoana.CNP ?? "N/A")" BadgeStyle="BadgeStyle.Secondary" Variant="Radzen.Variant.Filled" />
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="5"><strong>Data nasterii:</strong></RadzenColumn>
+                                            <RadzenColumn Size="7">@persoana.DataNasterii?.ToString("dd.MM.yyyy")</RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="5"><strong>Varsta:</strong></RadzenColumn>
+                                            <RadzenColumn Size="7">@persoana.Varsta ani</RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="5"><strong>Gen:</strong></RadzenColumn>
+                                            <RadzenColumn Size="7">
+                                                <RadzenBadge Text="@(persoana.Gen ?? "N/A")" 
+                                                           BadgeStyle="BadgeStyle.Info" 
+                                                           Variant="Radzen.Variant.Outlined" />
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                    </RadzenStack>
+                                </RadzenCard>
+                            </RadzenColumn>
+
+                            <!-- Contact & Location Information -->
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenCard Style="height: 100%; background-color: white;">
+                                    <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                                        <RadzenIcon Icon="contact_phone" Class="me-2" Style="color: #fd7e14;" />
+                                        Contact & Locatie
+                                    </RadzenText>
+                                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                                        <RadzenRow>
+                                            <RadzenColumn Size="4"><strong>Telefon:</strong></RadzenColumn>
+                                            <RadzenColumn Size="8">
+                                                @if (!string.IsNullOrEmpty(persoana.Telefon))
+                                                {
+                                                    <RadzenLink Text="@persoana.Telefon" Path="@($"tel:{persoana.Telefon}")" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Nu este specificat</span>
+                                                }
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="4"><strong>Email:</strong></RadzenColumn>
+                                            <RadzenColumn Size="8">
+                                                @if (!string.IsNullOrEmpty(persoana.Email))
+                                                {
+                                                    <RadzenLink Text="@persoana.Email" Path="@($"mailto:{persoana.Email}")" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Nu este specificat</span>
+                                                }
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="4"><strong>Judet:</strong></RadzenColumn>
+                                            <RadzenColumn Size="8">@(persoana.Judet ?? "Nu este specificat")</RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="4"><strong>Localitate:</strong></RadzenColumn>
+                                            <RadzenColumn Size="8">@(persoana.Localitate ?? "Nu este specificata")</RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="4"><strong>Status:</strong></RadzenColumn>
+                                            <RadzenColumn Size="8">
+                                                <RadzenBadge Text="@(persoana.EsteActiva ? "ACTIVA" : "INACTIVA")" 
+                                                           BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Danger)" 
+                                                           Variant="Radzen.Variant.Filled"
+                                                           Style="font-weight: bold;" />
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                        <RadzenRow>
+                                            <RadzenColumn Size="4"><strong>Data crearii:</strong></RadzenColumn>
+                                            <RadzenColumn Size="8">
+                                                <RadzenText TextStyle="TextStyle.Body2">
+                                                    @persoana.DataCreare?.ToString("dd MMM yyyy, HH:mm")
+                                                </RadzenText>
+                                            </RadzenColumn>
+                                        </RadzenRow>
+                                    </RadzenStack>
+                                </RadzenCard>
+                            </RadzenColumn>
+                        </RadzenRow>
+
+                        <!-- Action Buttons -->
+                        <RadzenRow>
+                            <RadzenColumn Size="12" Class="text-end">
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                                    <RadzenButton Text="Vizualizeaza Complet" 
+                                                Icon="launch" 
+                                                ButtonStyle="ButtonStyle.Info"
+                                                Click="@(() => ViewPersoana(persoana.Id))" />
+                                    <RadzenButton Text="Editeaza" 
+                                                Icon="edit" 
+                                                ButtonStyle="ButtonStyle.Secondary"
+                                                Click="@(() => EditPersoana(persoana.Id))" />
+                                    <RadzenButton Text="Sterge" 
+                                                Icon="delete" 
+                                                ButtonStyle="ButtonStyle.Danger"
+                                                Click="@(async () => await DeletePersoana(persoana.Id, persoana.NumeComplet))" />
+                                </RadzenStack>
+                            </RadzenColumn>
+                        </RadzenRow>
+
+                    </RadzenStack>
+                </RadzenCard>
+            </Template>
+        </RadzenDataGrid>
+    </RadzenCard>
+</RadzenStack>
+
+<style>
+    /* CSS minimal pentru grupuri - conform Plan_refactoring.txt: maxim 2 culori, f?r? override-uri stufoase */
+    .persoane-grid .rz-group-header-custom {
+        transition: background-color 0.2s ease;
+    }
+    
+    .persoane-grid .rz-group-header-custom:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Stilizare minimal? pentru grupurile native RadzenDataGrid */
+    .persoane-grid .rz-group-row {
+        border-left: 3px solid #0d6efd;
+    }
+</style>
+
+@code {
+}

@@ -71,6 +71,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Data layer - Connection factory
 builder.Services.AddScoped<ISqlConnectionFactory, SqlConnectionFactory>();
+builder.Services.AddScoped<IDatabaseTestService, DatabaseTestService>();
 
 // DB connection for repositories (legacy support)
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));

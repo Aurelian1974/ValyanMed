@@ -175,7 +175,7 @@ public class PersonalMedicalService : IPersonalMedicalService
         {
             if (string.IsNullOrWhiteSpace(request.NumarLicenta))
             {
-                errors.Add("Doctorul trebuie sa aibe numar de licenta");
+                errors.Add("Doctorul trebuie sa aiba numar de licenta");
             }
             if (string.IsNullOrWhiteSpace(request.Specializare))
             {
@@ -195,7 +195,7 @@ public class PersonalMedicalService : IPersonalMedicalService
         {
             if (string.IsNullOrWhiteSpace(request.NumarLicenta))
             {
-                errors.Add("Doctorul trebuie sa aibe numar de licenta");
+                errors.Add("Doctorul trebuie sa aiba numar de licenta");
             }
             if (string.IsNullOrWhiteSpace(request.Specializare))
             {

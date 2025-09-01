@@ -27,15 +27,13 @@ public class CreatePersoanaValidator : AbstractValidator<CreatePersoanaRequest>
             .GreaterThan(DateTime.Today.AddYears(-120)).When(x => x.DataNasterii.HasValue)
             .WithMessage("Data nasterii nu este realista");
 
-        RuleFor(x => x.SerieActIdentitate)
-            .Length(2).When(x => !string.IsNullOrEmpty(x.SerieActIdentitate))
-            .WithMessage("Seria actului de identitate trebuie sa aiba 2 caractere");
+        RuleFor(x => x.Email)
+            .EmailAddress().When(x => !string.IsNullOrEmpty(x.Email))
+            .WithMessage("Email-ul nu are un format valid");
 
-        RuleFor(x => x.NumarActIdentitate)
-            .Length(6).When(x => !string.IsNullOrEmpty(x.NumarActIdentitate))
-            .WithMessage("Numarul actului de identitate trebuie sa aiba 6 cifre")
-            .Matches(@"^\d{6}$").When(x => !string.IsNullOrEmpty(x.NumarActIdentitate))
-            .WithMessage("Numarul actului de identitate trebuie sa contina doar cifre");
+        RuleFor(x => x.Telefon)
+            .Matches(@"^[0-9+\-\s]+$").When(x => !string.IsNullOrEmpty(x.Telefon))
+            .WithMessage("Numarul de telefon poate contine doar cifre, +, - si spatii");
     }
 }
 
@@ -66,14 +64,12 @@ public class UpdatePersoanaValidator : AbstractValidator<UpdatePersoanaRequest>
             .GreaterThan(DateTime.Today.AddYears(-120)).When(x => x.DataNasterii.HasValue)
             .WithMessage("Data nasterii nu este realista");
 
-        RuleFor(x => x.SerieActIdentitate)
-            .Length(2).When(x => !string.IsNullOrEmpty(x.SerieActIdentitate))
-            .WithMessage("Seria actului de identitate trebuie sa aiba 2 caractere");
+        RuleFor(x => x.Email)
+            .EmailAddress().When(x => !string.IsNullOrEmpty(x.Email))
+            .WithMessage("Email-ul nu are un format valid");
 
-        RuleFor(x => x.NumarActIdentitate)
-            .Length(6).When(x => !string.IsNullOrEmpty(x.NumarActIdentitate))
-            .WithMessage("Numarul actului de identitate trebuie sa aiba 6 cifre")
-            .Matches(@"^\d{6}$").When(x => !string.IsNullOrEmpty(x.NumarActIdentitate))
-            .WithMessage("Numarul actului de identitate trebuie sa contina doar cifre");
+        RuleFor(x => x.Telefon)
+            .Matches(@"^[0-9+\-\s]+$").When(x => !string.IsNullOrEmpty(x.Telefon))
+            .WithMessage("Numarul de telefon poate contine doar cifre, +, - si spatii");
     }
 }

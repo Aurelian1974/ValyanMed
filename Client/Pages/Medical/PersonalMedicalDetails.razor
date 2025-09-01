@@ -255,6 +255,11 @@
                              Click="GoBack" />
                 
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                    <RadzenButton Text="Editeaza" 
+                                 Icon="edit" 
+                                 ButtonStyle="ButtonStyle.Primary" 
+                                 Variant="Radzen.Variant.Filled"
+                                 Click="@(() => EditPersonal(_personalDetail.PersonalID))" />
                     <RadzenButton Text="Programari" 
                                  Icon="event" 
                                  ButtonStyle="ButtonStyle.Info" 

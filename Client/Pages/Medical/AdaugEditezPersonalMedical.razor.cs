@@ -1,0 +1,644 @@
+using Microsoft.AspNetCore.Components;
+using global::Shared.DTOs.Medical;
+using global::Shared.Enums.Medical;
+using global::Shared.Common;
+using Radzen;
+using Client.Services.Medical;
+using FluentValidation;
+using Shared.Validators.Medical;
+using Microsoft.JSInterop;
+
+namespace Client.Pages.Medical;
+
+public partial class AdaugEditezPersonalMedical : ComponentBase, IDisposable
+{
+    [Inject] private IPersonalMedicalApiService PersonalMedicalApiService { get; set; } = null!;
+    [Inject] private NotificationService NotificationService { get; set; } = null!;
+    [Inject] private DialogService DialogService { get; set; } = null!;
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
+
+    [Parameter] public Guid? PersonalId { get; set; }
+
+    // Form model
+    private CreatePersonalMedicalRequest _model = new() { EsteActiv = true };
+    
+    // Form state
+    private bool _isProcessing = false;
+    private bool _isLoading = false;
+    private bool _isEditMode => PersonalId.HasValue && PersonalId.Value != Guid.Empty;
+    
+    // Business logic state
+    private bool _showSpecializareWarning = false;
+    private bool _showLicentaWarning = false;
+    private bool _showBusinessRulesInfo => _showSpecializareWarning || _showLicentaWarning;
+    
+    // Dropdown options
+    private List<OptionItem> _pozitiiOptions = new();
+    private List<OptionItem> _departamenteOptions = new();
+    
+    // Preview data for grid
+    private List<PersonalMedicalListDto> _previewData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadDropdownOptions();
+        UpdatePreviewData();
+        
+        if (_isEditMode)
+        {
+            await LoadPersonalDataAsync();
+        }
+        else
+        {
+            _model.EsteActiv = true;
+        }
+        
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_isEditMode && PersonalId.HasValue)
+        {
+            await LoadPersonalDataAsync();
+        }
+    }
+
+    private async Task LoadPersonalDataAsync()
+    {
+        if (!PersonalId.HasValue) return;
+        
+        _isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            var result = await PersonalMedicalApiService.GetByIdAsync(PersonalId.Value);
+            
+            if (result.IsSuccess && result.Value != null)
+            {
+                var personal = result.Value;
+                _model = new CreatePersonalMedicalRequest
+                {
+                    Nume = personal.Nume,
+                    Prenume = personal.Prenume,
+                    Pozitie = personal.Pozitie,
+                    Departament = personal.Departament,
+                    Specializare = personal.Specializare,
+                    NumarLicenta = personal.NumarLicenta,
+                    Telefon = personal.Telefon,
+                    Email = personal.Email,
+                    EsteActiv = personal.EsteActiv
+                };
+                
+                OnPozitieChanged(_model.Pozitie);
+                UpdatePreviewData();
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Info,
+                    Summary = "Date incarcate",
+                    Detail = $"Datele pentru '{personal.Nume} {personal.Prenume}' au fost incarcate pentru editare.",
+                    Duration = 3000
+                });
+            }
+            else
+            {
+                await ShowNotFoundError();
+            }
+        }
+        catch (HttpRequestException)
+        {
+            await ShowNetworkErrorNotification();
+        }
+        catch (Exception ex)
+        {
+            await ShowUnexpectedErrorNotification($"Eroare la incarcarea datelor: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
+
+    private void LoadDropdownOptions()
+    {
+        try
+        {
+            _pozitiiOptions = Enum.GetValues<PozitiePersonal>()
+                .Select(p => new OptionItem
+                {
+                    Value = p.GetDisplayName(),
+                    Text = p.GetDisplayName()
+                })
+                .OrderBy(o => o.Text)
+                .ToList();
+
+            _departamenteOptions = Enum.GetValues<Departament>()
+                .Select(d => new OptionItem
+                {
+                    Value = d.GetDisplayName(),
+                    Text = d.GetDisplayName()
+                })
+                .OrderBy(o => o.Text)
+                .ToList();
+                
+            // Log pentru debugging
+            JSRuntime.InvokeVoidAsync("console.log", "Dropdown options loaded", new { 
+                Pozitii = _pozitiiOptions.Count, 
+                Departamente = _departamenteOptions.Count 
+            });
+        }
+        catch (Exception ex)
+        {
+            JSRuntime.InvokeVoidAsync("console.error", "Error loading dropdown options", ex.Message);
+        }
+    }
+
+    private void OnPozitieChanged(object value)
+    {
+        var pozitie = value?.ToString() ?? string.Empty;
+        _model.Pozitie = pozitie;
+        
+        var isDoctorPosition = pozitie.Contains("Doctor") || pozitie.Contains("Medic");
+        
+        _showSpecializareWarning = isDoctorPosition && string.IsNullOrWhiteSpace(_model.Specializare);
+        _showLicentaWarning = isDoctorPosition && string.IsNullOrWhiteSpace(_model.NumarLicenta);
+        
+        UpdatePreviewData();
+        StateHasChanged();
+    }
+
+    private void OnFieldChanged(string fieldName)
+    {
+        UpdatePreviewData();
+        StateHasChanged();
+    }
+
+    private void UpdatePreviewData()
+    {
+        if (!string.IsNullOrEmpty(_model.Nume) && !string.IsNullOrEmpty(_model.Prenume))
+        {
+            _previewData = new List<PersonalMedicalListDto>
+            {
+                new PersonalMedicalListDto
+                {
+                    PersonalID = PersonalId ?? Guid.NewGuid(),
+                    Nume = _model.Nume,
+                    Prenume = _model.Prenume,
+                    Pozitie = _model.Pozitie,
+                    Specializare = _model.Specializare,
+                    Departament = _model.Departament,
+                    NumarLicenta = _model.NumarLicenta,
+                    Telefon = _model.Telefon,
+                    Email = _model.Email,
+                    EsteActiv = _model.EsteActiv,
+                    DataCreare = DateTime.Now
+                }
+            };
+        }
+        else
+        {
+            _previewData = new List<PersonalMedicalListDto>();
+        }
+    }
+
+    private async Task OnSubmitAsync(CreatePersonalMedicalRequest model)
+    {
+        if (!await CheckApiConnectivity())
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Probleme de conectare",
+                Detail = "Nu se poate conecta la serverul API. Verificati conexiunea si incercati din nou.",
+                Duration = 6000
+            });
+            return;
+        }
+        
+        if (_isEditMode)
+        {
+            await UpdatePersonal();
+        }
+        else
+        {
+            await SavePersonal();
+        }
+    }
+
+    private async Task TestDeserialization()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("console.log", "=== STARTING DESERIALIZATION TESTS ===");
+            
+            // Test 1: Deserializare Result<Guid> success
+            var successJson = @"{""isSuccess"":true,""value"":""12345678-1234-1234-1234-123456789012"",""errors"":[],""successMessage"":""Test success""}";
+            await JSRuntime.InvokeVoidAsync("console.log", "Test 1 - Success JSON:", successJson);
+            
+            try
+            {
+                var successResult = System.Text.Json.JsonSerializer.Deserialize<Result<Guid>>(successJson, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                });
+                
+                await JSRuntime.InvokeVoidAsync("console.log", "Test 1 SUCCESS - Deserialized:", new {
+                    IsSuccess = successResult?.IsSuccess,
+                    Value = successResult?.Value,
+                    ErrorsCount = successResult?.Errors?.Count,
+                    Message = successResult?.SuccessMessage
+                });
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "Test 1 FAILED:", ex.Message);
+            }
+            
+            // Test 2: Deserializare Result<Guid> failure
+            var failureJson = @"{""isSuccess"":false,""value"":null,""errors"":[""Error 1"",""Error 2""],""successMessage"":null}";
+            await JSRuntime.InvokeVoidAsync("console.log", "Test 2 - Failure JSON:", failureJson);
+            
+            try
+            {
+                var failureResult = System.Text.Json.JsonSerializer.Deserialize<Result<Guid>>(failureJson, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+                });
+                
+                await JSRuntime.InvokeVoidAsync("console.log", "Test 2 SUCCESS - Deserialized:", new {
+                    IsSuccess = failureResult?.IsSuccess,
+                    Value = failureResult?.Value,
+                    ErrorsCount = failureResult?.Errors?.Count,
+                    Errors = failureResult?.Errors
+                });
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("console.error", "Test 2 FAILED:", ex.Message);
+            }
+            
+            // Test 3: Creare si serializare locala
+            var localResult = Result<Guid>.Success(Guid.NewGuid(), "Local test");
+            var serialized = System.Text.Json.JsonSerializer.Serialize(localResult, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            });
+            
+            await JSRuntime.InvokeVoidAsync("console.log", "Test 3 - Local serialization:", serialized);
+            
+            await JSRuntime.InvokeVoidAsync("console.log", "=== DESERIALIZATION TESTS COMPLETED ===");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "DESERIALIZATION TEST ERROR:", ex.Message);
+        }
+    }
+
+    private async Task<bool> CheckApiConnectivity()
+    {
+        try
+        {
+            var testQuery = new PersonalMedicalSearchQuery { PageSize = 1 };
+            var result = await PersonalMedicalApiService.GetPagedAsync(testQuery);
+            return result.IsSuccess || result.Errors.Any(e => !e.Contains("network") && !e.Contains("connection"));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task SavePersonal()
+    {
+        if (_isProcessing) return;
+
+        _isProcessing = true;
+        
+        try
+        {
+            var businessValidation = ValidateBusinessRules();
+            if (!businessValidation.IsSuccess)
+            {
+                await ShowBusinessRuleDialog(businessValidation.Errors);
+                return;
+            }
+
+            var result = await PersonalMedicalApiService.CreateAsync(_model);
+            
+            if (result.IsSuccess)
+            {
+                // Notificare simpla verde
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Datele au fost salvate",
+                    Duration = 3000
+                });
+                
+                // Navigare la pagina de vizualizare
+                await Task.Delay(500);
+                Navigation.NavigateTo($"/medical/personal-view/{result.Value}");
+            }
+            else
+            {
+                await ShowDetailedErrorNotification("Eroare la salvare", result.Errors);
+            }
+        }
+        catch (HttpRequestException httpEx)
+        {
+            await ShowNetworkErrorNotification();
+        }
+        catch (TaskCanceledException timeoutEx)
+        {
+            await ShowTimeoutNotification();
+        }
+        catch (Exception ex)
+        {
+            await ShowUnexpectedErrorNotification(ex.Message);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task UpdatePersonal()
+    {
+        if (_isProcessing || !PersonalId.HasValue) return;
+
+        _isProcessing = true;
+        
+        try
+        {
+            var businessValidation = ValidateBusinessRules();
+            if (!businessValidation.IsSuccess)
+            {
+                await ShowBusinessRuleDialog(businessValidation.Errors);
+                return;
+            }
+
+            var updateRequest = new UpdatePersonalMedicalRequest
+            {
+                PersonalID = PersonalId.Value,
+                Nume = _model.Nume,
+                Prenume = _model.Prenume,
+                Pozitie = _model.Pozitie,
+                Departament = _model.Departament,
+                Specializare = _model.Specializare,
+                NumarLicenta = _model.NumarLicenta,
+                Telefon = _model.Telefon,
+                Email = _model.Email,
+                EsteActiv = _model.EsteActiv
+            };
+
+            var result = await PersonalMedicalApiService.UpdateAsync(PersonalId.Value, updateRequest);
+            
+            if (result.IsSuccess)
+            {
+                // Notificare simpla verde
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "Datele au fost salvate",
+                    Duration = 3000
+                });
+                
+                await Task.Delay(500);
+                Navigation.NavigateTo($"/medical/personal-view/{PersonalId.Value}");
+            }
+            else
+            {
+                await ShowDetailedErrorNotification("Eroare la actualizare", result.Errors);
+            }
+        }
+        catch (HttpRequestException)
+        {
+            await ShowNetworkErrorNotification();
+        }
+        catch (TaskCanceledException)
+        {
+            await ShowTimeoutNotification();
+        }
+        catch (Exception ex)
+        {
+            await ShowUnexpectedErrorNotification(ex.Message);
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowDetailedErrorNotification(string title, IEnumerable<string> errors)
+    {
+        var errorList = errors.ToList();
+        var friendlyErrors = errorList.Select(GetUserFriendlyError).ToList();
+        
+        var errorMessage = friendlyErrors.Count == 1 
+            ? friendlyErrors.First()
+            : $"Au aparut {friendlyErrors.Count} erori:\n• " + string.Join("\n• ", friendlyErrors);
+        
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = title,
+            Detail = errorMessage,
+            Duration = 8000
+        });
+    }
+
+    private async Task ShowBusinessRuleDialog(IEnumerable<string> errors)
+    {
+        var errorList = errors.ToList();
+        var message = "Reguli de afaceri:\n\n" + 
+                     string.Join("\n", errorList.Select((e, i) => $"{i + 1}. {e}"));
+        
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Warning,
+            Summary = "Reguli de afaceri",
+            Detail = $"Au fost identificate {errorList.Count} probleme care trebuie corectate",
+            Duration = 6000
+        });
+        
+        await DialogService.Alert(message, "Reguli de afaceri", new AlertOptions() 
+        { 
+            OkButtonText = "Am inteles" 
+        });
+    }
+
+    private async Task ShowNotFoundError()
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Warning,
+            Summary = "Nu s-a gasit",
+            Detail = "Personalul medical cu ID-ul specificat nu a fost gasit in baza de date sau a fost sters intre timp.",
+            Duration = 5000
+        });
+        
+        await Task.Delay(2000);
+        Navigation.NavigateTo("/medical/gestionare-personal");
+    }
+
+    private async Task ShowNetworkErrorNotification()
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = "Probleme de conectare",
+            Detail = "Nu s-a putut conecta la server. Verificati conexiunea la internet si incercati din nou.",
+            Duration = 8000
+        });
+    }
+
+    private async Task ShowTimeoutNotification()
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Warning,
+            Summary = "Timp depasit",
+            Detail = "Operatiunea a durat prea mult timp. Incercati din nou in cateva momente.",
+            Duration = 6000
+        });
+    }
+
+    private async Task ShowUnexpectedErrorNotification(string technicalMessage)
+    {
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Error,
+            Summary = "Eroare neasteptata",
+            Detail = "A aparut o problema neobisnuita in sistem. Va rugam sa contactati suportul tehnic daca problema persista.",
+            Duration = 10000
+        });
+    }
+
+    private string GetUserFriendlyError(string error)
+    {
+        var lowerError = error.ToLower();
+        
+        if (lowerError.Contains("duplicate") || lowerError.Contains("unique") || lowerError.Contains("pk_") || lowerError.Contains("ix_"))
+            return "Exista deja un personal medical cu aceste informatii in sistem (email sau numar licenta duplicat)";
+        
+        if (lowerError.Contains("email") && lowerError.Contains("invalid"))
+            return "Adresa de email introdusa nu respecta formatul valid (ex: nume@domeniu.ro)";
+        
+        if (lowerError.Contains("phone") || lowerError.Contains("telefon"))
+            return "Numarul de telefon nu este valid (folositi formatul: 07xxxxxxxx)";
+        
+        if (lowerError.Contains("required") || lowerError.Contains("obligatoriu"))
+            return "Unele campuri obligatorii nu sunt completate corespunzator";
+        
+        if (lowerError.Contains("length") || lowerError.Contains("lung"))
+            return "Unele campuri contin prea multe sau prea putine caractere fata de limitele permise";
+        
+        if (lowerError.Contains("foreign key") || lowerError.Contains("fk_"))
+            return "Datele introduse fac referire la informatii care nu exista in sistem";
+        
+        if (lowerError.Contains("timeout") || lowerError.Contains("expired"))
+            return "Conexiunea la baza de date a expirat - incercati din nou";
+        
+        if (lowerError.Contains("cannot open database") || lowerError.Contains("login failed"))
+            return "Nu se poate conecta la baza de date - verificati configurarea";
+        
+        if (lowerError.Contains("permission") || lowerError.Contains("access denied"))
+            return "Nu aveti permisiunile necesare pentru aceasta operatiune";
+        
+        if (lowerError.Contains("doctorul trebuie") || lowerError.Contains("specializare") || lowerError.Contains("licenta"))
+            return error;
+        
+        if (lowerError.Contains("500") || lowerError.Contains("internal server"))
+            return "Eroare interna de server - contactati administratorul";
+        
+        if (lowerError.Contains("404") || lowerError.Contains("not found"))
+            return "Resursa solicitata nu a fost gasita pe server";
+        
+        if (lowerError.Contains("400") || lowerError.Contains("bad request"))
+            return "Datele trimise catre server nu sunt in formatul corect";
+        
+        if (lowerError.Contains("json") || lowerError.Contains("serializ"))
+            return "Eroare la procesarea datelor - verificati completarea formularului";
+        
+        if (lowerError.Contains("sql") && lowerError.Contains("error"))
+            return "Eroare la nivelul bazei de date - verificati datele introduse";
+        
+        if (lowerError.Contains("network") || lowerError.Contains("connection refused"))
+            return "Probleme de retea - verificati conexiunea la internet";
+        
+        return $"Eroare tehnica: {error}";
+    }
+
+    private Result ValidateBusinessRules()
+    {
+        var errors = new List<string>();
+        
+        var isDoctorPosition = _model.Pozitie.Contains("Doctor") || _model.Pozitie.Contains("Medic");
+        
+        if (isDoctorPosition)
+        {
+            if (string.IsNullOrWhiteSpace(_model.NumarLicenta))
+            {
+                errors.Add("Numarul de licenta este obligatoriu pentru pozitiile de doctor/medic");
+            }
+        }
+        
+        return errors.Any() ? Result.Failure(errors) : Result.Success();
+    }
+
+    private void BackToList()
+    {
+        Navigation.NavigateTo("/medical/gestionare-personal");
+    }
+
+    private string GetSaveButtonText()
+    {
+        if (_isProcessing)
+        {
+            return _isEditMode ? "Se actualizeaza..." : "Se salveaza...";
+        }
+        return _isEditMode ? "Actualizeaza Personal" : "Salveaza Personal";
+    }
+
+    private string GetSaveButtonIcon()
+    {
+        if (_isProcessing)
+        {
+            return "hourglass_empty";
+        }
+        return _isEditMode ? "update" : "save";
+    }
+
+    private string GetSaveButtonStyle()
+    {
+        return "font-weight: bold;";
+    }
+
+    private void ShowSaveConfirmation()
+    {
+        // Notificare de confirmare finala
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Salvat in Baza de Date",
+            Detail = "Personalul medical a fost adaugat cu succes si este acum disponibil in sistem!",
+            Duration = 4000
+        });
+    }
+}
