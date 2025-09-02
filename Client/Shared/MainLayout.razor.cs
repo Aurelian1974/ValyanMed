@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Radzen;
 using Radzen.Blazor;
@@ -11,14 +12,143 @@ public partial class MainLayout : LayoutComponentBase
 {
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
+    [Inject] private NotificationService NotificationService { get; set; } = null!;
 
     private List<MenuModel> menuData = new();
+    private string searchTerm = string.Empty;
+    private bool isDarkMode = false;
 
     protected override void OnInitialized()
     {
         InitializeMenu();
     }
 
+    #region Search Functionality
+    private async Task OnGlobalSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return;
+
+        // Implement global search logic
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Info,
+            Summary = "C?utare",
+            Detail = $"Se caut?: {searchTerm}",
+            Duration = 3000
+        });
+
+        // Navigate to search results
+        NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(searchTerm)}");
+    }
+
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnGlobalSearch();
+        }
+    }
+    #endregion
+
+    #region Notifications
+    private async Task ShowNotifications()
+    {
+        // Show notifications panel/dialog
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Info,
+            Summary = "Notific?ri",
+            Detail = "Ave?i 3 notific?ri noi",
+            Duration = 4000
+        });
+    }
+    #endregion
+
+    #region Quick Actions
+    private async Task ShowQuickActions()
+    {
+        // Default quick action - most common: add patient
+        NavigationManager.NavigateTo("/medical/pacienti/nou");
+    }
+
+    private async Task OnQuickActionSelect(string action)
+    {
+        switch (action)
+        {
+            case "add-patient":
+                NavigationManager.NavigateTo("/medical/pacienti/nou");
+                break;
+            case "schedule-consultation":
+                NavigationManager.NavigateTo("/medical/programari/noua");
+                break;
+            case "manage-medication":
+                NavigationManager.NavigateTo("/farmacie/medicamente");
+                break;
+            case "view-reports":
+                NavigationManager.NavigateTo("/medical/rapoarte");
+                break;
+            case "add-staff":
+                NavigationManager.NavigateTo("/medical/personal/nou");
+                break;
+            default:
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Info,
+                    Summary = "Ac?iune rapid?",
+                    Detail = $"Ac?iunea {action} va fi disponibil? în curând",
+                    Duration = 3000
+                });
+                break;
+        }
+    }
+    #endregion
+
+    #region Theme Management
+    private async Task ToggleTheme()
+    {
+        isDarkMode = !isDarkMode;
+        
+        try
+        {
+            // Save theme preference
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "theme", isDarkMode ? "dark" : "light");
+            
+            // Simple CSS class toggle instead of complex JavaScript
+            var script = isDarkMode 
+                ? "document.body.classList.add('dark-theme'); document.body.classList.remove('light-theme');"
+                : "document.body.classList.add('light-theme'); document.body.classList.remove('dark-theme');";
+                
+            await JSRuntime.InvokeVoidAsync("eval", script);
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Tem? schimbat?",
+                Detail = $"Activat modul {(isDarkMode ? "întunecat" : "luminos")}",
+                Duration = 2000
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Theme toggle error: {ex.Message}");
+            
+            // Fallback - just toggle the state and show notification
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Summary = "Tem?",
+                Detail = $"Modul {(isDarkMode ? "întunecat" : "luminos")} va fi disponibil în curând",
+                Duration = 2000
+            });
+        }
+        
+        // Force re-render to update the icon
+        StateHasChanged();
+    }
+    #endregion
+
+    #region Original Menu Logic
     private void InitializeMenu()
     {
         menuData = new List<MenuModel>
@@ -180,6 +310,57 @@ public partial class MainLayout : LayoutComponentBase
     void NavigateToRapoarte() => NavigationManager.NavigateTo("/medical/rapoarte");
     void NavigateToSetari() => NavigationManager.NavigateTo("/medical/setari-clinica");
     void NavigateToDashboard() => NavigationManager.NavigateTo("/medical/dashboard");
+    #endregion
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // For?eaz? stilurile pentru butonul Quick Actions prin JavaScript direct
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                setTimeout(() => {
+                    console.log('Forcing Quick Actions button styles...');
+                    
+                    const quickBtn = document.querySelector('.quick-actions-btn-flat');
+                    if (quickBtn) {
+                        // For?eaz? stilurile direct pe element
+                        quickBtn.style.background = 'rgba(0,0,0,0.4)';
+                        quickBtn.style.border = '2px solid rgba(255,255,255,0.8)';
+                        quickBtn.style.color = 'white';
+                        quickBtn.style.fontWeight = '800';
+                        quickBtn.style.boxShadow = '0 3px 10px rgba(0,0,0,0.3)';
+                        
+                        // For?eaz? pe text
+                        const btnText = quickBtn.querySelector('.rz-button-text');
+                        if (btnText) {
+                            btnText.style.color = 'white';
+                            btnText.style.fontWeight = '800';
+                            btnText.style.textShadow = '0 2px 4px rgba(0,0,0,0.6)';
+                        }
+                        
+                        // For?eaz? pe icon
+                        const btnIcon = quickBtn.querySelector('.rz-button-icon');
+                        if (btnIcon) {
+                            btnIcon.style.color = 'white';
+                            btnIcon.style.textShadow = '0 2px 4px rgba(0,0,0,0.6)';
+                        }
+                        
+                        // For?eaz? pe butonul principal ?i cel de dropdown
+                        const allButtons = quickBtn.querySelectorAll('.rz-button, .rz-splitbutton-button');
+                        allButtons.forEach(btn => {
+                            btn.style.background = 'rgba(0,0,0,0.4)';
+                            btn.style.color = 'white';
+                            btn.style.border = 'none';
+                        });
+                        
+                        console.log('Quick Actions button styles applied successfully');
+                    } else {
+                        console.log('Quick Actions button not found');
+                    }
+                }, 1000);
+            ");
+        }
+    }
 
     public class MenuModel : INotifyPropertyChanged
     {

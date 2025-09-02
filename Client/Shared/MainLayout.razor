@@ -12,28 +12,102 @@
 <RadzenLayout>
     <!-- Header Bar -->
     <RadzenHeader>
-        <MudAppBar Elevation="1" Color="MudColor.Primary" Dense="true">
-            <div class="app-logo">
-                <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" />
-                <MudText Typo="Typo.h6">ValyanMed</MudText>
+        <div class="professional-header">
+            <!-- Left Side - Logo & Breadcrumbs -->
+            <div class="header-left">
+                <div class="app-logo">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" Class="logo-icon" />
+                    <MudText Typo="Typo.h6" Class="logo-text">ValyanMed</MudText>
+                </div>
+                
+                <!-- Breadcrumbs -->
+                <div class="breadcrumbs-container">
+                    <RadzenBreadCrumb>
+                        <RadzenBreadCrumbItem Path="/" Text="Acasă" Icon="home" />
+                        <RadzenBreadCrumbItem Path="/medical/dashboard" Text="Dashboard Medical" Icon="dashboard" />
+                    </RadzenBreadCrumb>
+                </div>
             </div>
-            <MudSpacer />
-            
-            <!-- User menu and logout -->
-            <MudMenu Color="MudColor.Inherit" Icon="@Icons.Material.Filled.AccountCircle" Dense="true" AnchorOrigin="Origin.TopRight" TransformOrigin="Origin.TopRight">
-                <MudMenuItem Href="/profil" Icon="@Icons.Material.Filled.ManageAccounts">Profil</MudMenuItem>
-                <MudMenuItem OnClick="Logout" Icon="@Icons.Material.Filled.Logout">Delogare</MudMenuItem>
-            </MudMenu>
 
-            <MudButton 
-                OnClick="Logout" 
-                StartIcon="@Icons.Material.Filled.Logout" 
-                Color="MudColor.Inherit" 
-                Class="ml-2" 
-                Variant="MudVariant.Text">
-                Delogare
-            </MudButton>
-        </MudAppBar>
+            <!-- Center - Search -->
+            <div class="header-center">
+                <div class="global-search">
+                    <RadzenTextBox Placeholder="Caută pacienti, personal, medicamente..." 
+                                  Style="width: 400px;" 
+                                  Class="search-input"
+                                  @bind-Value="@searchTerm"
+                                  @onkeydown="@OnSearchKeyPress" />
+                    <RadzenButton Icon="search" 
+                                 ButtonStyle="ButtonStyle.Primary" 
+                                 Variant="Radzen.Variant.Filled"
+                                 Size="ButtonSize.Medium"
+                                 Class="search-button"
+                                 Click="@OnGlobalSearch" />
+                </div>
+            </div>
+
+            <!-- Right Side - User Actions -->
+            <div class="header-right">
+                <!-- Notifications -->
+                <RadzenButton Icon="notifications" 
+                             ButtonStyle="ButtonStyle.Light" 
+                             Variant="Radzen.Variant.Text"
+                             Size="ButtonSize.Small"
+                             Class="notification-btn"
+                             Click="@ShowNotifications"
+                             Title="Notificări">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="3" Style="position: absolute; top: -2px; right: -2px; font-size: 10px;" />
+                </RadzenButton>
+
+                <!-- Quick Actions - Flat design integrated with header -->
+                <RadzenSplitButton Icon="add" 
+                                  Text="ACȚIUNI RAPIDE" 
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Variant="Radzen.Variant.Flat"
+                                  Size="ButtonSize.Medium"
+                                  Click="@ShowQuickActions"
+                                  Class="quick-actions-btn-flat">
+                    <RadzenSplitButtonItem Text="Adaugă Pacient" Icon="person_add" Value="add-patient" />
+                    <RadzenSplitButtonItem Text="Programează Consultație" Icon="event" Value="schedule-consultation" />
+                    <RadzenSplitButtonItem Text="Gestionează Medicamente" Icon="medication" Value="manage-medication" />
+                    <RadzenSplitButtonItem Text="Vezi Rapoarte" Icon="assessment" Value="view-reports" />
+                    <RadzenSplitButtonItem Text="Adaugă Personal" Icon="badge" Value="add-staff" />
+                </RadzenSplitButton>
+
+                <!-- User Profile - More compact -->
+                <div class="user-profile-section">
+                    <div class="user-info">
+                        <RadzenText TextStyle="TextStyle.Body2" Class="user-name">Dr. Popescu</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Class="user-role">Admin</RadzenText>
+                    </div>
+                    
+                    <RadzenProfileMenu>
+                        <Template>
+                            <RadzenImage Path="https://via.placeholder.com/32x32/007bff/ffffff?text=DP" 
+                                        Style="width: 32px; height: 32px; border-radius: 50%;" 
+                                        AlternateText="User Avatar" />
+                        </Template>
+                        <ChildContent>
+                            <RadzenProfileMenuItem Text="Profil" Icon="account_circle" Path="/profil" />
+                            <RadzenProfileMenuItem Text="Setări" Icon="settings" Path="/setari" />
+                            <RadzenProfileMenuItem Text="Preferințe" Icon="tune" Path="/preferinte" />
+                            <RadzenProfileMenuSeparator />
+                            <RadzenProfileMenuItem Text="Ajutor" Icon="help" Path="/ajutor" />
+                            <RadzenProfileMenuItem Text="Delogare" Icon="logout" Click="@Logout" />
+                        </ChildContent>
+                    </RadzenProfileMenu>
+                </div>
+
+                <!-- Theme Toggle -->
+                <RadzenButton Icon="@(isDarkMode ? "light_mode" : "dark_mode")" 
+                             ButtonStyle="ButtonStyle.Light" 
+                             Variant="Radzen.Variant.Text"
+                             Size="ButtonSize.Small"
+                             Class="theme-toggle"
+                             Title="@(isDarkMode ? "Mod Luminos" : "Mod Întunecat")"
+                             Click="@ToggleTheme" />
+            </div>
+        </div>
     </RadzenHeader>
 
     <!-- Left Sidebar -->
@@ -85,6 +159,318 @@
 </RadzenLayout>
 
 <style>
+    /* PROFESSIONAL HEADER STYLES */
+    .professional-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 64px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        position: relative;
+        z-index: 10;
+        margin-left: 0;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .header-center {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        justify-content: center;
+        margin: 0 16px;
+        min-width: 0;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 0 0 auto;
+        min-width: 0;
+        flex-wrap: nowrap;  /* Previne wrapping */
+    }
+
+    /* LOGO STYLING */
+    .app-logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        white-space: nowrap;
+    }
+
+    .logo-icon {
+        color: white !important;
+        font-size: 24px !important;
+    }
+
+    .logo-text {
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 18px !important;
+        margin: 0 !important;
+    }
+
+    /* BREADCRUMBS */
+    .breadcrumbs-container {
+        background: rgba(255,255,255,0.15);
+        border-radius: 6px;
+        padding: 6px 12px;
+        white-space: nowrap;
+    }
+
+    /* SEARCH BAR - Made more compact */
+    .global-search {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 20px;
+        padding: 2px 2px 2px 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        max-width: 350px;
+        width: 100%;
+    }
+
+    .search-input {
+        border: none !important;
+        background: transparent !important;
+        font-size: 14px;
+        width: 100%;
+        min-width: 200px;
+    }
+
+    .search-button {
+        border-radius: 18px !important;
+        min-width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+    }
+
+    /* NOTIFICATIONS - More compact */
+    .notification-btn {
+        position: relative;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+        background: rgba(255,255,255,0.1) !important;
+        padding: 0 !important;
+        min-width: 40px !important;
+    }
+
+    .notification-btn:hover {
+        background: rgba(255,255,255,0.2) !important;
+    }
+
+    /* QUICK ACTIONS - FORȚAT cu specificitate maximă pentru override Radzen */
+    div.header-right .quick-actions-btn-flat,
+    .professional-header .header-right .quick-actions-btn-flat,
+    .rz-layout .professional-header .header-right .quick-actions-btn-flat {
+        background: rgba(0,0,0,0.3) !important; /* Fundal și mai întunecat */
+        border: 2px solid rgba(255,255,255,0.7) !important; /* Border mai gros */
+        border-radius: 8px !important;
+        color: white !important;
+        font-weight: 800 !important; /* Extra bold */
+        padding: 12px 20px !important;
+        font-size: 14px !important;
+        letter-spacing: 0.5px !important;
+        white-space: nowrap !important;
+        min-width: 180px !important;
+        backdrop-filter: blur(15px) !important;
+        transition: all 0.3s ease !important;
+        flex-shrink: 0 !important;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    /* Forțează textul cu specificitate foarte mare */
+    div.header-right .quick-actions-btn-flat .rz-button-text,
+    .professional-header .header-right .quick-actions-btn-flat .rz-button-text,
+    .rz-layout .professional-header .header-right .quick-actions-btn-flat .rz-button-text {
+        color: white !important;
+        font-weight: 800 !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important; /* Shadow foarte puternic */
+        position: relative !important;
+        z-index: 10 !important;
+    }
+
+    /* Forțează iconul cu specificitate foarte mare */
+    div.header-right .quick-actions-btn-flat .rz-button-icon,
+    .professional-header .header-right .quick-actions-btn-flat .rz-button-icon,
+    .rz-layout .professional-header .header-right .quick-actions-btn-flat .rz-button-icon {
+        color: white !important;
+        font-weight: bold !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+
+    /* Hover cu specificitate maximă */
+    div.header-right .quick-actions-btn-flat:hover,
+    .professional-header .header-right .quick-actions-btn-flat:hover,
+    .rz-layout .professional-header .header-right .quick-actions-btn-flat:hover {
+        background: rgba(0,0,0,0.4) !important; /* Și mai întunecat pe hover */
+        border-color: rgba(255,255,255,0.9) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Override orice styling Radzen */
+    .rz-splitbutton.quick-actions-btn-flat,
+    .rz-splitbutton.quick-actions-btn-flat .rz-splitbutton-button,
+    .rz-splitbutton.quick-actions-btn-flat .rz-button {
+        background: rgba(0,0,0,0.3) !important;
+        color: white !important;
+        border-color: rgba(255,255,255,0.7) !important;
+    }
+
+    .rz-splitbutton.quick-actions-btn-flat .rz-splitbutton-button .rz-button-text,
+    .rz-splitbutton.quick-actions-btn-flat .rz-button .rz-button-text {
+        color: white !important;
+        font-weight: 800 !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
+    }
+
+    /* USER PROFILE - More compact */
+    .user-profile-section {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 6px 6px 6px 12px;
+        backdrop-filter: blur(10px);
+        white-space: nowrap;
+        min-width: auto;
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        min-width: 0;
+    }
+
+    .user-name {
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        margin: 0 !important;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    .user-role {
+        color: rgba(255,255,255,0.8) !important;
+        font-size: 11px !important;
+        margin: 0 !important;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    /* THEME TOGGLE - More compact */
+    .theme-toggle {
+        color: white !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+        background: rgba(255,255,255,0.1) !important;
+        padding: 0 !important;
+        min-width: 40px !important;
+    }
+
+    .theme-toggle:hover {
+        background: rgba(255,255,255,0.2) !important;
+    }
+
+    /* RESPONSIVE DESIGN */
+    @@media (max-width: 1200px) {
+        .header-left {
+            gap: 16px;
+        }
+        
+        .breadcrumbs-container {
+            display: none;
+        }
+        
+        .global-search {
+            max-width: 250px;
+        }
+        
+        .search-input {
+            min-width: 150px;
+        }
+        
+        .user-info {
+            display: none;
+        }
+        
+        .quick-actions-btn-flat {
+            min-width: 120px !important;
+            padding: 10px 16px !important;
+            font-size: 13px !important;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .professional-header {
+            padding: 0 12px;
+            gap: 8px;
+        }
+        
+        .header-left {
+            gap: 8px;
+        }
+        
+        .global-search {
+            max-width: 200px;
+        }
+        
+        .search-input {
+            min-width: 120px;
+        }
+        
+        .header-right {
+            gap: 8px;
+        }
+        
+        .logo-text {
+            display: none;
+        }
+        
+        .quick-actions-btn-flat {
+            min-width: 80px !important;
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+        }
+        
+        .quick-actions-btn-flat .rz-button-text {
+            display: none;
+        }
+    }
+
+    /* Sidebar positioning fix */
+    .rz-sidebar {
+        z-index: 5 !important;
+    }
+
     /* BACKUP CSS INLINE pentru a asigura indentarea */
     .valyan-menu .menu-level-1 {
         margin-left: 24px !important;
