@@ -202,11 +202,12 @@ public class PersoanaRepository : IPersoanaRepository
                 parameters.Add("@EsteActiva", query.EsteActiv.Value);
             }
 
-            // Build ORDER BY
+            // Build ORDER BY with column mapping
             var orderBy = "ORDER BY Nume, Prenume";
             if (!string.IsNullOrWhiteSpace(query.Sort))
             {
-                orderBy = $"ORDER BY {query.Sort}";
+                var mappedSort = MapSortColumns(query.Sort);
+                orderBy = $"ORDER BY {mappedSort}";
             }
 
             // Calculate pagination
@@ -350,5 +351,87 @@ public class PersoanaRepository : IPersoanaRepository
             return result;
 
         return null;
+    }
+
+    /// <summary>
+    /// Maps client column names to database column names for sorting
+    /// Supports all columns except 'Actiuni' which is UI-only
+    /// Based on the columns from GestionarePersoane.razor DataGrid
+    /// </summary>
+    private static string MapSortColumns(string sortExpression)
+    {
+        if (string.IsNullOrWhiteSpace(sortExpression))
+            return "Nume, Prenume";
+
+        // Split by comma for multiple sort columns
+        var sortParts = sortExpression.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var mappedParts = new List<string>();
+
+        foreach (var part in sortParts)
+        {
+            var trimmedPart = part.Trim();
+            var sortPart = trimmedPart.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            
+            if (sortPart.Length == 0) continue;
+
+            var columnName = sortPart[0].ToLower();
+            var direction = sortPart.Length > 1 ? sortPart[1].ToUpper() : "ASC";
+
+            // Validate direction
+            if (direction != "ASC" && direction != "DESC")
+                direction = "ASC";
+
+            // Map column names based on actual DataGrid columns from GestionarePersoane.razor:
+            // NumeComplet, CNP, DataNasterii, Varsta, Gen, Telefon, Email, Judet, Localitate, EsteActiva, DataCreare, Actiuni
+            var mappedColumn = columnName switch
+            {
+                // Basic name columns
+                "nume" => "Nume",
+                "prenume" => "Prenume", 
+                "numecomplet" => "CONCAT(Nume, ' ', Prenume)",
+                
+                // Identity and personal info columns
+                "cnp" => "CNP",
+                "datanasterii" => "DataNasterii",
+                "varsta" => "DATEDIFF(YEAR, DataNasterii, GETDATE())",
+                "gen" => "Gen",
+                
+                // Contact columns
+                "telefon" => "Telefon",
+                "email" => "Email",
+                
+                // Location columns
+                "judet" => "Judet",
+                "localitate" => "Localitate",
+                "adresa" => "CONCAT(ISNULL(Strada + ' ', ''), CASE WHEN NumarStrada IS NOT NULL THEN 'nr. ' + NumarStrada + ' ' ELSE '' END, ISNULL(Localitate + ' ', ''), CASE WHEN Judet IS NOT NULL THEN 'jud. ' + Judet ELSE '' END)",
+                
+                // Status columns - supporting multiple variations
+                "esteactiva" => "EsteActiva",
+                "status" => "EsteActiva",
+                "activa" => "EsteActiva",
+                "active" => "EsteActiva",
+                
+                // Date columns - supporting multiple variations
+                "datacrearii" => "DataCreare",
+                "datacreari" => "DataCreare",
+                "datacreare" => "DataCreare",
+                "creationdate" => "DataCreare",
+                
+                // UI-only columns that should be ignored (not sortable)
+                "actiuni" => null,
+                "actions" => null,
+                
+                // Default fallback for unknown columns
+                _ => "Nume"
+            };
+
+            // Skip UI-only columns that return null
+            if (mappedColumn != null)
+            {
+                mappedParts.Add($"{mappedColumn} {direction}");
+            }
+        }
+
+        return mappedParts.Any() ? string.Join(", ", mappedParts) : "Nume, Prenume";
     }
 }

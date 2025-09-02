@@ -1,0 +1,92 @@
+import pandas as pd
+
+ai putea sa creezi tabela 
+# Structura tabelara (Categorie -> Specialitate -> Subspecialitate)
+data = [
+    # Medicale
+    ("Medicale", "Medicina interna", "Cardiologie"),
+    ("Medicale", "Medicina interna", "Pneumologie / Medicina respiratorie"),
+    ("Medicale", "Medicina interna", "Gastroenterologie si Hepatologie"),
+    ("Medicale", "Medicina interna", "Nefrologie"),
+    ("Medicale", "Medicina interna", "Endocrinologie si Diabet"),
+    ("Medicale", "Medicina interna", "Hematologie clinica"),
+    ("Medicale", "Medicina interna", "Oncologie medicala"),
+    ("Medicale", "Medicina interna", "Reumatologie"),
+    ("Medicale", "Medicina interna", "Alergologie si Imunologie clinica"),
+    ("Medicale", "Neurologie", None),
+    ("Medicale", "Psihiatrie adulti", None),
+    ("Medicale", "Psihiatrie pediatrica", None),
+    ("Medicale", "Dermatologie", None),
+    ("Medicale", "Boli infectioase", None),
+    ("Medicale", "Geriatrie", None),
+    ("Medicale", "Medic. fizica si de reabilitare", None),
+    ("Medicale", "Medic. paliativa", None),
+    ("Medicale", "Medic. ocupationala", None),
+    ("Medicale", "Medic. preventiva si sanatate publica", None),
+
+    # Chirurgicale
+    ("Chirurgicale", "Chirurgie generala", None),
+    ("Chirurgicale", "Chirurgie cardiovasculara", None),
+    ("Chirurgicale", "Chirurgie toracica", None),
+    ("Chirurgicale", "Chirurgie vasculara", None),
+    ("Chirurgicale", "Neurochirurgie", None),
+    ("Chirurgicale", "Ortopedie si Traumatologie", None),
+    ("Chirurgicale", "Chirurgie plastica, estetica si reparatorie", None),
+    ("Chirurgicale", "Chirurgie pediatrica", None),
+    ("Chirurgicale", "Chirurgie oro-maxilo-faciala", None),
+    ("Chirurgicale", "Otorinolaringologie (ORL)", None),
+    ("Chirurgicale", "Oftalmologie", None),
+    ("Chirurgicale", "Urologie", None),
+    ("Chirurgicale", "Obstetrica si Ginecologie", None),
+    ("Chirurgicale", "Chirurgie oncologica", None),
+
+    # Pediatrice
+    ("Pediatrice", "Pediatrie generala", None),
+    ("Pediatrice", "Neonatologie", None),
+    ("Pediatrice", "Cardiologie pediatrica", None),
+    ("Pediatrice", "Neurologie pediatrica", None),
+    ("Pediatrice", "Nefrologie pediatrica", None),
+    ("Pediatrice", "Oncologie si hematologie pediatrica", None),
+    ("Pediatrice", "Chirurgie pediatrica", None),
+    ("Pediatrice", "Terapie intensiva pediatrica (PICU)", None),
+
+    # Critice si urgente
+    ("Critice si urgente", "Unitate Primiri Urgente (UPU / ER)", None),
+    ("Critice si urgente", "Terapie Intensiva adulti (ICU)", None),
+    ("Critice si urgente", "Terapie Intensiva cardiaca (CCU)", None),
+    ("Critice si urgente", "Terapie Intensiva neonatala (NICU)", None),
+    ("Critice si urgente", "Terapie Intensiva pediatrica (PICU)", None),
+    ("Critice si urgente", "Anestezie si Terapie Intensiva", None),
+
+    # Suport si diagnostic
+    ("Suport si diagnostic", "Radiologie si imagistica medicala", "CT"),
+    ("Suport si diagnostic", "Radiologie si imagistica medicala", "RMN"),
+    ("Suport si diagnostic", "Radiologie si imagistica medicala", "Ecografie"),
+    ("Suport si diagnostic", "Radiologie si imagistica medicala", "Radiografie digitala"),
+    ("Suport si diagnostic", "Medicina nucleara", None),
+    ("Suport si diagnostic", "Laborator analize medicale", "Biochimie"),
+    ("Suport si diagnostic", "Laborator analize medicale", "Hematologie"),
+    ("Suport si diagnostic", "Laborator analize medicale", "Microbiologie"),
+    ("Suport si diagnostic", "Laborator analize medicale", "Imunologie"),
+    ("Suport si diagnostic", "Anatomie patologica si citologie", None),
+    ("Suport si diagnostic", "Transfuzii sanguine", None),
+    ("Suport si diagnostic", "Farmacie spitaliceasca", None),
+    ("Suport si diagnostic", "Nutritie clinica si dietetica", None),
+    ("Suport si diagnostic", "Kinetoterapie si recuperare medicala", None),
+    ("Suport si diagnostic", "Psihologie clinica si psihoterapie", None),
+
+    # Speciale / supraspecializari
+    ("Speciale", "Transplant", "Renal"),
+    ("Speciale", "Transplant", "Hepatic"),
+    ("Speciale", "Transplant", "Cardiac"),
+    ("Speciale", "Transplant", "Medular"),
+    ("Speciale", "Fertilizare si medicina reproductiva (IVF)", None),
+    ("Speciale", "Medicina sportiva", None),
+    ("Speciale", "Genetica medicala", None),
+    ("Speciale", "Terapia durerii (Pain Management)", None),
+]
+
+df = pd.DataFrame(data, columns=["Domeniu", "Sectie", "Subsectie"])
+
+import caas_jupyter_tools
+caas_jupyter_tools.display_dataframe_to_user("Structura sectii clinice spital mare", df)

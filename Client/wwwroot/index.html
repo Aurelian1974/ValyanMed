@@ -72,7 +72,7 @@
     <script src="js/appLifecycle.js"></script>
     <script src="js/iconFallback.js"></script>
     <script src="js/paginationDropdown.js"></script>
-
+    
     <!-- Force hide error UI immediately -->
     <script>
         // Immediately hide any error UI elements
@@ -134,9 +134,8 @@
                     logoutUrl: apiBase + 'api/auth/logout',
                     storageKeys: ['valyanmed_auth_token', 'valyanmed_user_info', 'currentUser', 'auth_token', 'auth_user']
                 });
-                console.log('AppLifecycle registered - will clear auth data on app close/logout');
             } catch (ex) {
-                console.log('AppLifecycle registration failed:', ex);
+                // Silent fail for lifecycle registration
             }
         });
 
@@ -163,8 +162,6 @@
     <script>
         (async function initializeBlazor() {
             try {
-                console.log('Starting Blazor WebAssembly...');
-                
                 await Blazor.start({
                     loadBootResource: function (type, name, defaultUri, integrity) {
                         const skipFiles = [
@@ -173,7 +170,6 @@
                         ];
                         
                         if (skipFiles.some(skip => name.includes(skip))) {
-                            console.log(`Skipping known missing file: ${name}`);
                             return null;
                         }
                         
@@ -182,9 +178,7 @@
                     environment: 'Development'
                 });
                 
-                console.log('Blazor WebAssembly started successfully!');
-                
-                // Clean up loading and ensure no black elements remain
+                // Clean up loading UI
                 setTimeout(() => {
                     const loadingElement = document.querySelector('.loading-progress');
                     if (loadingElement) {
@@ -197,14 +191,11 @@
                         }, 500);
                     }
                     
-                    // Final cleanup - hide any error UI that might have appeared
                     const errorUI = document.getElementById('blazor-error-ui');
                     if (errorUI) {
                         errorUI.style.display = 'none';
                         errorUI.style.visibility = 'hidden';
                     }
-                    
-                    console.log('Loading UI cleaned up and error UI hidden');
                 }, 1000);
                 
             } catch (error) {
@@ -268,29 +259,6 @@
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        };
-
-        // Console error monitoring
-        window.consoleErrors = [];
-        
-        // Override console.error to capture errors
-        const originalError = console.error;
-        console.error = function(...args) {
-            window.consoleErrors.push({
-                timestamp: new Date(),
-                message: args.join(' ')
-            });
-            originalError.apply(console, args);
-        };
-
-        // Function to get captured console errors
-        window.getConsoleErrors = () => {
-            return window.consoleErrors;
-        };
-
-        // Function to clear captured errors
-        window.clearConsoleErrors = () => {
-            window.consoleErrors = [];
         };
     </script>
 
