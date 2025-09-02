@@ -5,23 +5,109 @@ using Microsoft.JSInterop;
 using Radzen;
 using Radzen.Blazor;
 using System.ComponentModel;
+using Shared.DTOs.Authentication;
+using Client.Services.Authentication;
 
 namespace Client.Shared;
 
-public partial class MainLayout : LayoutComponentBase
+public partial class MainLayout : LayoutComponentBase, IDisposable
 {
     [Inject] private NavigationManager NavigationManager { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
     [Inject] private NotificationService NotificationService { get; set; } = null!;
+    [Inject] private IAuthenticationStateService AuthStateService { get; set; } = null!;
 
     private List<MenuModel> menuData = new();
     private string searchTerm = string.Empty;
     private bool isDarkMode = false;
+    private AuthenticationResponse? currentUser;
+    private string userDisplayName = "Utilizator";
+    private string userRole = "Guest";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         InitializeMenu();
+        await LoadCurrentUserAsync();
+        
+        // Subscribe to authentication state changes
+        AuthStateService.OnAuthenticationStateChanged += OnAuthenticationStateChanged;
     }
+
+    #region User Management
+    public async Task RefreshCurrentUserAsync()
+    {
+        await LoadCurrentUserAsync();
+    }
+
+    private async Task LoadCurrentUserAsync()
+    {
+        try
+        {
+            currentUser = await AuthStateService.GetCurrentUserAsync();
+            UpdateUserDisplayInfo();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading current user: {ex.Message}");
+            userDisplayName = "Utilizator";
+            userRole = "Guest";
+        }
+    }
+
+    private void UpdateUserDisplayInfo()
+    {
+        if (currentUser != null)
+        {
+            userDisplayName = currentUser.NumeComplet;
+            userRole = DetermineUserRole();
+        }
+        else
+        {
+            userDisplayName = "Utilizator";
+            userRole = "Guest";
+        }
+        
+        StateHasChanged();
+    }
+
+    private string DetermineUserRole()
+    {
+        // Logic to determine user role based on user data
+        // You can expand this based on your business logic
+        if (currentUser?.NumeComplet.StartsWith("Dr.") == true)
+            return "Doctor";
+        else if (currentUser?.Email.Contains("admin") == true)
+            return "Administrator";
+        else
+            return "Personal Medical";
+    }
+
+    private void OnAuthenticationStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadCurrentUserAsync();
+        });
+    }
+
+    private string GetUserAvatarUrl()
+    {
+        if (currentUser != null)
+        {
+            // Generate avatar with user initials
+            var names = currentUser.NumeComplet.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var initials = names.Length >= 2 
+                ? $"{names[0][0]}{names[1][0]}" 
+                : names.Length == 1 
+                    ? $"{names[0][0]}{(names[0].Length > 1 ? names[0][1] : 'X')}"
+                    : "XX";
+                    
+            return $"https://via.placeholder.com/32x32/007bff/ffffff?text={initials}";
+        }
+        
+        return "https://via.placeholder.com/32x32/007bff/ffffff?text=XX";
+    }
+    #endregion
 
     #region Search Functionality
     private async Task OnGlobalSearch()
@@ -29,7 +115,6 @@ public partial class MainLayout : LayoutComponentBase
         if (string.IsNullOrWhiteSpace(searchTerm))
             return;
 
-        // Implement global search logic
         NotificationService.Notify(new NotificationMessage
         {
             Severity = NotificationSeverity.Info,
@@ -38,7 +123,6 @@ public partial class MainLayout : LayoutComponentBase
             Duration = 3000
         });
 
-        // Navigate to search results
         NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(searchTerm)}");
     }
 
@@ -54,7 +138,6 @@ public partial class MainLayout : LayoutComponentBase
     #region Notifications
     private async Task ShowNotifications()
     {
-        // Show notifications panel/dialog
         NotificationService.Notify(new NotificationMessage
         {
             Severity = NotificationSeverity.Info,
@@ -68,7 +151,6 @@ public partial class MainLayout : LayoutComponentBase
     #region Quick Actions
     private async Task ShowQuickActions()
     {
-        // Default quick action - most common: add patient
         NavigationManager.NavigateTo("/medical/pacienti/nou");
     }
 
@@ -111,10 +193,8 @@ public partial class MainLayout : LayoutComponentBase
         
         try
         {
-            // Save theme preference
             await JSRuntime.InvokeVoidAsync("localStorage.setItem", "theme", isDarkMode ? "dark" : "light");
             
-            // Simple CSS class toggle instead of complex JavaScript
             var script = isDarkMode 
                 ? "document.body.classList.add('dark-theme'); document.body.classList.remove('light-theme');"
                 : "document.body.classList.add('light-theme'); document.body.classList.remove('dark-theme');";
@@ -133,7 +213,6 @@ public partial class MainLayout : LayoutComponentBase
         {
             Console.WriteLine($"Theme toggle error: {ex.Message}");
             
-            // Fallback - just toggle the state and show notification
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Info,
@@ -143,12 +222,11 @@ public partial class MainLayout : LayoutComponentBase
             });
         }
         
-        // Force re-render to update the icon
         StateHasChanged();
     }
     #endregion
 
-    #region Original Menu Logic
+    #region Menu Logic
     private void InitializeMenu()
     {
         menuData = new List<MenuModel>
@@ -316,21 +394,18 @@ public partial class MainLayout : LayoutComponentBase
     {
         if (firstRender)
         {
-            // For?eaz? stilurile pentru butonul Quick Actions prin JavaScript direct
+            await LoadCurrentUserAsync();
+            
             await JSRuntime.InvokeVoidAsync("eval", @"
                 setTimeout(() => {
-                    console.log('Forcing Quick Actions button styles...');
-                    
                     const quickBtn = document.querySelector('.quick-actions-btn-flat');
                     if (quickBtn) {
-                        // For?eaz? stilurile direct pe element
                         quickBtn.style.background = 'rgba(0,0,0,0.4)';
                         quickBtn.style.border = '2px solid rgba(255,255,255,0.8)';
                         quickBtn.style.color = 'white';
                         quickBtn.style.fontWeight = '800';
                         quickBtn.style.boxShadow = '0 3px 10px rgba(0,0,0,0.3)';
                         
-                        // For?eaz? pe text
                         const btnText = quickBtn.querySelector('.rz-button-text');
                         if (btnText) {
                             btnText.style.color = 'white';
@@ -338,28 +413,27 @@ public partial class MainLayout : LayoutComponentBase
                             btnText.style.textShadow = '0 2px 4px rgba(0,0,0,0.6)';
                         }
                         
-                        // For?eaz? pe icon
                         const btnIcon = quickBtn.querySelector('.rz-button-icon');
                         if (btnIcon) {
                             btnIcon.style.color = 'white';
                             btnIcon.style.textShadow = '0 2px 4px rgba(0,0,0,0.6)';
                         }
                         
-                        // For?eaz? pe butonul principal ?i cel de dropdown
                         const allButtons = quickBtn.querySelectorAll('.rz-button, .rz-splitbutton-button');
                         allButtons.forEach(btn => {
                             btn.style.background = 'rgba(0,0,0,0.4)';
                             btn.style.color = 'white';
                             btn.style.border = 'none';
                         });
-                        
-                        console.log('Quick Actions button styles applied successfully');
-                    } else {
-                        console.log('Quick Actions button not found');
                     }
                 }, 1000);
             ");
         }
+    }
+
+    public void Dispose()
+    {
+        AuthStateService.OnAuthenticationStateChanged -= OnAuthenticationStateChanged;
     }
 
     public class MenuModel : INotifyPropertyChanged

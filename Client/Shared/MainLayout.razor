@@ -77,13 +77,13 @@
                 <!-- User Profile - More compact -->
                 <div class="user-profile-section">
                     <div class="user-info">
-                        <RadzenText TextStyle="TextStyle.Body2" Class="user-name">Dr. Popescu</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Caption" Class="user-role">Admin</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Class="user-name">@userDisplayName</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Class="user-role">@userRole</RadzenText>
                     </div>
                     
                     <RadzenProfileMenu>
                         <Template>
-                            <RadzenImage Path="https://via.placeholder.com/32x32/007bff/ffffff?text=DP" 
+                            <RadzenImage Path="@GetUserAvatarUrl()" 
                                         Style="width: 32px; height: 32px; border-radius: 50%;" 
                                         AlternateText="User Avatar" />
                         </Template>
