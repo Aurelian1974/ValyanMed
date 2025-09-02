@@ -57,37 +57,11 @@
     padding-left: 48px !important;
 }
 
-/* QUICK ACTIONS BUTTON - OVERRIDE RADZEN STYLES */
-.quick-actions-btn-flat,
-.rz-splitbutton.quick-actions-btn-flat,
-.rz-splitbutton.quick-actions-btn-flat .rz-splitbutton-button,
-.rz-splitbutton.quick-actions-btn-flat .rz-button {
-    background: rgba(0,0,0,0.35) !important;
-    border: 2px solid rgba(255,255,255,0.8) !important;
-    color: white !important;
-    font-weight: 800 !important;
-    border-radius: 8px !important;
-    backdrop-filter: blur(15px) !important;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2) !important;
-}
-
-.quick-actions-btn-flat .rz-button-text,
-.rz-splitbutton.quick-actions-btn-flat .rz-button-text,
-.rz-splitbutton.quick-actions-btn-flat .rz-splitbutton-button .rz-button-text {
-    color: white !important;
-    font-weight: 800 !important;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.6) !important;
-}
-
-.quick-actions-btn-flat .rz-button-icon,
-.rz-splitbutton.quick-actions-btn-flat .rz-button-icon {
-    color: white !important;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.6) !important;
-}
-
-.quick-actions-btn-flat:hover,
-.rz-splitbutton.quick-actions-btn-flat:hover {
-    background: rgba(0,0,0,0.45) !important;
-    border-color: rgba(255,255,255,0.9) !important;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3) !important;
+/* USER PROFILE SECTION - PRIORITY FIX */
+::deep .user-profile-section {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    outline: none !important;
 }

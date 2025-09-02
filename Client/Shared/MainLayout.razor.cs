@@ -23,6 +23,16 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
     private AuthenticationResponse? currentUser;
     private string userDisplayName = "Utilizator";
     private string userRole = "Guest";
+    
+    // Simple dropdown state
+    private bool showUserMenu = false;
+    
+    // Breadcrumbs dynamic
+    private string currentPageTitle = "Dashboard";
+    private string currentPageIcon = "dashboard";
+    private string currentPagePath = "/dashboard";
+    private string? parentPageTitle = null;
+    private string? parentPagePath = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,12 +41,69 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         
         // Subscribe to authentication state changes
         AuthStateService.OnAuthenticationStateChanged += OnAuthenticationStateChanged;
+        
+        // Subscribe to navigation changes
+        NavigationManager.LocationChanged += OnLocationChanged;
+        
+        // Set initial breadcrumb
+        UpdateBreadcrumb(NavigationManager.Uri);
     }
 
     #region User Management
     public async Task RefreshCurrentUserAsync()
     {
         await LoadCurrentUserAsync();
+    }
+
+    private async Task OnAvatarClick(MouseEventArgs e)
+    {
+        showUserMenu = !showUserMenu;
+        StateHasChanged();
+    }
+
+    private void CloseUserMenu()
+    {
+        showUserMenu = false;
+        StateHasChanged();
+    }
+
+    private void NavigateToProfile()
+    {
+        showUserMenu = false;
+        NavigationManager.NavigateTo("/profil");
+    }
+
+    private void NavigateToSettings()
+    {
+        showUserMenu = false;
+        NavigationManager.NavigateTo("/setari");
+    }
+
+    private void NavigateToPreferences()
+    {
+        showUserMenu = false;
+        NavigationManager.NavigateTo("/preferinte");
+    }
+
+    private void NavigateToHelp()
+    {
+        showUserMenu = false;
+        NavigationManager.NavigateTo("/ajutor");
+    }
+
+    private string GetUserInitials()
+    {
+        if (currentUser != null)
+        {
+            var names = currentUser.NumeComplet.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return names.Length >= 2 
+                ? $"{names[0][0]}{names[1][0]}"
+                : names.Length == 1 
+                    ? $"{names[0][0]}{(names[0].Length > 1 ? names[0][1] : 'X')}"
+                    : "XX";
+        }
+        
+        return "XX";
     }
 
     private async Task LoadCurrentUserAsync()
@@ -72,8 +139,6 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
 
     private string DetermineUserRole()
     {
-        // Logic to determine user role based on user data
-        // You can expand this based on your business logic
         if (currentUser?.NumeComplet.StartsWith("Dr.") == true)
             return "Doctor";
         else if (currentUser?.Email.Contains("admin") == true)
@@ -89,26 +154,10 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
             await LoadCurrentUserAsync();
         });
     }
-
-    private string GetUserAvatarUrl()
-    {
-        if (currentUser != null)
-        {
-            // Generate avatar with user initials
-            var names = currentUser.NumeComplet.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            var initials = names.Length >= 2 
-                ? $"{names[0][0]}{names[1][0]}" 
-                : names.Length == 1 
-                    ? $"{names[0][0]}{(names[0].Length > 1 ? names[0][1] : 'X')}"
-                    : "XX";
-                    
-            return $"https://via.placeholder.com/32x32/007bff/ffffff?text={initials}";
-        }
-        
-        return "https://via.placeholder.com/32x32/007bff/ffffff?text=XX";
-    }
     #endregion
 
+    #region Disabled Features (For future implementation)
+    /*
     #region Search Functionality
     private async Task OnGlobalSearch()
     {
@@ -224,6 +273,8 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         
         StateHasChanged();
     }
+    #endregion
+    */
     #endregion
 
     #region Menu Logic
@@ -370,6 +421,7 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
 
     private async Task Logout()
     {
+        showUserMenu = false;
         try
         {
             await JSRuntime.InvokeVoidAsync("appLifecycle.logoutNow", "https://localhost:7294/api/auth/logout", 
@@ -395,45 +447,124 @@ public partial class MainLayout : LayoutComponentBase, IDisposable
         if (firstRender)
         {
             await LoadCurrentUserAsync();
-            
-            await JSRuntime.InvokeVoidAsync("eval", @"
-                setTimeout(() => {
-                    const quickBtn = document.querySelector('.quick-actions-btn-flat');
-                    if (quickBtn) {
-                        quickBtn.style.background = 'rgba(0,0,0,0.4)';
-                        quickBtn.style.border = '2px solid rgba(255,255,255,0.8)';
-                        quickBtn.style.color = 'white';
-                        quickBtn.style.fontWeight = '800';
-                        quickBtn.style.boxShadow = '0 3px 10px rgba(0,0,0,0.3)';
-                        
-                        const btnText = quickBtn.querySelector('.rz-button-text');
-                        if (btnText) {
-                            btnText.style.color = 'white';
-                            btnText.style.fontWeight = '800';
-                            btnText.style.textShadow = '0 2px 4px rgba(0,0,0,0.6)';
-                        }
-                        
-                        const btnIcon = quickBtn.querySelector('.rz-button-icon');
-                        if (btnIcon) {
-                            btnIcon.style.color = 'white';
-                            btnIcon.style.textShadow = '0 2px 4px rgba(0,0,0,0.6)';
-                        }
-                        
-                        const allButtons = quickBtn.querySelectorAll('.rz-button, .rz-splitbutton-button');
-                        allButtons.forEach(btn => {
-                            btn.style.background = 'rgba(0,0,0,0.4)';
-                            btn.style.color = 'white';
-                            btn.style.border = 'none';
-                        });
-                    }
-                }, 1000);
-            ");
         }
+        
+        // Simple styling for user profile section
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            setTimeout(() => {
+                // Style User Profile Section only
+                const userProfileSection = document.querySelector('.user-profile-section');
+                if (userProfileSection) {
+                    console.log('?? Styling user profile section...');
+                    
+                    userProfileSection.style.setProperty('background', 'rgba(255,255,255,0.08)', 'important');
+                    userProfileSection.style.setProperty('border', '1px solid rgba(255,255,255,0.15)', 'important');
+                    userProfileSection.style.setProperty('border-radius', '20px', 'important');
+                    userProfileSection.style.setProperty('padding', '6px 6px 6px 12px', 'important');
+                    userProfileSection.style.setProperty('backdrop-filter', 'blur(10px)', 'important');
+                    userProfileSection.style.setProperty('box-shadow', '0 2px 8px rgba(0,0,0,0.1)', 'important');
+                    
+                    console.log('? User profile section styled!');
+                } else {
+                    console.log('? User profile section not found');
+                }
+            }, 50);
+        ");
     }
 
     public void Dispose()
     {
         AuthStateService.OnAuthenticationStateChanged -= OnAuthenticationStateChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateBreadcrumb(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateBreadcrumb(string uri)
+    {
+        var relativePath = NavigationManager.ToBaseRelativePath(uri).ToLower();
+        
+        Console.WriteLine($"[BREADCRUMB DEBUG] URI: {uri}, RelativePath: {relativePath}");
+        
+        if (string.IsNullOrEmpty(relativePath) || relativePath == "dashboard" || relativePath == "medical/dashboard")
+        {
+            currentPageTitle = "Dashboard";
+            currentPageIcon = "dashboard";
+            currentPagePath = "/dashboard";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else if (relativePath.Contains("administrare/gestionare-persoane"))
+        {
+            currentPageTitle = "Gestionare Persoane";
+            currentPageIcon = "manage_accounts";
+            currentPagePath = "/administrare/gestionare-persoane";
+            parentPageTitle = "Persoane";
+            parentPagePath = "/administrare/persoane";
+        }
+        else if (relativePath.Contains("persoane") || relativePath.Contains("administrare/persoane"))
+        {
+            currentPageTitle = "Persoane";
+            currentPageIcon = "people";
+            currentPagePath = "/administrare/persoane";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else if (relativePath.Contains("utilizatori"))
+        {
+            currentPageTitle = "Utilizatori";
+            currentPageIcon = "manage_accounts";
+            currentPagePath = "/utilizatori";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else if (relativePath.Contains("pacienti"))
+        {
+            currentPageTitle = "Pacien?i";
+            currentPageIcon = "people";
+            currentPagePath = "/medical/pacienti";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else if (relativePath.Contains("personal"))
+        {
+            currentPageTitle = "Personal Medical";
+            currentPageIcon = "badge";
+            currentPagePath = "/medical/personal";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else if (relativePath.Contains("farmacie"))
+        {
+            currentPageTitle = "Farmacie";
+            currentPageIcon = "local_pharmacy";
+            currentPagePath = "/farmacie";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else if (relativePath.Contains("rapoarte"))
+        {
+            currentPageTitle = "Rapoarte";
+            currentPageIcon = "assessment";
+            currentPagePath = "/rapoarte";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        else
+        {
+            currentPageTitle = "Dashboard";
+            currentPageIcon = "dashboard";
+            currentPagePath = "/dashboard";
+            parentPageTitle = null;
+            parentPagePath = null;
+        }
+        
+        Console.WriteLine($"[BREADCRUMB DEBUG] Set to: {currentPageTitle} with icon {currentPageIcon}");
+        Console.WriteLine($"[BREADCRUMB DEBUG] Parent: {parentPageTitle}");
     }
 
     public class MenuModel : INotifyPropertyChanged
