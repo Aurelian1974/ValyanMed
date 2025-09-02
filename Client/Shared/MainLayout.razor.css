@@ -1,0 +1,58 @@
+/* MainLayout CSS - Styling pentru RadzenPanelMenu cu indentare corect? */
+
+.valyan-menu .rz-panel-menu-item {
+    transition: background-color 0.2s ease;
+}
+
+.valyan-menu .rz-panel-menu-item:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.valyan-menu .rz-panel-menu-item.rz-state-active {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* App logo styling */
+.app-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Sidebar header styling */
+.sidebar-header {
+    padding: 16px;
+}
+
+.sidebar-title {
+    margin-bottom: 16px;
+}
+
+/* Menu indentation styling - FOR?EAZ? INDENTAREA */
+.menu-level-1 {
+    margin-left: 24px !important;
+}
+
+.menu-level-2 {
+    margin-left: 24px !important;
+}
+
+/* Backup CSS pentru Radzen - în caz c? clasele custom nu func?ioneaz? */
+.valyan-menu .rz-panel-menu-item .rz-panel-menu-item {
+    margin-left: 24px !important;
+    padding-left: 8px !important;
+}
+
+.valyan-menu .rz-panel-menu-item .rz-panel-menu-item .rz-panel-menu-item {
+    margin-left: 48px !important;
+    padding-left: 8px !important;
+}
+
+/* Targeteaz? ?i con?inutul itemilor pentru siguran?? */
+.valyan-menu .rz-panel-menu-item .rz-panel-menu-item > .rz-panel-menu-item-content {
+    padding-left: 24px !important;
+}
+
+.valyan-menu .rz-panel-menu-item .rz-panel-menu-item .rz-panel-menu-item > .rz-panel-menu-item-content {
+    padding-left: 48px !important;
+}
