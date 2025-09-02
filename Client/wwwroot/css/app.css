@@ -1,4 +1,5 @@
 ﻿/* ValyanMed Application Styles */
+@import url('components/headers.css');
 
 html, body {
     font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

@@ -13,24 +13,15 @@
 <RadzenRow Class="rz-p-4">
     <RadzenColumn Size="12">
         
-        <!-- Header Card -->
-        <RadzenCard Class="rz-mb-4">
+        <!-- Header Card - FOLOSESTE CLASELE GLOBALE -->
+        <RadzenCard Class="page-header-card rz-mb-4">
             <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
-                <RadzenColumn Size="12" SizeMD="8">
+                <RadzenColumn Size="12">
                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-                        <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Style="font-size: 1.5rem; color: var(--rz-primary);" />
-                        <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0">
+                        <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Class="page-header-icon" />
+                        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title">
                             @(_isEditMode ? "Modifica Personal Medical" : "Adauga Personal Medical Nou")
                         </RadzenText>
-                    </RadzenStack>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="4">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.5rem">
-                        <RadzenButton Text="Inapoi la lista" 
-                                     Icon="arrow_back" 
-                                     ButtonStyle="ButtonStyle.Secondary" 
-                                     Variant="Radzen.Variant.Filled"
-                                     Click="@BackToList" />
                     </RadzenStack>
                 </RadzenColumn>
             </RadzenRow>
@@ -96,7 +87,8 @@
                                                           MaxLength="100"
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
-                                                          Change="@(() => OnFieldChanged(nameof(_model.Nume)))" />
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Nume)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Nume)))" />
                                             <RadzenRequiredValidator Component="Nume" Text="Numele este obligatoriu" />
                                         </RadzenColumn>
                                         
@@ -111,7 +103,8 @@
                                                           MaxLength="100"
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
-                                                          Change="@(() => OnFieldChanged(nameof(_model.Prenume)))" />
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Prenume)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Prenume)))" />
                                             <RadzenRequiredValidator Component="Prenume" Text="Prenumele este obligatoriu" />
                                         </RadzenColumn>
                                         
@@ -134,53 +127,96 @@
                                             <RadzenRequiredValidator Component="Pozitie" Text="Pozitia este obligatorie" />
                                         </RadzenColumn>
 
-                                        <!-- Departament -->
-                                        <RadzenColumn Size="12" SizeMD="6">
-                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Departament</RadzenText>
-                                            <RadzenDropDown @bind-Value="_model.Departament" 
-                                                           Name="Departament"
-                                                           Data="@_departamenteOptions" 
-                                                           TextProperty="Text" 
-                                                           ValueProperty="Value"
-                                                           Placeholder="Selecteaza departamentul..." 
-                                                           AllowClear="true"
-                                                           AllowFiltering="true"
-                                                           Style="width: 100%;"
-                                                           Variant="Radzen.Variant.Outlined" />
-                                        </RadzenColumn>
-
                                         <!-- Status -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Status</RadzenText>
                                             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0.75rem" 
                                                        Style="height: 40px; border: 1px solid #dee2e6; border-radius: 4px; padding: 0 12px; background: white;">
-                                                <RadzenCheckBox @bind-Value="_model.EsteActiv" Name="EsteActiv" />
+                                                <RadzenCheckBox @bind-Value="_model.EsteActiv" 
+                                                               Name="EsteActiv" 
+                                                               Change="@(async (bool value) => await OnFieldChanged(nameof(_model.EsteActiv)))" />
                                                 <RadzenLabel Text="Personal activ in sistem" Component="EsteActiv" />
                                             </RadzenStack>
                                         </RadzenColumn>
                                     </RadzenRow>
                                 </RadzenFieldset>
 
-                                <!-- Informatii Profesionale -->
+                                <!-- Informatii Profesionale - ACTUALIZAT CU IERARHIE -->
                                 <RadzenFieldset Text="Informatii Profesionale">
                                     <RadzenRow Gap="1rem" RowGap="1.5rem">
-                                        <!-- Specializare -->
+                                        <!-- Categorie (fostul Departament) -->
+                                        <RadzenColumn Size="12" SizeMD="6">
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
+                                                Categorie <span style="color: #dc3545; font-weight: bold;">*</span>
+                                            </RadzenText>
+                                            <RadzenDropDown @bind-Value="_model.CategorieID" 
+                                                           Name="CategorieID"
+                                                           Data="@_categoriiOptions" 
+                                                           TextProperty="Text" 
+                                                           ValueProperty="Value"
+                                                           Placeholder="Selecteaza categoria..." 
+                                                           AllowClear="true"
+                                                           AllowFiltering="true"
+                                                           Style="width: 100%;"
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Change="@OnCategorieChanged" />
+                                            <RadzenRequiredValidator Component="CategorieID" Text="Categoria este obligatorie" />
+                                        </RadzenColumn>
+
+                                        <!-- Specializare (dropdown dependent de Categorie) -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
                                                 Specializare <span style="color: #dc3545; font-weight: bold;">*</span>
                                             </RadzenText>
-                                            <RadzenTextBox @bind-Value="_model.Specializare" 
-                                                          Name="Specializare"
-                                                          Placeholder="Introduceti specializarea..." 
-                                                          MaxLength="100"
-                                                          Style="width: 100%;"
-                                                          Variant="Radzen.Variant.Outlined" />
-                                            <RadzenRequiredValidator Component="Specializare" Text="Specializarea este obligatorie" />
+                                            <RadzenDropDown @bind-Value="_model.SpecializareID" 
+                                                           Name="SpecializareID"
+                                                           Data="@_specializariOptions" 
+                                                           TextProperty="Text" 
+                                                           ValueProperty="Value"
+                                                           Placeholder="Selecteaza specializarea..." 
+                                                           AllowClear="true"
+                                                           AllowFiltering="true"
+                                                           Style="width: 100%;"
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Disabled="@(!_model.CategorieID.HasValue || !_specializariOptions.Any())"
+                                                           Change="@OnSpecializareChanged" />
+                                            <RadzenRequiredValidator Component="SpecializareID" Text="Specializarea este obligatorie" />
                                             @if (_showSpecializareWarning)
                                             {
                                                 <div class="business-warning">
                                                     <RadzenIcon Icon="info" />
                                                     Specializarea este recomandata pentru aceasta pozitie
+                                                </div>
+                                            }
+                                            @if (_model.CategorieID.HasValue && !_specializariOptions.Any())
+                                            {
+                                                <div class="info-message">
+                                                    <RadzenIcon Icon="info" />
+                                                    Nu exista specializari disponibile pentru categoria selectata
+                                                </div>
+                                            }
+                                        </RadzenColumn>
+
+                                        <!-- Subspecializare (dropdown dependent de Specializare) -->
+                                        <RadzenColumn Size="12" SizeMD="6">
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Subspecializare</RadzenText>
+                                            <RadzenDropDown @bind-Value="_model.SubspecializareID" 
+                                                           Name="SubspecializareID"
+                                                           Data="@_subspecializariOptions" 
+                                                           TextProperty="Text" 
+                                                           ValueProperty="Value"
+                                                           Placeholder="Selecteaza subspecializarea..." 
+                                                           AllowClear="true"
+                                                           AllowFiltering="true"
+                                                           Style="width: 100%;"
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Disabled="@(!_model.SpecializareID.HasValue || !_subspecializariOptions.Any())"
+                                                           Change="@OnSubspecializareChanged" />
+                                            @if (_model.SpecializareID.HasValue && !_subspecializariOptions.Any())
+                                            {
+                                                <div class="info-message">
+                                                    <RadzenIcon Icon="info" />
+                                                    Nu exista subspecializari disponibile pentru specializarea selectata
                                                 </div>
                                             }
                                         </RadzenColumn>
@@ -195,7 +231,9 @@
                                                           Placeholder="Introduceti numarul de licenta..." 
                                                           MaxLength="50"
                                                           Style="width: 100%;"
-                                                          Variant="Radzen.Variant.Outlined" />
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.NumarLicenta)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.NumarLicenta)))" />
                                             <RadzenRequiredValidator Component="NumarLicenta" Text="Numarul de licenta este obligatoriu" />
                                             @if (_showLicentaWarning)
                                             {
@@ -208,7 +246,7 @@
                                     </RadzenRow>
                                 </RadzenFieldset>
 
-                                <!-- Informatii Contact -->
+                                <!-- Informatii de Contact -->
                                 <RadzenFieldset Text="Informatii de Contact">
                                     <RadzenRow Gap="1rem" RowGap="1.5rem">
                                         <!-- Telefon -->
@@ -221,7 +259,9 @@
                                                           Placeholder="Ex: 0721123456" 
                                                           MaxLength="20"
                                                           Style="width: 100%;"
-                                                          Variant="Radzen.Variant.Outlined" />
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Telefon)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Telefon)))" />
                                             <RadzenRequiredValidator Component="Telefon" Text="Telefonul este obligatoriu" />
                                         </RadzenColumn>
 
@@ -235,31 +275,49 @@
                                                           Placeholder="Ex: nume@valyanmed.ro" 
                                                           MaxLength="100"
                                                           Style="width: 100%;"
-                                                          Variant="Radzen.Variant.Outlined" />
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Email)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Email)))" />
                                             <RadzenRequiredValidator Component="Email" Text="Email-ul este obligatoriu" />
                                             <RadzenEmailValidator Component="Email" Text="Formatul email-ului nu este valid" />
                                         </RadzenColumn>
                                     </RadzenRow>
                                 </RadzenFieldset>
 
-                                <!-- Action Buttons -->
-                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="rz-background-color-base-100">
-                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="1rem">
-                                        <RadzenButton Text="Anuleaza" 
-                                                     Icon="cancel" 
-                                                     ButtonStyle="ButtonStyle.Danger" 
-                                                     Variant="Radzen.Variant.Outlined"
+                                <!-- Action Buttons - UN SINGUR BUTON INAPOI IN STANGA JOS -->
+                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="rz-background-color-base-100" Style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.SpaceBetween" Gap="1rem">
+                                        
+                                        <!-- BUTON INAPOI PRINCIPAL - DOAR ACESTA RAMANE (STANGA JOS) -->
+                                        <RadzenButton Text="Inapoi la lista" 
+                                                     Icon="arrow_back" 
+                                                     ButtonStyle="ButtonStyle.Info" 
+                                                     Variant="Radzen.Variant.Filled"
+                                                     Size="ButtonSize.Large"
+                                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
                                                      Click="@BackToList"
                                                      Disabled="@_isProcessing" />
-                                                     
-                                        <RadzenButton ButtonType="Radzen.ButtonType.Submit" 
-                                                     Text="@GetSaveButtonText()" 
-                                                     Icon="@GetSaveButtonIcon()" 
-                                                     ButtonStyle="ButtonStyle.Success" 
-                                                     Variant="Radzen.Variant.Filled"
-                                                     Disabled="@_isProcessing"
-                                                     IsBusy="@_isProcessing" 
-                                                     Style="@GetSaveButtonStyle()" />
+                                        
+                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                                            <RadzenButton Text="Anuleaza" 
+                                                         Icon="cancel" 
+                                                         ButtonStyle="ButtonStyle.Danger" 
+                                                         Variant="Radzen.Variant.Outlined"
+                                                         Size="ButtonSize.Large"
+                                                         Style="font-weight: 600; padding: 12px 20px;"
+                                                         Click="@BackToList"
+                                                         Disabled="@_isProcessing" />
+                                                         
+                                            <RadzenButton ButtonType="Radzen.ButtonType.Submit" 
+                                                         Text="@GetSaveButtonText()" 
+                                                         Icon="@GetSaveButtonIcon()" 
+                                                         ButtonStyle="ButtonStyle.Success" 
+                                                         Variant="Radzen.Variant.Filled"
+                                                         Size="ButtonSize.Large"
+                                                         Disabled="@_isProcessing"
+                                                         IsBusy="@_isProcessing" 
+                                                         Style="font-weight: bold; padding: 12px 24px; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); text-transform: uppercase;" />
+                                        </RadzenStack>
                                     </RadzenStack>
                                 </RadzenCard>
                             </RadzenStack>
@@ -276,10 +334,10 @@
                                 Preview Personal Medical
                             </RadzenText>
                             
-                            @if (_isEditMode || (!string.IsNullOrEmpty(_model.Nume) && !string.IsNullOrEmpty(_model.Prenume)))
+                            @if (_isEditMode || (!string.IsNullOrEmpty(_model.Nume) || !string.IsNullOrEmpty(_model.Prenume)))
                             {
                                 <!-- Grid cu preview-ul datelor folosind Radzen Grid -->
-                                <RadzenGrid TItem="PersonalMedicalListDto" 
+                                <RadzenGrid TItem="PersonalMedicalPreview" 
                                            Data="@_previewData" 
                                            AllowPaging="false"
                                            AllowSorting="false"
@@ -288,14 +346,35 @@
                                            Density="Density.Compact"
                                            Style="border: 1px solid var(--rz-border-color); height: 300px;">
                                     <Columns>
-                                        <RadzenGridColumn TItem="PersonalMedicalListDto" Property="Nume" Title="Nume" Width="100px" />
-                                        <RadzenGridColumn TItem="PersonalMedicalListDto" Property="Prenume" Title="Prenume" Width="100px" />
-                                        <RadzenGridColumn TItem="PersonalMedicalListDto" Property="Pozitie" Title="Pozitie" Width="120px" />
-                                        <RadzenGridColumn TItem="PersonalMedicalListDto" Property="Specializare" Title="Specializare" Width="120px" />
-                                        <RadzenGridColumn TItem="PersonalMedicalListDto" Property="Departament" Title="Departament" Width="120px" />
-                                        <RadzenGridColumn TItem="PersonalMedicalListDto" Property="StatusText" Title="Status" Width="80px" />
+                                        <RadzenGridColumn TItem="PersonalMedicalPreview" Property="Nume" Title="Nume" Width="100px" />
+                                        <RadzenGridColumn TItem="PersonalMedicalPreview" Property="Prenume" Title="Prenume" Width="100px" />
+                                        <RadzenGridColumn TItem="PersonalMedicalPreview" Property="Pozitie" Title="Pozitie" Width="120px" />
+                                        <RadzenGridColumn TItem="PersonalMedicalPreview" Property="Specializare" Title="Specializare" Width="120px" />
+                                        <RadzenGridColumn TItem="PersonalMedicalPreview" Property="Categorie" Title="Categorie" Width="120px" />
+                                        <RadzenGridColumn TItem="PersonalMedicalPreview" Property="Status" Title="Status" Width="80px" />
                                     </Columns>
                                 </RadzenGrid>
+
+                                @if (_previewData.Any())
+                                {
+                                    var personal = _previewData.First();
+                                    if (!string.IsNullOrEmpty(personal.CategorieNume) || !string.IsNullOrEmpty(personal.SpecializareNume) || !string.IsNullOrEmpty(personal.SubspecializareNume))
+                                    {
+                                        <!-- Calea ierarhica completa -->
+                                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
+                                            <RadzenText TextStyle="TextStyle.Body2">
+                                                <strong>Calea ierarhica:</strong><br />
+                                                @{
+                                                    var parts = new List<string>();
+                                                    if (!string.IsNullOrEmpty(personal.CategorieNume)) parts.Add(personal.CategorieNume);
+                                                    if (!string.IsNullOrEmpty(personal.SpecializareNume)) parts.Add(personal.SpecializareNume);
+                                                    if (!string.IsNullOrEmpty(personal.SubspecializareNume)) parts.Add(personal.SubspecializareNume);
+                                                }
+                                                @string.Join(" > ", parts)
+                                            </RadzenText>
+                                        </RadzenAlert>
+                                    }
+                                }
                             }
                             else
                             {
@@ -348,5 +427,33 @@
 
 .business-warning .rz-icon {
     color: #856404;
+}
+
+.info-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    color: #0c5460;
+    font-size: 0.875rem;
+}
+
+.info-message .rz-icon {
+    color: #0c5460;
+}
+
+/* CSS pentru butoanele imbunatatite */
+.rz-button-large {
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.rz-button-large:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
 }
 </style>

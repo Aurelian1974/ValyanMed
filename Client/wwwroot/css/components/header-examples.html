@@ -1,0 +1,80 @@
+<!--
+EXEMPLU DE FOLOSIRE A HEADER-URILOR GLOBALE
+=============================================
+
+1. Header Standard (default - albastru):
+-->
+<RadzenCard Class="page-header-card">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+        <RadzenIcon Icon="dashboard" Class="page-header-icon" />
+        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title">
+            Titlu Pagina Standard
+        </RadzenText>
+    </RadzenStack>
+</RadzenCard>
+
+<!--
+2. Header pentru pagini de vizualizare (mov):
+-->
+<RadzenCard Class="page-header-card view-mode">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+        <RadzenIcon Icon="visibility" Class="page-header-icon view-mode" />
+        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title view-mode">
+            Vizualizare Element
+        </RadzenText>
+    </RadzenStack>
+</RadzenCard>
+
+<!--
+3. Header pentru pagini de lista (verde):
+-->
+<RadzenCard Class="page-header-card list-mode">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+        <RadzenIcon Icon="list" Class="page-header-icon list-mode" />
+        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title list-mode">
+            Lista Elemente
+        </RadzenText>
+    </RadzenStack>
+</RadzenCard>
+
+<!--
+4. Header pentru pagini de editare (portocaliu):
+-->
+<RadzenCard Class="page-header-card edit-mode">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+        <RadzenIcon Icon="edit" Class="page-header-icon edit-mode" />
+        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title edit-mode">
+            Editare Element
+        </RadzenText>
+    </RadzenStack>
+</RadzenCard>
+
+<!--
+CLASELE DISPONIBILE:
+====================
+
+CARD:
+- page-header-card (standard - albastru)
+- page-header-card view-mode (mov)
+- page-header-card list-mode (verde)
+- page-header-card edit-mode (portocaliu)
+
+ICON:
+- page-header-icon (standard)
+- page-header-icon view-mode
+- page-header-icon list-mode
+- page-header-icon edit-mode
+
+TITLE:
+- page-header-title (standard)
+- page-header-title view-mode
+- page-header-title list-mode
+- page-header-title edit-mode
+
+STRUCTURA OBLIGATORIE:
+======================
+1. RadzenCard cu clasa page-header-card [+ modul]
+2. RadzenStack pentru layout
+3. RadzenIcon cu clasa page-header-icon [+ modul]
+4. RadzenText cu clasa page-header-title [+ modul]
+-->

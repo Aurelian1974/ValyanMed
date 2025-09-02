@@ -1,81 +1,133 @@
 using Microsoft.AspNetCore.Components;
 using global::Shared.DTOs.Medical;
-using global::Shared.Enums.Medical;
 using global::Shared.Common;
 using Radzen;
 using Client.Services.Medical;
-using FluentValidation;
-using Shared.Validators.Medical;
-using Microsoft.JSInterop;
+using System.Linq;
 
 namespace Client.Pages.Medical;
 
 public partial class AdaugEditezPersonalMedical : ComponentBase, IDisposable
 {
     [Inject] private IPersonalMedicalApiService PersonalMedicalApiService { get; set; } = null!;
+    [Inject] private IDepartamenteApiService DepartamenteApiService { get; set; } = null!;
     [Inject] private NotificationService NotificationService { get; set; } = null!;
-    [Inject] private DialogService DialogService { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
-    [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
 
     [Parameter] public Guid? PersonalId { get; set; }
 
     // Form model
-    private CreatePersonalMedicalRequest _model = new() { EsteActiv = true };
-    
-    // Form state
+    private CreatePersonalMedicalRequest _model = new();
+    private bool _isEditMode = false;
+    private bool _isLoading = true;
     private bool _isProcessing = false;
-    private bool _isLoading = false;
-    private bool _isEditMode => PersonalId.HasValue && PersonalId.Value != Guid.Empty;
-    
-    // Business logic state
-    private bool _showSpecializareWarning = false;
+
+    // Dropdown options - ACTUALIZAT pentru ierarhie
+    private IEnumerable<DepartamentOptionDto> _categoriiOptions = new List<DepartamentOptionDto>();
+    private IEnumerable<DepartamentOptionDto> _specializariOptions = new List<DepartamentOptionDto>();
+    private IEnumerable<DepartamentOptionDto> _subspecializariOptions = new List<DepartamentOptionDto>();
+    private IEnumerable<dynamic> _pozitiiOptions = new List<dynamic>();
+
+    // Business rule warnings
     private bool _showLicentaWarning = false;
-    private bool _showBusinessRulesInfo => _showSpecializareWarning || _showLicentaWarning;
-    
-    // Dropdown options
-    private List<OptionItem> _pozitiiOptions = new();
-    private List<OptionItem> _departamenteOptions = new();
-    
-    // Preview data for grid
-    private List<PersonalMedicalListDto> _previewData = new();
+    private bool _showSpecializareWarning = false;
+    private bool _showBusinessRulesInfo = false;
+
+    // Preview data
+    private IEnumerable<PersonalMedicalPreview> _previewData = new List<PersonalMedicalPreview>();
+
+    // Preview class for grid display
+    private class PersonalMedicalPreview
+    {
+        public string Nume { get; set; } = string.Empty;
+        public string Prenume { get; set; } = string.Empty;
+        public string Pozitie { get; set; } = string.Empty;
+        public string Specializare { get; set; } = string.Empty;
+        public string Categorie { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string CategorieNume { get; set; } = string.Empty;
+        public string SpecializareNume { get; set; } = string.Empty;
+        public string SubspecializareNume { get; set; } = string.Empty;
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        LoadDropdownOptions();
-        UpdatePreviewData();
+        _isEditMode = PersonalId.HasValue;
         
-        if (_isEditMode)
+        await LoadInitialData();
+        
+        if (_isEditMode && PersonalId.HasValue)
         {
-            await LoadPersonalDataAsync();
+            await LoadPersonalForEdit();
         }
         else
         {
+            // Set defaults for new personal
             _model.EsteActiv = true;
         }
-        
-        await base.OnInitializedAsync();
+
+        _isLoading = false;
+        await UpdatePreviewData();
+        StateHasChanged(); // For?ez re-render ini?ial
     }
 
-    protected override async Task OnParametersSetAsync()
+    private async Task LoadInitialData()
     {
-        if (_isEditMode && PersonalId.HasValue)
+        try
         {
-            await LoadPersonalDataAsync();
+            // Load categorii (fostele departamente)
+            var categoriiResult = await DepartamenteApiService.GetCategoriiAsync();
+            if (categoriiResult.IsSuccess)
+            {
+                _categoriiOptions = categoriiResult.Value ?? new List<DepartamentOptionDto>();
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Aten?ie",
+                    Detail = "Nu s-au putut înc?rca categoriile de departamente",
+                    Duration = 4000
+                });
+            }
+
+            // Load pozitii options (acestea r?mân statice)
+            _pozitiiOptions = new[]
+            {
+                new { Value = "Doctor", Text = "Doctor" },
+                new { Value = "Medic Specialist", Text = "Medic Specialist" },
+                new { Value = "Medic Primar", Text = "Medic Primar" },
+                new { Value = "Asistent Medical", Text = "Asistent Medical" },
+                new { Value = "Infirmiera", Text = "Infirmiera" },
+                new { Value = "Tehnician Medical", Text = "Tehnician Medical" },
+                new { Value = "Kinetoterapeut", Text = "Kinetoterapeut" },
+                new { Value = "Farmacist", Text = "Farmacist" },
+                new { Value = "Radiolog", Text = "Radiolog" },
+                new { Value = "Laborant", Text = "Laborant" },
+                new { Value = "Administrator", Text = "Administrator" },
+                new { Value = "Personal Suport", Text = "Personal Suport" }
+            };
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare la înc?rcarea datelor ini?iale: {ex.Message}",
+                Duration = 5000
+            });
         }
     }
 
-    private async Task LoadPersonalDataAsync()
+    private async Task LoadPersonalForEdit()
     {
         if (!PersonalId.HasValue) return;
-        
-        _isLoading = true;
-        StateHasChanged();
-        
+
         try
         {
             var result = await PersonalMedicalApiService.GetByIdAsync(PersonalId.Value);
-            
             if (result.IsSuccess && result.Value != null)
             {
                 var personal = result.Value;
@@ -84,561 +136,384 @@ public partial class AdaugEditezPersonalMedical : ComponentBase, IDisposable
                     Nume = personal.Nume,
                     Prenume = personal.Prenume,
                     Pozitie = personal.Pozitie,
-                    Departament = personal.Departament,
-                    Specializare = personal.Specializare,
-                    NumarLicenta = personal.NumarLicenta,
-                    Telefon = personal.Telefon,
-                    Email = personal.Email,
-                    EsteActiv = personal.EsteActiv
+                    Specializare = personal.SpecializareNume ?? personal.Specializare ?? string.Empty,
+                    NumarLicenta = personal.NumarLicenta ?? string.Empty,
+                    Telefon = personal.Telefon ?? string.Empty,
+                    Email = personal.Email ?? string.Empty,
+                    Departament = personal.DepartamentAfisare,
+                    EsteActiv = personal.EsteActiv,
+                    // Noi propriet??i ierarhice
+                    CategorieID = personal.CategorieID,
+                    SpecializareID = personal.SpecializareID,
+                    SubspecializareID = personal.SubspecializareID
                 };
-                
-                OnPozitieChanged(_model.Pozitie);
-                UpdatePreviewData();
-                
-                NotificationService.Notify(new NotificationMessage
+
+                // Load dependent dropdowns based on existing data
+                if (personal.CategorieID.HasValue)
                 {
-                    Severity = NotificationSeverity.Info,
-                    Summary = "Date incarcate",
-                    Detail = $"Datele pentru '{personal.Nume} {personal.Prenume}' au fost incarcate pentru editare.",
-                    Duration = 3000
-                });
+                    await LoadSpecializari(personal.CategorieID.Value);
+                    
+                    if (personal.SpecializareID.HasValue)
+                    {
+                        await LoadSubspecializari(personal.SpecializareID.Value);
+                    }
+                }
             }
             else
             {
-                await ShowNotFoundError();
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Eroare",
+                    Detail = string.Join(", ", result.Errors),
+                    Duration = 4000
+                });
+                await BackToList();
             }
-        }
-        catch (HttpRequestException)
-        {
-            await ShowNetworkErrorNotification();
         }
         catch (Exception ex)
         {
-            await ShowUnexpectedErrorNotification($"Eroare la incarcarea datelor: {ex.Message}");
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare la înc?rcarea personalului medical: {ex.Message}",
+                Duration = 4000
+            });
+            await BackToList();
         }
     }
 
-    public void Dispose()
+    // Cascade dropdown handlers - NOI METODE PENTRU IERARHIE
+    private async Task OnCategorieChanged(object? value)
     {
-        // Cleanup if needed
+        if (value is Guid categorieId)
+        {
+            _model.CategorieID = categorieId;
+            _model.SpecializareID = null;
+            _model.SubspecializareID = null;
+            
+            // Clear dependent dropdowns
+            _specializariOptions = new List<DepartamentOptionDto>();
+            _subspecializariOptions = new List<DepartamentOptionDto>();
+            
+            await LoadSpecializari(categorieId);
+        }
+        else
+        {
+            _model.CategorieID = null;
+            _model.SpecializareID = null;
+            _model.SubspecializareID = null;
+            _specializariOptions = new List<DepartamentOptionDto>();
+            _subspecializariOptions = new List<DepartamentOptionDto>();
+        }
+        
+        await UpdatePreviewData();
+        StateHasChanged();
     }
 
-    private void LoadDropdownOptions()
+    private async Task OnSpecializareChanged(object? value)
+    {
+        if (value is Guid specializareId)
+        {
+            _model.SpecializareID = specializareId;
+            _model.SubspecializareID = null;
+            
+            // Update Specializare text field based on selection
+            var selectedSpecializare = _specializariOptions.FirstOrDefault(s => s.Value == specializareId);
+            if (selectedSpecializare != null)
+            {
+                _model.Specializare = selectedSpecializare.Text;
+            }
+            
+            // Clear subspecializari dropdown
+            _subspecializariOptions = new List<DepartamentOptionDto>();
+            
+            await LoadSubspecializari(specializareId);
+        }
+        else
+        {
+            _model.SpecializareID = null;
+            _model.SubspecializareID = null;
+            _subspecializariOptions = new List<DepartamentOptionDto>();
+        }
+        
+        await UpdatePreviewData();
+        StateHasChanged();
+    }
+
+    private async Task OnSubspecializareChanged(object? value)
+    {
+        if (value is Guid subspecializareId)
+        {
+            _model.SubspecializareID = subspecializareId;
+        }
+        else
+        {
+            _model.SubspecializareID = null;
+        }
+        
+        await UpdatePreviewData();
+        StateHasChanged();
+    }
+
+    // Load methods for cascade dropdowns
+    private async Task LoadSpecializari(Guid categorieId)
     {
         try
         {
-            _pozitiiOptions = Enum.GetValues<PozitiePersonal>()
-                .Select(p => new OptionItem
+            var result = await DepartamenteApiService.GetSpecializariByCategorieAsync(categorieId);
+            if (result.IsSuccess)
+            {
+                _specializariOptions = result.Value ?? new List<DepartamentOptionDto>();
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
                 {
-                    Value = p.GetDisplayName(),
-                    Text = p.GetDisplayName()
-                })
-                .OrderBy(o => o.Text)
-                .ToList();
-
-            _departamenteOptions = Enum.GetValues<Departament>()
-                .Select(d => new OptionItem
-                {
-                    Value = d.GetDisplayName(),
-                    Text = d.GetDisplayName()
-                })
-                .OrderBy(o => o.Text)
-                .ToList();
-                
-            // Log pentru debugging
-            JSRuntime.InvokeVoidAsync("console.log", "Dropdown options loaded", new { 
-                Pozitii = _pozitiiOptions.Count, 
-                Departamente = _departamenteOptions.Count 
-            });
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Aten?ie",
+                    Detail = "Nu s-au putut înc?rca specializ?rile pentru categoria selectat?",
+                    Duration = 4000
+                });
+            }
         }
         catch (Exception ex)
         {
-            JSRuntime.InvokeVoidAsync("console.error", "Error loading dropdown options", ex.Message);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare la înc?rcarea specializ?rilor: {ex.Message}",
+                Duration = 4000
+            });
         }
     }
 
-    private void OnPozitieChanged(object value)
+    private async Task LoadSubspecializari(Guid specializareId)
     {
-        var pozitie = value?.ToString() ?? string.Empty;
-        _model.Pozitie = pozitie;
-        
-        var isDoctorPosition = pozitie.Contains("Doctor") || pozitie.Contains("Medic");
-        
-        _showSpecializareWarning = isDoctorPosition && string.IsNullOrWhiteSpace(_model.Specializare);
-        _showLicentaWarning = isDoctorPosition && string.IsNullOrWhiteSpace(_model.NumarLicenta);
-        
-        UpdatePreviewData();
-        StateHasChanged();
-    }
-
-    private void OnFieldChanged(string fieldName)
-    {
-        UpdatePreviewData();
-        StateHasChanged();
-    }
-
-    private void UpdatePreviewData()
-    {
-        if (!string.IsNullOrEmpty(_model.Nume) && !string.IsNullOrEmpty(_model.Prenume))
+        try
         {
-            _previewData = new List<PersonalMedicalListDto>
+            var result = await DepartamenteApiService.GetSubspecializariBySpecializareAsync(specializareId);
+            if (result.IsSuccess)
             {
-                new PersonalMedicalListDto
+                _subspecializariOptions = result.Value ?? new List<DepartamentOptionDto>();
+            }
+            else
+            {
+                NotificationService.Notify(new NotificationMessage
                 {
-                    PersonalID = PersonalId ?? Guid.NewGuid(),
-                    Nume = _model.Nume,
-                    Prenume = _model.Prenume,
-                    Pozitie = _model.Pozitie,
-                    Specializare = _model.Specializare,
-                    Departament = _model.Departament,
-                    NumarLicenta = _model.NumarLicenta,
-                    Telefon = _model.Telefon,
-                    Email = _model.Email,
-                    EsteActiv = _model.EsteActiv,
-                    DataCreare = DateTime.Now
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Aten?ie",
+                    Detail = "Nu s-au putut înc?rca subspecializ?rile pentru specializarea selectat?",
+                    Duration = 4000
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare la înc?rcarea subspecializ?rilor: {ex.Message}",
+                Duration = 4000
+            });
+        }
+    }
+
+    private async Task OnPozitieChanged(object? value)
+    {
+        if (value is string pozitie)
+        {
+            _model.Pozitie = pozitie;
+            await CheckBusinessRules();
+        }
+        
+        await UpdatePreviewData();
+    }
+
+    private async Task OnFieldChanged(string fieldName)
+    {
+        await CheckBusinessRules();
+        await UpdatePreviewData();
+    }
+
+    private async Task CheckBusinessRules()
+    {
+        // Reset warnings
+        _showLicentaWarning = false;
+        _showSpecializareWarning = false;
+
+        // Check if license number is required for doctors
+        if (!string.IsNullOrEmpty(_model.Pozitie))
+        {
+            var pozitiiCareNecesitaLicenta = new[] { "Doctor", "Medic Specialist", "Medic Primar" };
+            _showLicentaWarning = pozitiiCareNecesitaLicenta.Contains(_model.Pozitie) && string.IsNullOrEmpty(_model.NumarLicenta);
+        }
+
+        // Check if specialization is recommended
+        if (!string.IsNullOrEmpty(_model.Pozitie))
+        {
+            var pozitiiCareNecesitaSpecializare = new[] { "Doctor", "Medic Specialist", "Medic Primar", "Asistent Medical" };
+            _showSpecializareWarning = pozitiiCareNecesitaSpecializare.Contains(_model.Pozitie) && string.IsNullOrEmpty(_model.Specializare);
+        }
+
+        _showBusinessRulesInfo = _showLicentaWarning || _showSpecializareWarning;
+        
+        await Task.CompletedTask;
+    }
+
+    private async Task UpdatePreviewData()
+    {
+        if (!string.IsNullOrEmpty(_model.Nume) || !string.IsNullOrEmpty(_model.Prenume) || _isEditMode)
+        {
+            // Create preview data
+            var categorieNume = _categoriiOptions.FirstOrDefault(c => c.Value == _model.CategorieID)?.Text;
+            var specializareNume = _specializariOptions.FirstOrDefault(s => s.Value == _model.SpecializareID)?.Text;
+            var subspecializareNume = _subspecializariOptions.FirstOrDefault(s => s.Value == _model.SubspecializareID)?.Text;
+
+            _previewData = new[]
+            {
+                new PersonalMedicalPreview
+                {
+                    Nume = _model.Nume ?? "...",
+                    Prenume = _model.Prenume ?? "...",
+                    Pozitie = _model.Pozitie ?? "Nu este specificata",
+                    Specializare = specializareNume ?? _model.Specializare ?? "Nu este specificata",
+                    Categorie = categorieNume ?? _model.Departament ?? "Nu este specificat",
+                    Status = _model.EsteActiv ? "Activ" : "Inactiv",
+                    CategorieNume = categorieNume ?? string.Empty,
+                    SpecializareNume = specializareNume ?? string.Empty,
+                    SubspecializareNume = subspecializareNume ?? string.Empty
                 }
             };
         }
         else
         {
-            _previewData = new List<PersonalMedicalListDto>();
+            _previewData = new List<PersonalMedicalPreview>();
         }
+        
+        StateHasChanged(); // For?ez re-render pentru preview
+        await Task.CompletedTask;
     }
 
-    private async Task OnSubmitAsync(CreatePersonalMedicalRequest model)
+    public async Task OnSubmitAsync(CreatePersonalMedicalRequest model)
     {
-        if (!await CheckApiConnectivity())
+        _isProcessing = true;
+        
+        try
+        {
+            if (_isEditMode && PersonalId.HasValue)
+            {
+                var updateRequest = new UpdatePersonalMedicalRequest
+                {
+                    PersonalID = PersonalId.Value,
+                    Nume = _model.Nume,
+                    Prenume = _model.Prenume,
+                    Pozitie = _model.Pozitie,
+                    Specializare = _model.Specializare,
+                    NumarLicenta = _model.NumarLicenta,
+                    Telefon = _model.Telefon,
+                    Email = _model.Email,
+                    Departament = _model.Departament,
+                    EsteActiv = _model.EsteActiv,
+                    // Noi propriet??i ierarhice
+                    CategorieID = _model.CategorieID,
+                    SpecializareID = _model.SpecializareID,
+                    SubspecializareID = _model.SubspecializareID
+                };
+
+                var result = await PersonalMedicalApiService.UpdateAsync(PersonalId.Value, updateRequest);
+                
+                if (result.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Succes",
+                        Detail = $"Personal medical '{_model.Nume} {_model.Prenume}' a fost actualizat cu succes",
+                        Duration = 3000
+                    });
+                    await BackToList();
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Eroare",
+                        Detail = string.Join(", ", result.Errors),
+                        Duration = 4000
+                    });
+                }
+            }
+            else
+            {
+                var result = await PersonalMedicalApiService.CreateAsync(_model);
+                
+                if (result.IsSuccess)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Succes",
+                        Detail = $"Personal medical '{_model.Nume} {_model.Prenume}' a fost creat cu succes",
+                        Duration = 3000
+                    });
+                    await BackToList();
+                }
+                else
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Eroare",
+                        Detail = string.Join(", ", result.Errors),
+                        Duration = 4000
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
         {
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
-                Summary = "Probleme de conectare",
-                Detail = "Nu se poate conecta la serverul API. Verificati conexiunea si incercati din nou.",
-                Duration = 6000
+                Summary = "Eroare",
+                Detail = $"Eroare nea?teptat?: {ex.Message}",
+                Duration = 4000
             });
-            return;
-        }
-        
-        if (_isEditMode)
-        {
-            await UpdatePersonal();
-        }
-        else
-        {
-            await SavePersonal();
-        }
-    }
-
-    private async Task TestDeserialization()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("console.log", "=== STARTING DESERIALIZATION TESTS ===");
-            
-            // Test 1: Deserializare Result<Guid> success
-            var successJson = @"{""isSuccess"":true,""value"":""12345678-1234-1234-1234-123456789012"",""errors"":[],""successMessage"":""Test success""}";
-            await JSRuntime.InvokeVoidAsync("console.log", "Test 1 - Success JSON:", successJson);
-            
-            try
-            {
-                var successResult = System.Text.Json.JsonSerializer.Deserialize<Result<Guid>>(successJson, new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                });
-                
-                await JSRuntime.InvokeVoidAsync("console.log", "Test 1 SUCCESS - Deserialized:", new {
-                    IsSuccess = successResult?.IsSuccess,
-                    Value = successResult?.Value,
-                    ErrorsCount = successResult?.Errors?.Count,
-                    Message = successResult?.SuccessMessage
-                });
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("console.error", "Test 1 FAILED:", ex.Message);
-            }
-            
-            // Test 2: Deserializare Result<Guid> failure
-            var failureJson = @"{""isSuccess"":false,""value"":null,""errors"":[""Error 1"",""Error 2""],""successMessage"":null}";
-            await JSRuntime.InvokeVoidAsync("console.log", "Test 2 - Failure JSON:", failureJson);
-            
-            try
-            {
-                var failureResult = System.Text.Json.JsonSerializer.Deserialize<Result<Guid>>(failureJson, new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                    PropertyNameCaseInsensitive = true,
-                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-                });
-                
-                await JSRuntime.InvokeVoidAsync("console.log", "Test 2 SUCCESS - Deserialized:", new {
-                    IsSuccess = failureResult?.IsSuccess,
-                    Value = failureResult?.Value,
-                    ErrorsCount = failureResult?.Errors?.Count,
-                    Errors = failureResult?.Errors
-                });
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("console.error", "Test 2 FAILED:", ex.Message);
-            }
-            
-            // Test 3: Creare si serializare locala
-            var localResult = Result<Guid>.Success(Guid.NewGuid(), "Local test");
-            var serialized = System.Text.Json.JsonSerializer.Serialize(localResult, new System.Text.Json.JsonSerializerOptions
-            {
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-            });
-            
-            await JSRuntime.InvokeVoidAsync("console.log", "Test 3 - Local serialization:", serialized);
-            
-            await JSRuntime.InvokeVoidAsync("console.log", "=== DESERIALIZATION TESTS COMPLETED ===");
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("console.error", "DESERIALIZATION TEST ERROR:", ex.Message);
-        }
-    }
-
-    private async Task<bool> CheckApiConnectivity()
-    {
-        try
-        {
-            var testQuery = new PersonalMedicalSearchQuery { PageSize = 1 };
-            var result = await PersonalMedicalApiService.GetPagedAsync(testQuery);
-            return result.IsSuccess || result.Errors.Any(e => !e.Contains("network") && !e.Contains("connection"));
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private async Task SavePersonal()
-    {
-        if (_isProcessing) return;
-
-        _isProcessing = true;
-        
-        try
-        {
-            var businessValidation = ValidateBusinessRules();
-            if (!businessValidation.IsSuccess)
-            {
-                await ShowBusinessRuleDialog(businessValidation.Errors);
-                return;
-            }
-
-            var result = await PersonalMedicalApiService.CreateAsync(_model);
-            
-            if (result.IsSuccess)
-            {
-                // Notificare simpla verde
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Datele au fost salvate",
-                    Duration = 3000
-                });
-                
-                // Navigare la pagina de vizualizare
-                await Task.Delay(500);
-                Navigation.NavigateTo($"/medical/personal-view/{result.Value}");
-            }
-            else
-            {
-                await ShowDetailedErrorNotification("Eroare la salvare", result.Errors);
-            }
-        }
-        catch (HttpRequestException httpEx)
-        {
-            await ShowNetworkErrorNotification();
-        }
-        catch (TaskCanceledException timeoutEx)
-        {
-            await ShowTimeoutNotification();
-        }
-        catch (Exception ex)
-        {
-            await ShowUnexpectedErrorNotification(ex.Message);
         }
         finally
         {
             _isProcessing = false;
-            StateHasChanged();
         }
     }
 
-    private async Task UpdatePersonal()
-    {
-        if (_isProcessing || !PersonalId.HasValue) return;
-
-        _isProcessing = true;
-        
-        try
-        {
-            var businessValidation = ValidateBusinessRules();
-            if (!businessValidation.IsSuccess)
-            {
-                await ShowBusinessRuleDialog(businessValidation.Errors);
-                return;
-            }
-
-            var updateRequest = new UpdatePersonalMedicalRequest
-            {
-                PersonalID = PersonalId.Value,
-                Nume = _model.Nume,
-                Prenume = _model.Prenume,
-                Pozitie = _model.Pozitie,
-                Departament = _model.Departament,
-                Specializare = _model.Specializare,
-                NumarLicenta = _model.NumarLicenta,
-                Telefon = _model.Telefon,
-                Email = _model.Email,
-                EsteActiv = _model.EsteActiv
-            };
-
-            var result = await PersonalMedicalApiService.UpdateAsync(PersonalId.Value, updateRequest);
-            
-            if (result.IsSuccess)
-            {
-                // Notificare simpla verde
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Success,
-                    Summary = "Datele au fost salvate",
-                    Duration = 3000
-                });
-                
-                await Task.Delay(500);
-                Navigation.NavigateTo($"/medical/personal-view/{PersonalId.Value}");
-            }
-            else
-            {
-                await ShowDetailedErrorNotification("Eroare la actualizare", result.Errors);
-            }
-        }
-        catch (HttpRequestException)
-        {
-            await ShowNetworkErrorNotification();
-        }
-        catch (TaskCanceledException)
-        {
-            await ShowTimeoutNotification();
-        }
-        catch (Exception ex)
-        {
-            await ShowUnexpectedErrorNotification(ex.Message);
-        }
-        finally
-        {
-            _isProcessing = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ShowDetailedErrorNotification(string title, IEnumerable<string> errors)
-    {
-        var errorList = errors.ToList();
-        var friendlyErrors = errorList.Select(GetUserFriendlyError).ToList();
-        
-        var errorMessage = friendlyErrors.Count == 1 
-            ? friendlyErrors.First()
-            : $"Au aparut {friendlyErrors.Count} erori:\n• " + string.Join("\n• ", friendlyErrors);
-        
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Error,
-            Summary = title,
-            Detail = errorMessage,
-            Duration = 8000
-        });
-    }
-
-    private async Task ShowBusinessRuleDialog(IEnumerable<string> errors)
-    {
-        var errorList = errors.ToList();
-        var message = "Reguli de afaceri:\n\n" + 
-                     string.Join("\n", errorList.Select((e, i) => $"{i + 1}. {e}"));
-        
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Warning,
-            Summary = "Reguli de afaceri",
-            Detail = $"Au fost identificate {errorList.Count} probleme care trebuie corectate",
-            Duration = 6000
-        });
-        
-        await DialogService.Alert(message, "Reguli de afaceri", new AlertOptions() 
-        { 
-            OkButtonText = "Am inteles" 
-        });
-    }
-
-    private async Task ShowNotFoundError()
-    {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Warning,
-            Summary = "Nu s-a gasit",
-            Detail = "Personalul medical cu ID-ul specificat nu a fost gasit in baza de date sau a fost sters intre timp.",
-            Duration = 5000
-        });
-        
-        await Task.Delay(2000);
-        Navigation.NavigateTo("/medical/gestionare-personal");
-    }
-
-    private async Task ShowNetworkErrorNotification()
-    {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Error,
-            Summary = "Probleme de conectare",
-            Detail = "Nu s-a putut conecta la server. Verificati conexiunea la internet si incercati din nou.",
-            Duration = 8000
-        });
-    }
-
-    private async Task ShowTimeoutNotification()
-    {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Warning,
-            Summary = "Timp depasit",
-            Detail = "Operatiunea a durat prea mult timp. Incercati din nou in cateva momente.",
-            Duration = 6000
-        });
-    }
-
-    private async Task ShowUnexpectedErrorNotification(string technicalMessage)
-    {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Error,
-            Summary = "Eroare neasteptata",
-            Detail = "A aparut o problema neobisnuita in sistem. Va rugam sa contactati suportul tehnic daca problema persista.",
-            Duration = 10000
-        });
-    }
-
-    private string GetUserFriendlyError(string error)
-    {
-        var lowerError = error.ToLower();
-        
-        if (lowerError.Contains("duplicate") || lowerError.Contains("unique") || lowerError.Contains("pk_") || lowerError.Contains("ix_"))
-            return "Exista deja un personal medical cu aceste informatii in sistem (email sau numar licenta duplicat)";
-        
-        if (lowerError.Contains("email") && lowerError.Contains("invalid"))
-            return "Adresa de email introdusa nu respecta formatul valid (ex: nume@domeniu.ro)";
-        
-        if (lowerError.Contains("phone") || lowerError.Contains("telefon"))
-            return "Numarul de telefon nu este valid (folositi formatul: 07xxxxxxxx)";
-        
-        if (lowerError.Contains("required") || lowerError.Contains("obligatoriu"))
-            return "Unele campuri obligatorii nu sunt completate corespunzator";
-        
-        if (lowerError.Contains("length") || lowerError.Contains("lung"))
-            return "Unele campuri contin prea multe sau prea putine caractere fata de limitele permise";
-        
-        if (lowerError.Contains("foreign key") || lowerError.Contains("fk_"))
-            return "Datele introduse fac referire la informatii care nu exista in sistem";
-        
-        if (lowerError.Contains("timeout") || lowerError.Contains("expired"))
-            return "Conexiunea la baza de date a expirat - incercati din nou";
-        
-        if (lowerError.Contains("cannot open database") || lowerError.Contains("login failed"))
-            return "Nu se poate conecta la baza de date - verificati configurarea";
-        
-        if (lowerError.Contains("permission") || lowerError.Contains("access denied"))
-            return "Nu aveti permisiunile necesare pentru aceasta operatiune";
-        
-        if (lowerError.Contains("doctorul trebuie") || lowerError.Contains("specializare") || lowerError.Contains("licenta"))
-            return error;
-        
-        if (lowerError.Contains("500") || lowerError.Contains("internal server"))
-            return "Eroare interna de server - contactati administratorul";
-        
-        if (lowerError.Contains("404") || lowerError.Contains("not found"))
-            return "Resursa solicitata nu a fost gasita pe server";
-        
-        if (lowerError.Contains("400") || lowerError.Contains("bad request"))
-            return "Datele trimise catre server nu sunt in formatul corect";
-        
-        if (lowerError.Contains("json") || lowerError.Contains("serializ"))
-            return "Eroare la procesarea datelor - verificati completarea formularului";
-        
-        if (lowerError.Contains("sql") && lowerError.Contains("error"))
-            return "Eroare la nivelul bazei de date - verificati datele introduse";
-        
-        if (lowerError.Contains("network") || lowerError.Contains("connection refused"))
-            return "Probleme de retea - verificati conexiunea la internet";
-        
-        return $"Eroare tehnica: {error}";
-    }
-
-    private Result ValidateBusinessRules()
-    {
-        var errors = new List<string>();
-        
-        var isDoctorPosition = _model.Pozitie.Contains("Doctor") || _model.Pozitie.Contains("Medic");
-        
-        if (isDoctorPosition)
-        {
-            if (string.IsNullOrWhiteSpace(_model.NumarLicenta))
-            {
-                errors.Add("Numarul de licenta este obligatoriu pentru pozitiile de doctor/medic");
-            }
-        }
-        
-        return errors.Any() ? Result.Failure(errors) : Result.Success();
-    }
-
-    private void BackToList()
+    public async Task BackToList()
     {
         Navigation.NavigateTo("/medical/gestionare-personal");
+        await Task.CompletedTask;
     }
 
     private string GetSaveButtonText()
     {
-        if (_isProcessing)
-        {
-            return _isEditMode ? "Se actualizeaza..." : "Se salveaza...";
-        }
         return _isEditMode ? "Actualizeaza Personal" : "Salveaza Personal";
     }
 
     private string GetSaveButtonIcon()
     {
-        if (_isProcessing)
-        {
-            return "hourglass_empty";
-        }
-        return _isEditMode ? "update" : "save";
+        return _isEditMode ? "save" : "add";
     }
 
     private string GetSaveButtonStyle()
     {
-        return "font-weight: bold;";
+        return _isProcessing ? "opacity: 0.6;" : "";
     }
 
-    private void ShowSaveConfirmation()
+    public void Dispose()
     {
-        // Notificare de confirmare finala
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Success,
-            Summary = "Salvat in Baza de Date",
-            Detail = "Personalul medical a fost adaugat cu succes si este acum disponibil in sistem!",
-            Duration = 4000
-        });
+        // Cleanup if needed
     }
 }

@@ -42,7 +42,22 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     };
     
     // Preview data for grid
-    private List<PersoanaListDto> _previewData = new();
+    private List<PersoanaPreview> _previewData = new();
+
+    // Preview class for grid display  
+    private class PersoanaPreview
+    {
+        public string Nume { get; set; } = string.Empty;
+        public string Prenume { get; set; } = string.Empty;
+        public string Gen { get; set; } = string.Empty;
+        public string Judet { get; set; } = string.Empty;
+        public string Localitate { get; set; } = string.Empty;
+        public string StatusText { get; set; } = string.Empty;
+        public string CNP { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Telefon { get; set; } = string.Empty;
+        public int Varsta { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -161,37 +176,34 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
 
     private void UpdatePreviewData()
     {
-        if (!string.IsNullOrEmpty(_model.Nume) && !string.IsNullOrEmpty(_model.Prenume))
+        if (!string.IsNullOrEmpty(_model.Nume) || !string.IsNullOrEmpty(_model.Prenume) || _isEditMode)
         {
             var varsta = _model.DataNasterii.HasValue ? 
                 DateTime.Now.Year - _model.DataNasterii.Value.Year : 0;
             
-            _previewData = new List<PersoanaListDto>
+            _previewData = new List<PersoanaPreview>
             {
-                new PersoanaListDto
+                new PersoanaPreview
                 {
-                    Id = PersoanaId ?? 0,
-                    Nume = _model.Nume,
-                    Prenume = _model.Prenume,
-                    NumeComplet = $"{_model.Nume} {_model.Prenume}",
-                    CNP = _model.CNP,
-                    DataNasterii = _model.DataNasterii,
+                    Nume = _model.Nume ?? "...",
+                    Prenume = _model.Prenume ?? "...",
+                    CNP = _model.CNP ?? "Nu este specificat",
                     Varsta = varsta,
-                    Gen = _model.Gen?.ToString(),
-                    Telefon = _model.Telefon,
-                    Email = _model.Email,
-                    Judet = _model.Judet,
-                    Localitate = _model.Localitate,
-                    Adresa = _model.Adresa,
-                    EsteActiva = _model.EsteActiva,
-                    DataCreare = DateTime.Now
+                    Gen = _model.Gen?.ToString() ?? "Nu este specificat",
+                    Telefon = _model.Telefon ?? "Nu este specificat",
+                    Email = _model.Email ?? "Nu este specificat",
+                    Judet = _model.Judet ?? "Nu este specificat",
+                    Localitate = _model.Localitate ?? "Nu este specificat",
+                    StatusText = _model.EsteActiva ? "Activ" : "Inactiv"
                 }
             };
         }
         else
         {
-            _previewData = new List<PersoanaListDto>();
+            _previewData = new List<PersoanaPreview>();
         }
+        
+        StateHasChanged(); // For?ez re-render pentru preview
     }
 
     private async Task OnSubmitAsync(CreatePersoanaRequest model)

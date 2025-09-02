@@ -39,7 +39,7 @@ public class PersonalMedicalController : ControllerBase
             {
                 var gridResult = result.Value!;
                 _logger.LogInformation("GetDataGrid successful: IsGrouped={IsGrouped}, Count={Count}, Groups={GroupCount}", 
-                    gridResult.IsGrouped, gridResult.Count, gridResult.Groups?.Count ?? 0);
+                    gridResult.IsGrouped, gridResult.Count, gridResult.Groups?.Count() ?? 0);
                 return Ok(gridResult);
             }
 

@@ -9,36 +9,37 @@
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
     
-    <!-- Header cu navigare -->
-    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center" Class="mb-3">
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-            <RadzenButton Icon="arrow_back" 
-                         ButtonStyle="ButtonStyle.Light" 
-                         Variant="Radzen.Variant.Outlined"
-                         Click="@GoBack" 
-                         Title="Inapoi la lista" />
-            <RadzenText TextStyle="TextStyle.H4" Class="mb-0">
-                @if (_personalDetail != null)
-                {
-                    <text>Vizualizare Personal Medical - @_personalDetail.NumeComplet</text>
-                }
-                else
-                {
-                    <text>Vizualizare Personal Medical</text>
-                }
-            </RadzenText>
-        </RadzenStack>
-        
-        @if (_personalDetail != null)
-        {
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
-                <RadzenButton Text="Editeaza" 
-                             Icon="edit" 
-                             ButtonStyle="ButtonStyle.Info"
-                             Click="@(() => EditPersonal(_personalDetail.PersonalID))" />
+    <!-- Header Card cu navigare - FOLOSESTE CLASELE GLOBALE -->
+    <RadzenCard Class="page-header-card view-mode mb-3">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+                <RadzenIcon Icon="visibility" Class="page-header-icon view-mode" />
+                <RadzenText TextStyle="TextStyle.H4" Class="page-header-title view-mode mb-0">
+                    @if (_personalDetail != null)
+                    {
+                        <text>Vizualizare Personal Medical - @_personalDetail.NumeComplet</text>
+                    }
+                    else
+                    {
+                        <text>Vizualizare Personal Medical</text>
+                    }
+                </RadzenText>
             </RadzenStack>
-        }
-    </RadzenStack>
+            
+            @if (_personalDetail != null)
+            {
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                    <RadzenButton Text="Editeaza" 
+                                 Icon="edit" 
+                                 ButtonStyle="ButtonStyle.Warning"
+                                 Variant="Radzen.Variant.Filled"
+                                 Size="ButtonSize.Large"
+                                 Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);"
+                                 Click="@(() => EditPersonal(_personalDetail.PersonalID))" />
+                </RadzenStack>
+            }
+        </RadzenStack>
+    </RadzenCard>
 
     @if (_isLoading)
     {
@@ -72,11 +73,7 @@
             <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
                 <RadzenIcon Icon="person_off" Style="font-size: 3rem; color: #ffc107;" />
                 <RadzenText TextStyle="TextStyle.H6">Personal medical nu a fost gasit</RadzenText>
-                <RadzenText TextStyle="TextStyle.Body2">ID-ul personalului medical nu exista sau a fost sters.</RadzenText>
-                <RadzenButton Text="Inapoi la lista" 
-                             Icon="arrow_back" 
-                             ButtonStyle="ButtonStyle.Primary"
-                             Click="@GoBack" />
+                <RadzenText TextStyle="TextStyle.Body2">ID-ul personalului medical nu existe sau a fost sters.</RadzenText>
             </RadzenStack>
         </RadzenCard>
     }
@@ -183,7 +180,7 @@
             </RadzenRow>
 
             <!-- Statistici -->
-            <RadzenRow>
+            <RadzenRow Class="mb-4">
                 <RadzenColumn Size="12">
                     <RadzenCard Style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
                         <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
@@ -218,6 +215,31 @@
                     </RadzenCard>
                 </RadzenColumn>
             </RadzenRow>
+
+            <!-- Butoane de actiune - UN SINGUR BUTON INAPOI IN STANGA JOS -->
+            <RadzenCard Variant="Radzen.Variant.Outlined" Style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="1rem">
+                    
+                    <!-- BUTON INAPOI PRINCIPAL - DOAR ACESTA RAMANE (STANGA JOS) -->
+                    <RadzenButton Text="Inapoi la lista" 
+                                 Icon="arrow_back" 
+                                 ButtonStyle="ButtonStyle.Info" 
+                                 Variant="Radzen.Variant.Filled"
+                                 Size="ButtonSize.Large"
+                                 Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
+                                 Click="@GoBack" />
+                    
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                        <RadzenButton Text="Editeaza" 
+                                     Icon="edit" 
+                                     ButtonStyle="ButtonStyle.Warning"
+                                     Variant="Radzen.Variant.Filled"
+                                     Size="ButtonSize.Large"
+                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);"
+                                     Click="@(() => EditPersonal(_personalDetail.PersonalID))" />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
         </RadzenCard>
     }
 </RadzenStack>
@@ -229,5 +251,16 @@
     
     .personal-view-card:hover {
         box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    }
+
+    /* CSS pentru butoanele imbunatatite */
+    .rz-button-large {
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .rz-button-large:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
     }
 </style>

@@ -49,6 +49,7 @@ try
 
     // Medical API services
     builder.Services.AddScoped<IPersonalMedicalApiService, PersonalMedicalApiService>();
+    builder.Services.AddScoped<IDepartamenteApiService, DepartamenteApiService>(); // NOU - serviciul pentru departamente
 
     // Authentication state provider and authorization
     builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();

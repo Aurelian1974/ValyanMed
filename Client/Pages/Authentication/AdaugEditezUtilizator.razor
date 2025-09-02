@@ -1,0 +1,599 @@
+@page "/administrare/utilizatori/nou"
+@page "/administrare/utilizatori/editare/{UtilizatorId:int}"
+@using global::Shared.DTOs.Authentication
+@using global::Shared.Common
+@using Radzen
+@using Radzen.Blazor
+@using FluentValidation
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@inject NotificationService NotificationService
+@inject NavigationManager Navigation
+
+<PageTitle>@(_isEditMode ? "Modifica Utilizator" : "Adauga Utilizator") - ValyanMed</PageTitle>
+
+<RadzenRow Class="rz-p-4">
+    <RadzenColumn Size="12">
+        
+        <!-- Header Card - FOLOSESTE CLASELE GLOBALE -->
+        <RadzenCard Class="page-header-card edit-mode rz-mb-4">
+            <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+                        <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Class="page-header-icon edit-mode" />
+                        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title edit-mode rz-m-0">
+                            @(_isEditMode ? "Modifica Utilizator" : "Adauga Utilizator Nou")
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.5rem">
+                        <RadzenButton Text="Inapoi la lista" 
+                                     Icon="arrow_back" 
+                                     ButtonStyle="ButtonStyle.Info" 
+                                     Variant="Radzen.Variant.Filled"
+                                     Size="ButtonSize.Large"
+                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
+                                     Click="@BackToList" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+
+        <!-- Loading Indicator -->
+        @if (_isLoading)
+        {
+            <RadzenCard>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Style="padding: 2rem;">
+                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1">
+                            @(_isEditMode ? "Se incarca datele utilizatorului..." : "Se initializeaza formularul...")
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">
+                            Va rugam sa asteptati...
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        }
+        else if (_isProcessing)
+        {
+            <!-- Processing Indicator -->
+            <RadzenCard Style="border-left: 4px solid #0d6efd;">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Style="padding: 1.5rem;">
+                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" />
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Body1" Style="color: #0d6efd;">
+                            @(_isEditMode ? "Se actualizeaza..." : "Se salveaza...")
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">
+                            Procesarea datelor in curs...
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        }
+        else
+        {
+            <RadzenRow Gap="2rem">
+                <!-- Form Section -->
+                <RadzenColumn Size="12" SizeLG="8">
+                    <!-- Form Card -->
+                    <RadzenCard Style="max-width: 900px;">
+                        <RadzenTemplateForm TItem="UserFormModel" Data="@_model" Submit="@OnSubmitAsync">
+                            <DataAnnotationsValidator />
+                            
+                            <RadzenStack Gap="2rem">
+                                
+                                <!-- Informatii Utilizator -->
+                                <RadzenFieldset Text="Informatii Utilizator">
+                                    <RadzenRow Gap="1rem" RowGap="1.5rem">
+                                        <!-- Nume Utilizator -->
+                                        <RadzenColumn Size="12" SizeMD="6">
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
+                                                Nume Utilizator <span style="color: #dc3545; font-weight: bold;">*</span>
+                                            </RadzenText>
+                                            <RadzenTextBox @bind-Value="_model.NumeUtilizator" 
+                                                          Name="NumeUtilizator"
+                                                          Placeholder="Introduceti numele de utilizator..." 
+                                                          MaxLength="50"
+                                                          Style="width: 100%;"
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.NumeUtilizator)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.NumeUtilizator)))" />
+                                            <RadzenRequiredValidator Component="NumeUtilizator" Text="Numele de utilizator este obligatoriu" />
+                                        </RadzenColumn>
+                                        
+                                        <!-- Email -->
+                                        <RadzenColumn Size="12" SizeMD="6">
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
+                                                Email <span style="color: #dc3545; font-weight: bold;">*</span>
+                                            </RadzenText>
+                                            <RadzenTextBox @bind-Value="_model.Email" 
+                                                          Name="Email"
+                                                          Placeholder="Introduceti adresa de email..." 
+                                                          MaxLength="100"
+                                                          Style="width: 100%;"
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Email)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Email)))" />
+                                            <RadzenRequiredValidator Component="Email" Text="Email-ul este obligatoriu" />
+                                            <RadzenEmailValidator Component="Email" Text="Formatul email-ului nu este valid" />
+                                        </RadzenColumn>
+
+                                        <!-- Telefon -->
+                                        <RadzenColumn Size="12" SizeMD="6">
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Telefon</RadzenText>
+                                            <RadzenTextBox @bind-Value="_model.Telefon" 
+                                                          Name="Telefon"
+                                                          Placeholder="Ex: 0721123456" 
+                                                          MaxLength="20"
+                                                          Style="width: 100%;"
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Telefon)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Telefon)))" />
+                                        </RadzenColumn>
+
+                                        <!-- Parola -->
+                                        @if (!_isEditMode)
+                                        {
+                                            <RadzenColumn Size="12" SizeMD="6">
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
+                                                    Parola <span style="color: #dc3545; font-weight: bold;">*</span>
+                                                </RadzenText>
+                                                <RadzenPassword @bind-Value="_model.Parola" 
+                                                               Name="Parola"
+                                                               Placeholder="Introduceti parola..." 
+                                                               Style="width: 100%;"
+                                                               Variant="Radzen.Variant.Outlined"
+                                                               Change="@(() => OnFieldChanged(nameof(_model.Parola)))" />
+                                                <RadzenRequiredValidator Component="Parola" Text="Parola este obligatorie" />
+                                            </RadzenColumn>
+                                        }
+                                        else
+                                        {
+                                            <RadzenColumn Size="12" SizeMD="6">
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Parola Noua (optional)</RadzenText>
+                                                <RadzenPassword @bind-Value="_model.NovaParola" 
+                                                               Name="NovaParola"
+                                                               Placeholder="Lasati gol pentru a pastra parola actuala..." 
+                                                               Style="width: 100%;"
+                                                               Variant="Radzen.Variant.Outlined"
+                                                               Change="@(() => OnFieldChanged(nameof(_model.NovaParola)))" />
+                                            </RadzenColumn>
+                                        }
+                                    </RadzenRow>
+                                </RadzenFieldset>
+
+                                <!-- Asociere Persoana -->
+                                <RadzenFieldset Text="Asociere Persoana">
+                                    <RadzenRow Gap="1rem" RowGap="1.5rem">
+                                        <RadzenColumn Size="12">
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
+                                                Persoana Asociata <span style="color: #dc3545; font-weight: bold;">*</span>
+                                            </RadzenText>
+                                            <RadzenDropDown @bind-Value="_model.SelectedPersoanaId" 
+                                                           Name="SelectedPersoanaId"
+                                                           Data="@_availablePersons" 
+                                                           TextProperty="NumeComplet" 
+                                                           ValueProperty="Id"
+                                                           Placeholder="Selecteaza persoana..." 
+                                                           AllowClear="false"
+                                                           AllowFiltering="true"
+                                                           Style="width: 100%;"
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Change="@OnPersoanaChanged" />
+                                            <RadzenRequiredValidator Component="SelectedPersoanaId" Text="Persoana asociata este obligatorie" />
+                                        </RadzenColumn>
+
+                                        @if (_model.SelectedPersoanaId.HasValue)
+                                        {
+                                            var selectedPerson = _availablePersons.FirstOrDefault(p => p.Id == _model.SelectedPersoanaId.Value);
+                                            if (selectedPerson != null)
+                                            {
+                                                <RadzenColumn Size="12">
+                                                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
+                                                        <RadzenText TextStyle="TextStyle.Body2">
+                                                            <strong>@selectedPerson.NumeComplet</strong><br />
+                                                            @if (!string.IsNullOrEmpty(selectedPerson.CNP))
+                                                            {
+                                                                <text>CNP: @selectedPerson.CNP<br /></text>
+                                                            }
+                                                            @if (!string.IsNullOrEmpty(selectedPerson.PozitieOrganizatie))
+                                                            {
+                                                                <text>Pozitie: @selectedPerson.PozitieOrganizatie</text>
+                                                            }
+                                                        </RadzenText>
+                                                    </RadzenAlert>
+                                                </RadzenColumn>
+                                            }
+                                        }
+                                    </RadzenRow>
+                                </RadzenFieldset>
+
+                                <!-- Action Buttons -->
+                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="rz-background-color-base-100" Style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
+                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.SpaceBetween" Gap="1rem">
+                                        <RadzenButton Text="Inapoi la lista" 
+                                                     Icon="arrow_back" 
+                                                     ButtonStyle="ButtonStyle.Info" 
+                                                     Variant="Radzen.Variant.Filled"
+                                                     Size="ButtonSize.Large"
+                                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
+                                                     Click="@BackToList"
+                                                     Disabled="@_isProcessing" />
+                                        
+                                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
+                                            <RadzenButton Text="Anuleaza" 
+                                                         Icon="cancel" 
+                                                         ButtonStyle="ButtonStyle.Danger" 
+                                                         Variant="Radzen.Variant.Outlined"
+                                                         Size="ButtonSize.Large"
+                                                         Style="font-weight: 600; padding: 12px 20px;"
+                                                         Click="@BackToList"
+                                                         Disabled="@_isProcessing" />
+                                                         
+                                            <RadzenButton ButtonType="Radzen.ButtonType.Submit" 
+                                                         Text="@GetSaveButtonText()" 
+                                                         Icon="@GetSaveButtonIcon()" 
+                                                         ButtonStyle="ButtonStyle.Success" 
+                                                         Variant="Radzen.Variant.Filled"
+                                                         Size="ButtonSize.Large"
+                                                         Disabled="@_isProcessing"
+                                                         IsBusy="@_isProcessing" 
+                                                         Style="font-weight: bold; padding: 12px 24px; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); text-transform: uppercase;" />
+                                        </RadzenStack>
+                                    </RadzenStack>
+                                </RadzenCard>
+                            </RadzenStack>
+                        </RadzenTemplateForm>
+                    </RadzenCard>
+                </RadzenColumn>
+
+                <!-- Grid Preview Section -->
+                <RadzenColumn Size="12" SizeLG="4">
+                    <RadzenCard>
+                        <RadzenStack Gap="1rem">
+                            <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
+                                <RadzenIcon Icon="grid_view" Class="me-2" />
+                                Preview Utilizator
+                            </RadzenText>
+                            
+                            @if (_isEditMode || (!string.IsNullOrEmpty(_model.NumeUtilizator) || !string.IsNullOrEmpty(_model.Email)))
+                            {
+                                <!-- Grid cu preview-ul datelor folosind Radzen Grid -->
+                                <RadzenGrid TItem="UtilizatorPreview" 
+                                           Data="@_previewData" 
+                                           AllowPaging="false"
+                                           AllowSorting="false"
+                                           AllowFiltering="false"
+                                           ShowPagingSummary="false"
+                                           Density="Density.Compact"
+                                           Style="border: 1px solid var(--rz-border-color); height: 250px;">
+                                    <Columns>
+                                        <RadzenGridColumn TItem="UtilizatorPreview" Property="NumeUtilizator" Title="Nume Utilizator" Width="150px" />
+                                        <RadzenGridColumn TItem="UtilizatorPreview" Property="Email" Title="Email" Width="200px" />
+                                        <RadzenGridColumn TItem="UtilizatorPreview" Property="Telefon" Title="Telefon" Width="120px" />
+                                        <RadzenGridColumn TItem="UtilizatorPreview" Property="PersoanaAsociata" Title="Persoana" Width="180px" />
+                                    </Columns>
+                                </RadzenGrid>
+
+                                @if (_previewData.Any())
+                                {
+                                    var utilizator = _previewData.First();
+                                    <!-- Informatii suplimentare pentru preview -->
+                                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
+                                        <RadzenText TextStyle="TextStyle.Body2">
+                                            <strong>Utilizator:</strong> @utilizator.NumeUtilizator<br />
+                                            <strong>Email:</strong> @utilizator.Email<br />
+                                            @if (!string.IsNullOrEmpty(utilizator.Telefon))
+                                            {
+                                                <strong>Telefon:</strong> @utilizator.Telefon<br />
+                                            }
+                                            @if (!string.IsNullOrEmpty(utilizator.PersoanaAsociata))
+                                            {
+                                                <strong>Persoana:</strong> @utilizator.PersoanaAsociata
+                                            }
+                                        </RadzenText>
+                                    </RadzenAlert>
+                                }
+                            }
+                            else
+                            {
+                                <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
+                                    <RadzenText TextStyle="TextStyle.Body2">
+                                        Completati numele de utilizator si email-ul pentru a vedea preview-ul.
+                                    </RadzenText>
+                                </RadzenAlert>
+                            }
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        }
+        
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    [Parameter] public int? UtilizatorId { get; set; }
+
+    // Form model
+    private UserFormModel _model = new();
+    private bool _isEditMode = false;
+    private bool _isLoading = true;
+    private bool _isProcessing = false;
+
+    // Available persons for selection
+    private List<Persoana> _availablePersons = new();
+
+    // Preview data
+    private IEnumerable<UtilizatorPreview> _previewData = new List<UtilizatorPreview>();
+
+    // Preview class for grid display
+    private class UtilizatorPreview
+    {
+        public string NumeUtilizator { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Telefon { get; set; } = string.Empty;
+        public string PersoanaAsociata { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isEditMode = UtilizatorId.HasValue;
+        
+        await LoadAvailablePersons();
+        
+        if (_isEditMode && UtilizatorId.HasValue)
+        {
+            await LoadUtilizatorForEdit();
+        }
+
+        _isLoading = false;
+        await UpdatePreviewData();
+        StateHasChanged();
+    }
+
+    private async Task LoadAvailablePersons()
+    {
+        try
+        {
+            var response = await Http.GetAsync("api/persoane");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<Persoana>>();
+                _availablePersons = result ?? new List<Persoana>();
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare la incarcarea persoanelor: {ex.Message}",
+                Duration = 4000
+            });
+        }
+    }
+
+    private async Task LoadUtilizatorForEdit()
+    {
+        if (!UtilizatorId.HasValue) return;
+
+        try
+        {
+            var response = await Http.GetAsync($"api/utilizatori/{UtilizatorId.Value}");
+            if (response.IsSuccessStatusCode)
+            {
+                var utilizator = await response.Content.ReadFromJsonAsync<Utilizator>();
+                if (utilizator != null)
+                {
+                    _model = new UserFormModel
+                    {
+                        NumeUtilizator = utilizator.NumeUtilizator,
+                        Email = utilizator.Email,
+                        Telefon = utilizator.Telefon,
+                        SelectedPersoanaId = utilizator.PersoanaId
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare la incarcarea utilizatorului: {ex.Message}",
+                Duration = 4000
+            });
+        }
+    }
+
+    private async Task OnFieldChanged(string fieldName)
+    {
+        await UpdatePreviewData();
+    }
+
+    private async Task OnPersoanaChanged(object? value)
+    {
+        if (value is int persoanaId)
+        {
+            _model.SelectedPersoanaId = persoanaId;
+        }
+        else
+        {
+            _model.SelectedPersoanaId = null;
+        }
+        
+        await UpdatePreviewData();
+    }
+
+    private async Task UpdatePreviewData()
+    {
+        if (!string.IsNullOrEmpty(_model.NumeUtilizator) || !string.IsNullOrEmpty(_model.Email) || _isEditMode)
+        {
+            var persoanaAsociata = "";
+            if (_model.SelectedPersoanaId.HasValue)
+            {
+                var persoana = _availablePersons.FirstOrDefault(p => p.Id == _model.SelectedPersoanaId.Value);
+                persoanaAsociata = persoana?.NumeComplet ?? "Nu este selectata";
+            }
+            else
+            {
+                persoanaAsociata = "Nu este selectata";
+            }
+
+            _previewData = new[]
+            {
+                new UtilizatorPreview
+                {
+                    NumeUtilizator = _model.NumeUtilizator ?? "...",
+                    Email = _model.Email ?? "...",
+                    Telefon = _model.Telefon ?? "Nu este specificat",
+                    PersoanaAsociata = persoanaAsociata
+                }
+            };
+        }
+        else
+        {
+            _previewData = new List<UtilizatorPreview>();
+        }
+        
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private async Task OnSubmitAsync(UserFormModel model)
+    {
+        _isProcessing = true;
+        
+        try
+        {
+            if (_isEditMode && UtilizatorId.HasValue)
+            {
+                var updateRequest = new UpdateUtilizatorRequest(
+                    UtilizatorId.Value,
+                    _model.NumeUtilizator,
+                    _model.Email,
+                    _model.Telefon,
+                    _model.SelectedPersoanaId!.Value,
+                    string.IsNullOrWhiteSpace(_model.NovaParola) ? null : _model.NovaParola
+                );
+
+                var response = await Http.PutAsJsonAsync($"api/utilizatori/{UtilizatorId.Value}", updateRequest);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Succes",
+                        Detail = $"Utilizatorul '{_model.NumeUtilizator}' a fost actualizat cu succes",
+                        Duration = 3000
+                    });
+                    await BackToList();
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Eroare",
+                        Detail = $"Eroare la actualizare: {errorContent}",
+                        Duration = 4000
+                    });
+                }
+            }
+            else
+            {
+                var createRequest = new CreateUtilizatorRequest(
+                    _model.NumeUtilizator,
+                    _model.Parola,
+                    _model.Email,
+                    _model.Telefon,
+                    _model.SelectedPersoanaId!.Value
+                );
+
+                var response = await Http.PostAsJsonAsync("api/utilizatori", createRequest);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Success,
+                        Summary = "Succes",
+                        Detail = $"Utilizatorul '{_model.NumeUtilizator}' a fost creat cu succes",
+                        Duration = 3000
+                    });
+                    await BackToList();
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Error,
+                        Summary = "Eroare",
+                        Detail = $"Eroare la creare: {errorContent}",
+                        Duration = 4000
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Eroare",
+                Detail = $"Eroare nea?teptat?: {ex.Message}",
+                Duration = 4000
+            });
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task BackToList()
+    {
+        Navigation.NavigateTo("/administrare/utilizatori");
+        await Task.CompletedTask;
+    }
+
+    private string GetSaveButtonText()
+    {
+        return _isEditMode ? "Actualizeaza Utilizator" : "Salveaza Utilizator";
+    }
+
+    private string GetSaveButtonIcon()
+    {
+        return _isEditMode ? "save" : "add";
+    }
+}
+
+<style>
+/* Conform Plan_refactoring.txt - CSS minimal */
+.business-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    color: #856404;
+    font-size: 0.875rem;
+}
+
+.business-warning .rz-icon {
+    color: #856404;
+}
+</style>

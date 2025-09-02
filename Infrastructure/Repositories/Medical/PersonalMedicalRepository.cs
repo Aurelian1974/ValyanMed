@@ -21,72 +21,34 @@ public class PersonalMedicalRepository : IPersonalMedicalRepository
         {
             using var connection = _connectionFactory.CreateConnection();
             
-            // Build ORDER BY clause cu suport pentru grupare
-            var orderBy = BuildOrderByClause(query.Sort);
-            
             Console.WriteLine($"Repository: GetPagedAsync called");
             Console.WriteLine($"Sort parameter: {query.Sort}");
-            Console.WriteLine($"Generated ORDER BY: {orderBy}");
 
-            var offset = (query.Page - 1) * query.PageSize;
-
-            var sql = $@"
-SELECT PersonalID, Nume, Prenume, Specializare, NumarLicenta, Telefon, Email, Departament, Pozitie, EsteActiv, DataCreare
-FROM PersonalMedical WITH (NOLOCK)
-WHERE 1=1
-  AND (@EsteActiv IS NULL OR EsteActiv = @EsteActiv)
-  AND (@Departament IS NULL OR @Departament = '' OR @Departament = 'toate' OR UPPER(Departament) LIKE '%' + UPPER(@Departament) + '%')
-  AND (@Pozitie IS NULL OR @Pozitie = '' OR @Pozitie = 'toate' OR UPPER(Pozitie) LIKE '%' + UPPER(@Pozitie) + '%')
-  AND (@Nume IS NULL OR @Nume = '' OR UPPER(Nume) LIKE '%' + UPPER(@Nume) + '%')
-  AND (@Prenume IS NULL OR @Prenume = '' OR UPPER(Prenume) LIKE '%' + UPPER(@Prenume) + '%')
-  AND (@Specializare IS NULL OR @Specializare = '' OR UPPER(Specializare) LIKE '%' + UPPER(@Specializare) + '%')
-  AND (@NumarLicenta IS NULL OR @NumarLicenta = '' OR UPPER(NumarLicenta) LIKE '%' + UPPER(@NumarLicenta) + '%')
-  AND (@Telefon IS NULL OR @Telefon = '' OR Telefon LIKE '%' + @Telefon + '%')
-  AND (@Email IS NULL OR @Email = '' OR UPPER(Email) LIKE '%' + UPPER(@Email) + '%')
-  AND ( @Search IS NULL OR @Search = ''
-        OR UPPER(Nume) LIKE '%' + UPPER(@Search) + '%'
-        OR UPPER(Prenume) LIKE '%' + UPPER(@Search) + '%'
-        OR UPPER(CONCAT(Nume, ' ', Prenume)) LIKE '%' + UPPER(@Search) + '%'
-        OR (Specializare IS NOT NULL AND UPPER(Specializare) LIKE '%' + UPPER(@Search) + '%')
-        OR (NumarLicenta IS NOT NULL AND UPPER(NumarLicenta) LIKE '%' + UPPER(@Search) + '%')
-        OR (Departament IS NOT NULL AND UPPER(Departament) LIKE '%' + UPPER(@Search) + '%')
-        OR (Pozitie IS NOT NULL AND UPPER(Pozitie) LIKE '%' + UPPER(@Search) + '%')
-        OR (Telefon IS NOT NULL AND Telefon LIKE '%' + @Search + '%')
-        OR (Email IS NOT NULL AND UPPER(Email) LIKE '%' + UPPER(@Search) + '%') )
-ORDER BY {orderBy}
-OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
-
-SELECT COUNT(*)
-FROM PersonalMedical WITH (NOLOCK)
-WHERE 1=1
-  AND (@EsteActiv IS NULL OR EsteActiv = @EsteActiv)
-  AND (@Departament IS NULL OR @Departament = '' OR @Departament = 'toate' OR UPPER(Departament) LIKE '%' + UPPER(@Departament) + '%')
-  AND (@Pozitie IS NULL OR @Pozitie = '' OR @Pozitie = 'toate' OR UPPER(Pozitie) LIKE '%' + UPPER(@Pozitie) + '%')
-  AND (@Nume IS NULL OR @Nume = '' OR UPPER(Nume) LIKE '%' + UPPER(@Nume) + '%')
-  AND (@Prenume IS NULL OR @Prenume = '' OR UPPER(Prenume) LIKE '%' + UPPER(@Prenume) + '%')
-  AND (@Specializare IS NULL OR @Specializare = '' OR UPPER(Specializare) LIKE '%' + UPPER(@Search) + '%')
-  AND (@NumarLicenta IS NULL OR @NumarLicenta = '' OR UPPER(NumarLicenta) LIKE '%' + UPPER(@Search) + '%')
-  AND (@Telefon IS NULL OR @Telefon = '' OR Telefon LIKE '%' + @Search + '%')
-  AND (@Email IS NULL OR @Email = '' OR UPPER(Email) LIKE '%' + UPPER(@Search) + '%')
-  AND ( @Search IS NULL OR @Search = ''
-        OR UPPER(Nume) LIKE '%' + UPPER(@Search) + '%'
-        OR UPPER(Prenume) LIKE '%' + UPPER(@Search) + '%'
-        OR UPPER(CONCAT(Nume, ' ', Prenume)) LIKE '%' + UPPER(@Search) + '%'
-        OR (Specializare IS NOT NULL AND UPPER(Specializare) LIKE '%' + UPPER(@Search) + '%')
-        OR (NumarLicenta IS NOT NULL AND UPPER(NumarLicenta) LIKE '%' + UPPER(@Search) + '%')
-        OR (Departament IS NOT NULL AND UPPER(Departament) LIKE '%' + UPPER(@Search) + '%')
-        OR (Pozitie IS NOT NULL AND UPPER(Pozitie) LIKE '%' + UPPER(@Search) + '%')
-        OR (Telefon IS NOT NULL AND Telefon LIKE '%' + @Search + '%')
-        OR (Email IS NOT NULL AND UPPER(Email) LIKE '%' + UPPER(@Email) + '%') );";
-
+            // Folosim stored procedure actualizat? cu suport pentru ierarhie
             var parameters = new DynamicParameters();
-            BuildSearchParameters(parameters, query);
-            parameters.Add("@Offset", offset);
+            parameters.Add("@Search", query.Search);
+            parameters.Add("@CategorieID", query.CategorieID);
+            parameters.Add("@SpecializareID", query.SpecializareID);
+            parameters.Add("@SubspecializareID", query.SubspecializareID);
+            parameters.Add("@Departament", query.Departament); // Pentru compatibilitate cu datele vechi
+            parameters.Add("@Pozitie", query.Pozitie);
+            parameters.Add("@EsteActiv", query.EsteActiv);
+            parameters.Add("@Nume", query.Nume);
+            parameters.Add("@Prenume", query.Prenume);
+            parameters.Add("@Specializare", query.Specializare); // Pentru compatibilitate cu datele vechi
+            parameters.Add("@NumarLicenta", query.NumarLicenta);
+            parameters.Add("@Telefon", query.Telefon);
+            parameters.Add("@Email", query.Email);
+            parameters.Add("@Page", query.Page);
             parameters.Add("@PageSize", query.PageSize);
+            parameters.Add("@Sort", query.Sort);
 
-            using var multi = await connection.QueryMultipleAsync(sql, parameters);
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_PersonalMedical_GetPaged", 
+                parameters, 
+                commandType: System.Data.CommandType.StoredProcedure);
             
-            var items = await multi.ReadAsync<PersonalMedicalDto>();
+            var items = await multi.ReadAsync<PersonalMedicalListDtoRaw>();
             var totalCount = await multi.ReadSingleAsync<int>();
 
             var listItems = items.Select(MapToListDto).ToList();
@@ -106,95 +68,28 @@ WHERE 1=1
         }
     }
 
-    private string BuildOrderByClause(string? sort)
-    {
-        if (string.IsNullOrWhiteSpace(sort))
-            return "Nume ASC, Prenume ASC";
-
-        var orderByParts = new List<string>();
-        var sortParts = sort.Split(',', StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var part in sortParts)
-        {
-            var trimmedPart = part.Trim();
-            var colonIndex = trimmedPart.IndexOf(':');
-            
-            string column, direction;
-            if (colonIndex > 0)
-            {
-                column = trimmedPart.Substring(0, colonIndex).Trim();
-                direction = trimmedPart.Substring(colonIndex + 1).Trim().ToUpper();
-                direction = direction == "DESC" ? "DESC" : "ASC";
-            }
-            else
-            {
-                column = trimmedPart;
-                direction = "ASC";
-            }
-
-            var validColumn = GetValidColumnName(column);
-            if (!string.IsNullOrEmpty(validColumn))
-            {
-                orderByParts.Add($"{validColumn} {direction}");
-            }
-        }
-
-        if (!orderByParts.Any())
-            return "Nume ASC, Prenume ASC";
-
-        var result = string.Join(", ", orderByParts);
-        Console.WriteLine($"BuildOrderByClause: '{sort}' -> '{result}'");
-        return result;
-    }
-
-    private string? GetValidColumnName(string column)
-    {
-        return column?.ToLower() switch
-        {
-            "nume" => "Nume",
-            "prenume" => "Prenume", 
-            "numecomplet" => "Nume", 
-            "pozitie" => "Pozitie",
-            "departament" => "Departament",
-            "specializare" => "Specializare",
-            "numarlicenta" => "NumarLicenta",
-            "telefon" => "Telefon",
-            "email" => "Email",
-            "esteactiv" => "EsteActiv",
-            "datacreare" => "DataCreare",
-            _ => null
-        };
-    }
-
-    private void BuildSearchParameters(DynamicParameters parameters, PersonalMedicalSearchQuery query)
-    {
-        parameters.Add("@Search", query.Search);
-        parameters.Add("@Departament", query.Departament);
-        parameters.Add("@Pozitie", query.Pozitie);
-        parameters.Add("@EsteActiv", query.EsteActiv);
-        parameters.Add("@Nume", query.Nume);
-        parameters.Add("@Prenume", query.Prenume);
-        parameters.Add("@Specializare", query.Specializare);
-        parameters.Add("@NumarLicenta", query.NumarLicenta);
-        parameters.Add("@Telefon", query.Telefon);
-        parameters.Add("@Email", query.Email);
-    }
-
-    private PersonalMedicalListDto MapToListDto(PersonalMedicalDto dto)
+    private PersonalMedicalListDto MapToListDto(PersonalMedicalListDtoRaw raw)
     {
         return new PersonalMedicalListDto
         {
-            PersonalID = dto.PersonalID,
-            Nume = dto.Nume,
-            Prenume = dto.Prenume,
-            Specializare = dto.Specializare,
-            NumarLicenta = dto.NumarLicenta,
-            Telefon = dto.Telefon,
-            Email = dto.Email,
-            Departament = dto.Departament,
-            Pozitie = dto.Pozitie,
-            EsteActiv = dto.EsteActiv,
-            DataCreare = dto.DataCreare
+            PersonalID = raw.PersonalID,
+            Nume = raw.Nume,
+            Prenume = raw.Prenume,
+            Specializare = raw.Specializare,
+            NumarLicenta = raw.NumarLicenta,
+            Telefon = raw.Telefon,
+            Email = raw.Email,
+            Departament = raw.Departament,
+            Pozitie = raw.Pozitie,
+            EsteActiv = raw.EsteActiv,
+            DataCreare = raw.DataCreare,
+            // Noi propriet??i ierarhice
+            CategorieID = raw.CategorieID,
+            SpecializareID = raw.SpecializareID,
+            SubspecializareID = raw.SubspecializareID,
+            CategorieNume = raw.CategorieNume,
+            SpecializareNume = raw.SpecializareNume,
+            SubspecializareNume = raw.SubspecializareNume
         };
     }
 
@@ -207,6 +102,9 @@ WHERE 1=1
             var searchQuery = new PersonalMedicalSearchQuery
             {
                 Search = request.Search,
+                CategorieID = request.CategorieID,
+                SpecializareID = request.SpecializareID,
+                SubspecializareID = request.SubspecializareID,
                 Departament = request.Departament,
                 Pozitie = request.Pozitie,
                 EsteActiv = request.EsteActiv,
@@ -255,31 +153,37 @@ WHERE 1=1
         {
             using var connection = _connectionFactory.CreateConnection();
             
-            var sql = @"
-SELECT PersonalID, Nume, Prenume, Specializare, NumarLicenta, Telefon, Email, Departament, Pozitie, EsteActiv, DataCreare
-FROM PersonalMedical WITH (NOLOCK)
-WHERE PersonalID = @PersonalID";
-
-            var dto = await connection.QuerySingleOrDefaultAsync<PersonalMedicalDto>(sql, new { PersonalID = personalId });
+            var rawData = await connection.QuerySingleOrDefaultAsync<PersonalMedicalDetailDtoRaw>(
+                "sp_PersonalMedical_GetById", 
+                new { PersonalID = personalId },
+                commandType: System.Data.CommandType.StoredProcedure);
             
-            if (dto == null)
+            if (rawData == null)
             {
                 return Result<PersonalMedicalDetailDto?>.Success(null);
             }
 
             var detailDto = new PersonalMedicalDetailDto
             {
-                PersonalID = dto.PersonalID,
-                Nume = dto.Nume,
-                Prenume = dto.Prenume,
-                Specializare = dto.Specializare,
-                NumarLicenta = dto.NumarLicenta,
-                Telefon = dto.Telefon,
-                Email = dto.Email,
-                Departament = dto.Departament,
-                Pozitie = dto.Pozitie,
-                EsteActiv = dto.EsteActiv,
-                DataCreare = dto.DataCreare,
+                PersonalID = rawData.PersonalID,
+                Nume = rawData.Nume,
+                Prenume = rawData.Prenume,
+                Specializare = rawData.Specializare,
+                NumarLicenta = rawData.NumarLicenta,
+                Telefon = rawData.Telefon,
+                Email = rawData.Email,
+                Departament = rawData.Departament,
+                Pozitie = rawData.Pozitie,
+                EsteActiv = rawData.EsteActiv,
+                DataCreare = rawData.DataCreare,
+                // Noi propriet??i ierarhice
+                CategorieID = rawData.CategorieID,
+                SpecializareID = rawData.SpecializareID,
+                SubspecializareID = rawData.SubspecializareID,
+                CategorieNume = rawData.CategorieNume,
+                SpecializareNume = rawData.SpecializareNume,
+                SubspecializareNume = rawData.SubspecializareNume,
+                // Date adi?ionale pentru pagina de detalii
                 ProgramariRecente = new List<ProgramareListDto>(),
                 ConsultatiiRecente = new List<ConsultatieListDto>(),
                 TotalProgramari = 0,
@@ -300,52 +204,34 @@ WHERE PersonalID = @PersonalID";
         {
             using var connection = _connectionFactory.CreateConnection();
             
-            var personalId = Guid.NewGuid();
+            Console.WriteLine($"[PersonalMedicalRepository] Creating personal with data: {request.Nume} {request.Prenume}");
             
-            Console.WriteLine($"[PersonalMedicalRepository] Creating personal with ID: {personalId}");
-            Console.WriteLine($"[PersonalMedicalRepository] Request data: {request.Nume} {request.Prenume}, {request.Pozitie}");
-            
-            var sql = @"
-INSERT INTO PersonalMedical (PersonalID, Nume, Prenume, Specializare, NumarLicenta, Telefon, Email, Departament, Pozitie, EsteActiv, DataCreare)
-VALUES (@PersonalID, @Nume, @Prenume, @Specializare, @NumarLicenta, @Telefon, @Email, @Departament, @Pozitie, @EsteActiv, @DataCreare)";
+            var parameters = new DynamicParameters();
+            parameters.Add("@Nume", request.Nume);
+            parameters.Add("@Prenume", request.Prenume);
+            parameters.Add("@CategorieID", request.CategorieID);
+            parameters.Add("@SpecializareID", request.SpecializareID);
+            parameters.Add("@SubspecializareID", request.SubspecializareID);
+            parameters.Add("@NumarLicenta", request.NumarLicenta);
+            parameters.Add("@Telefon", request.Telefon);
+            parameters.Add("@Email", request.Email);
+            parameters.Add("@Pozitie", request.Pozitie);
+            parameters.Add("@EsteActiv", request.EsteActiv);
+            // Pentru compatibilitate cu datele vechi
+            parameters.Add("@Departament", request.Departament);
+            parameters.Add("@Specializare", request.Specializare);
 
-            var parameters = new
-            {
-                PersonalID = personalId,
-                Nume = request.Nume,
-                Prenume = request.Prenume,
-                Specializare = request.Specializare,
-                NumarLicenta = request.NumarLicenta,
-                Telefon = request.Telefon,
-                Email = request.Email,
-                Departament = request.Departament,
-                Pozitie = request.Pozitie,
-                EsteActiv = request.EsteActiv,
-                DataCreare = DateTime.UtcNow
-            };
+            var result = await connection.QuerySingleAsync<PersonalCreateResult>(
+                "sp_PersonalMedical_Create",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure);
 
-            Console.WriteLine($"[PersonalMedicalRepository] SQL: {sql}");
-            Console.WriteLine($"[PersonalMedicalRepository] Parameters: {System.Text.Json.JsonSerializer.Serialize(parameters)}");
-
-            var rowsAffected = await connection.ExecuteAsync(sql, parameters);
-            
-            Console.WriteLine($"[PersonalMedicalRepository] Rows affected: {rowsAffected}");
-
-            if (rowsAffected > 0)
-            {
-                Console.WriteLine($"[PersonalMedicalRepository] Success! Created personal with ID: {personalId}");
-                return Result<Guid>.Success(personalId);
-            }
-            else
-            {
-                Console.WriteLine("[PersonalMedicalRepository] No rows were affected - insert failed");
-                return Result<Guid>.Failure("Nu s-au putut salva datele - niciun rand afectat");
-            }
+            Console.WriteLine($"[PersonalMedicalRepository] Success! Created personal with ID: {result.PersonalID}");
+            return Result<Guid>.Success(result.PersonalID);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[PersonalMedicalRepository] Exception: {ex.Message}");
-            Console.WriteLine($"[PersonalMedicalRepository] Stack trace: {ex.StackTrace}");
             return Result<Guid>.Failure($"Eroare la crearea personalului medical: {ex.Message}");
         }
     }
@@ -356,25 +242,26 @@ VALUES (@PersonalID, @Nume, @Prenume, @Specializare, @NumarLicenta, @Telefon, @E
         {
             using var connection = _connectionFactory.CreateConnection();
             
-            var sql = @"
-UPDATE PersonalMedical 
-SET Nume = @Nume, 
-    Prenume = @Prenume, 
-    Specializare = @Specializare, 
-    NumarLicenta = @NumarLicenta, 
-    Telefon = @Telefon, 
-    Email = @Email, 
-    Departament = @Departament, 
-    Pozitie = @Pozitie, 
-    EsteActiv = @EsteActiv
-WHERE PersonalID = @PersonalID";
+            var parameters = new DynamicParameters();
+            parameters.Add("@PersonalID", request.PersonalID);
+            parameters.Add("@Nume", request.Nume);
+            parameters.Add("@Prenume", request.Prenume);
+            parameters.Add("@CategorieID", request.CategorieID);
+            parameters.Add("@SpecializareID", request.SpecializareID);
+            parameters.Add("@SubspecializareID", request.SubspecializareID);
+            parameters.Add("@NumarLicenta", request.NumarLicenta);
+            parameters.Add("@Telefon", request.Telefon);
+            parameters.Add("@Email", request.Email);
+            parameters.Add("@Pozitie", request.Pozitie);
+            parameters.Add("@EsteActiv", request.EsteActiv);
+            // Pentru compatibilitate cu datele vechi
+            parameters.Add("@Departament", request.Departament);
+            parameters.Add("@Specializare", request.Specializare);
 
-            var rowsAffected = await connection.ExecuteAsync(sql, request);
-            
-            if (rowsAffected == 0)
-            {
-                return Result.Failure("Personal medical nu a fost gasit pentru actualizare");
-            }
+            await connection.ExecuteAsync(
+                "sp_PersonalMedical_Update",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure);
 
             return Result.Success();
         }
@@ -418,13 +305,17 @@ WHERE PersonalID = @PersonalID";
             using var connection = _connectionFactory.CreateConnection();
             
             var sql = @"
-SELECT PersonalID, Nume, Prenume, Specializare, NumarLicenta, Telefon, Email, Departament, Pozitie, EsteActiv, DataCreare
-FROM PersonalMedical WITH (NOLOCK)
-WHERE EsteActiv = 1 
-  AND (Pozitie LIKE '%Doctor%' OR Pozitie LIKE '%Medic%')
-ORDER BY Nume, Prenume";
+SELECT PersonalID, Nume, Prenume, Specializare, NumarLicenta, Telefon, Email, Departament, Pozitie, EsteActiv, DataCreare,
+       CategorieID, SpecializareID, SubspecializareID, CategorieNume, SpecializareNume, SubspecializareNume
+FROM PersonalMedical pm WITH (NOLOCK)
+LEFT JOIN Departamente cat ON pm.CategorieID = cat.DepartamentID AND cat.Tip = 'Categorie'
+LEFT JOIN Departamente spec ON pm.SpecializareID = spec.DepartamentID AND spec.Tip = 'Specialitate'
+LEFT JOIN Departamente sub ON pm.SubspecializareID = sub.DepartamentID AND sub.Tip = 'Subspecialitate'
+WHERE pm.EsteActiv = 1 
+  AND (pm.Pozitie LIKE '%Doctor%' OR pm.Pozitie LIKE '%Medic%')
+ORDER BY pm.Nume, pm.Prenume";
 
-            var items = await connection.QueryAsync<PersonalMedicalDto>(sql);
+            var items = await connection.QueryAsync<PersonalMedicalListDtoRaw>(sql);
             var listItems = items.Select(MapToListDto).ToList();
 
             return Result<IEnumerable<PersonalMedicalListDto>>.Success(listItems);
@@ -441,28 +332,30 @@ ORDER BY Nume, Prenume";
         {
             using var connection = _connectionFactory.CreateConnection();
             
-            var groupByColumn = GetValidColumnName(query.GroupBy) ?? "Departament";
+            var groupByColumn = GetValidColumnName(query.GroupBy) ?? "CategorieNume";
             
             var sql = $@"
 SELECT 
     ISNULL({groupByColumn}, 'Nu este specificat') as [Key],
     COUNT(*) as Count,
-    MAX(DataCreare) as LastDataCreare
-FROM PersonalMedical WITH (NOLOCK)
+    MAX(pm.DataCreare) as LastDataCreare
+FROM PersonalMedical pm WITH (NOLOCK)
+LEFT JOIN Departamente cat ON pm.CategorieID = cat.DepartamentID AND cat.Tip = 'Categorie'
+LEFT JOIN Departamente spec ON pm.SpecializareID = spec.DepartamentID AND spec.Tip = 'Specialitate'
 WHERE 1=1
-  AND (@EsteActiv IS NULL OR EsteActiv = @EsteActiv)
-  AND (@Departament IS NULL OR @Departament = '' OR UPPER(Departament) LIKE '%' + UPPER(@Departament) + '%')
-  AND (@Pozitie IS NULL OR @Pozitie = '' OR UPPER(Pozitie) LIKE '%' + UPPER(@Pozitie) + '%')
+  AND (@EsteActiv IS NULL OR pm.EsteActiv = @EsteActiv)
+  AND (@CategorieID IS NULL OR pm.CategorieID = @CategorieID)
+  AND (@SpecializareID IS NULL OR pm.SpecializareID = @SpecializareID)
   AND (@Search IS NULL OR @Search = '' OR 
-       UPPER(Nume) LIKE '%' + UPPER(@Search) + '%' OR 
-       UPPER(Prenume) LIKE '%' + UPPER(@Search) + '%')
+       UPPER(pm.Nume) LIKE '%' + UPPER(@Search) + '%' OR 
+       UPPER(pm.Prenume) LIKE '%' + UPPER(@Search) + '%')
 GROUP BY {groupByColumn}
 ORDER BY Count DESC";
 
             var parameters = new DynamicParameters();
             parameters.Add("@Search", query.Search);
-            parameters.Add("@Departament", query.Departament);
-            parameters.Add("@Pozitie", query.Pozitie);
+            parameters.Add("@CategorieID", query.CategorieID);
+            parameters.Add("@SpecializareID", query.SpecializareID);
             parameters.Add("@EsteActiv", query.EsteActiv);
 
             var items = await connection.QueryAsync<PersonalMedicalGroupAggregateDto>(sql, parameters);
@@ -474,9 +367,30 @@ ORDER BY Count DESC";
             return Result<IEnumerable<PersonalMedicalGroupAggregateDto>>.Failure($"Eroare la agregarea grupurilor: {ex.Message}");
         }
     }
+
+    private string? GetValidColumnName(string column)
+    {
+        return column?.ToLower() switch
+        {
+            "nume" => "pm.Nume",
+            "prenume" => "pm.Prenume", 
+            "numecomplet" => "pm.Nume", 
+            "pozitie" => "pm.Pozitie",
+            "departament" => "cat.Nume",
+            "categorie" => "cat.Nume",
+            "specializare" => "spec.Nume",
+            "numarlicenta" => "pm.NumarLicenta",
+            "telefon" => "pm.Telefon",
+            "email" => "pm.Email",
+            "esteactiv" => "pm.EsteActiv",
+            "datacreare" => "pm.DataCreare",
+            _ => null
+        };
+    }
 }
 
-internal class PersonalMedicalDto
+// Raw DTOs pentru maparea din database cu toate coloanele noi
+internal class PersonalMedicalListDtoRaw
 {
     public Guid PersonalID { get; set; }
     public string Nume { get; set; } = string.Empty;
@@ -489,4 +403,21 @@ internal class PersonalMedicalDto
     public string Pozitie { get; set; } = string.Empty;
     public bool EsteActiv { get; set; }
     public DateTime DataCreare { get; set; }
+    // Noi propriet??i ierarhice
+    public Guid? CategorieID { get; set; }
+    public Guid? SpecializareID { get; set; }
+    public Guid? SubspecializareID { get; set; }
+    public string? CategorieNume { get; set; }
+    public string? SpecializareNume { get; set; }
+    public string? SubspecializareNume { get; set; }
+}
+
+internal class PersonalMedicalDetailDtoRaw : PersonalMedicalListDtoRaw
+{
+    // Inherit all properties from PersonalMedicalListDtoRaw
+}
+
+internal class PersonalCreateResult
+{
+    public Guid PersonalID { get; set; }
 }

@@ -11,13 +11,13 @@
 <RadzenRow Class="rz-p-4">
     <RadzenColumn Size="12">
         
-        <!-- Header Card -->
-        <RadzenCard Class="rz-mb-4">
+        <!-- Header Card - FOLOSESTE CLASELE GLOBALE -->
+        <RadzenCard Class="page-header-card edit-mode rz-mb-4">
             <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
                 <RadzenColumn Size="12" SizeMD="8">
                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-                        <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Style="font-size: 1.5rem; color: var(--rz-primary);" />
-                        <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0">
+                        <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Class="page-header-icon edit-mode" />
+                        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title edit-mode rz-m-0">
                             @(_isEditMode ? "Modifica Persoana" : "Adauga Persoana Noua")
                         </RadzenText>
                     </RadzenStack>
@@ -26,8 +26,10 @@
                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.5rem">
                         <RadzenButton Text="Inapoi la lista" 
                                      Icon="arrow_back" 
-                                     ButtonStyle="ButtonStyle.Secondary" 
+                                     ButtonStyle="ButtonStyle.Info" 
                                      Variant="Radzen.Variant.Filled"
+                                     Size="ButtonSize.Large"
+                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
                                      Click="@BackToList" />
                     </RadzenStack>
                 </RadzenColumn>
@@ -94,7 +96,9 @@
                                                           MaxLength="100"
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
-                                                          Change="@(() => OnFieldChanged(nameof(_model.Nume)))" />
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Nume)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Nume)))" />
+
                                             <RadzenRequiredValidator Component="Nume" Text="Numele este obligatoriu" />
                                         </RadzenColumn>
                                         
@@ -109,7 +113,9 @@
                                                           MaxLength="100"
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
-                                                          Change="@(() => OnFieldChanged(nameof(_model.Prenume)))" />
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Prenume)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Prenume)))" />
+
                                             <RadzenRequiredValidator Component="Prenume" Text="Prenumele este obligatoriu" />
                                         </RadzenColumn>
                                         
@@ -124,7 +130,8 @@
                                                           MaxLength="13"
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
-                                                          Change="@(() => OnFieldChanged(nameof(_model.CNP)))" />
+                                                          Change="@(() => OnFieldChanged(nameof(_model.CNP)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.CNP)))" />
                                         </RadzenColumn>
 
                                         <!-- Data Nasterii -->
@@ -184,7 +191,9 @@
                                                           Placeholder="Ex: 0721123456" 
                                                           MaxLength="20"
                                                           Style="width: 100%;"
-                                                          Variant="Radzen.Variant.Outlined" />
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Telefon)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Telefon)))" />
                                         </RadzenColumn>
 
                                         <!-- Email -->
@@ -197,7 +206,9 @@
                                                           Placeholder="Ex: nume@email.ro" 
                                                           MaxLength="100"
                                                           Style="width: 100%;"
-                                                          Variant="Radzen.Variant.Outlined" />
+                                                          Variant="Radzen.Variant.Outlined"
+                                                          Change="@(() => OnFieldChanged(nameof(_model.Email)))"
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Email)))" />
                                             <RadzenEmailValidator Component="Email" Text="Formatul email-ului nu este valid" />
                                         </RadzenColumn>
                                     </RadzenRow>
@@ -280,10 +291,10 @@
                                 Preview Persoana
                             </RadzenText>
                             
-                            @if (_isEditMode || (!string.IsNullOrEmpty(_model.Nume) && !string.IsNullOrEmpty(_model.Prenume)))
+                            @if (_isEditMode || (!string.IsNullOrEmpty(_model.Nume) || !string.IsNullOrEmpty(_model.Prenume)))
                             {
                                 <!-- Grid cu preview-ul datelor folosind Radzen Grid -->
-                                <RadzenGrid TItem="PersoanaListDto" 
+                                <RadzenGrid TItem="PersoanaPreview" 
                                            Data="@_previewData" 
                                            AllowPaging="false"
                                            AllowSorting="false"
@@ -292,14 +303,37 @@
                                            Density="Density.Compact"
                                            Style="border: 1px solid var(--rz-border-color); height: 300px;">
                                     <Columns>
-                                        <RadzenGridColumn TItem="PersoanaListDto" Property="Nume" Title="Nume" Width="100px" />
-                                        <RadzenGridColumn TItem="PersoanaListDto" Property="Prenume" Title="Prenume" Width="100px" />
-                                        <RadzenGridColumn TItem="PersoanaListDto" Property="Gen" Title="Gen" Width="80px" />
-                                        <RadzenGridColumn TItem="PersoanaListDto" Property="Judet" Title="Judet" Width="100px" />
-                                        <RadzenGridColumn TItem="PersoanaListDto" Property="Localitate" Title="Localitate" Width="120px" />
-                                        <RadzenGridColumn TItem="PersoanaListDto" Property="StatusText" Title="Status" Width="80px" />
+                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Nume" Title="Nume" Width="100px" />
+                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Prenume" Title="Prenume" Width="100px" />
+                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Gen" Title="Gen" Width="80px" />
+                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Judet" Title="Judet" Width="100px" />
+                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Localitate" Title="Localitate" Width="120px" />
+                                        <RadzenGridColumn TItem="PersoanaPreview" Property="StatusText" Title="Status" Width="80px" />
                                     </Columns>
                                 </RadzenGrid>
+
+                                @if (_previewData.Any())
+                                {
+                                    var persoana = _previewData.First();
+                                    <!-- Informatii suplimentare pentru preview -->
+                                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
+                                        <RadzenText TextStyle="TextStyle.Body2">
+                                            <strong>Varsta:</strong> @(persoana.Varsta > 0 ? $"{persoana.Varsta} ani" : "Nu este calculata")<br />
+                                            @if (!string.IsNullOrEmpty(persoana.CNP) && persoana.CNP != "Nu este specificat")
+                                            {
+                                                <strong>CNP:</strong> @persoana.CNP<br />
+                                            }
+                                            @if (!string.IsNullOrEmpty(persoana.Email) && persoana.Email != "Nu este specificat")
+                                            {
+                                                <strong>Email:</strong> @persoana.Email<br />
+                                            }
+                                            @if (!string.IsNullOrEmpty(persoana.Telefon) && persoana.Telefon != "Nu este specificat")
+                                            {
+                                                <strong>Telefon:</strong> @persoana.Telefon
+                                            }
+                                        </RadzenText>
+                                    </RadzenAlert>
+                                }
                             }
                             else
                             {
