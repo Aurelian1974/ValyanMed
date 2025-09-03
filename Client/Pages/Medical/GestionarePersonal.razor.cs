@@ -4,6 +4,7 @@ using global::Shared.Common;
 using Radzen;
 using Radzen.Blazor;
 using Client.Services.Medical;
+using Client.Services;
 using System.Linq;
 using Microsoft.JSInterop;
 using System.Text.Json;
@@ -17,6 +18,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
     [Inject] private DialogService DialogService { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private IDataGridSettingsService DataGridSettingsService { get; set; } = null!;
 
     // PUBLIC PROPERTIES FOR RAZOR BINDING
     public Radzen.Blazor.RadzenDataGrid<PersonalMedicalListDto> _dataGrid = null!;
@@ -33,6 +35,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
 
     // PRIVATE FIELDS
     private Timer? _searchTimer;
+    private bool _isDisposed = false;
     private bool _isGrouped = false;
     private List<DataGridGroupRequest> _currentGroups = new();
     private bool _allGroupsExpanded = true;
@@ -133,26 +136,55 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         await base.OnAfterRenderAsync(firstRender);
     }
 
+    // COMPLETE DISPOSE PATTERN IMPLEMENTATION
     public void Dispose()
     {
-        _searchTimer?.Dispose();
+        if (_isDisposed) return;
         
-        // Save current state before disposal
-        if (_gridSettings != null)
+        _isDisposed = true;
+        
+        try
         {
-            try
+            // 1. Dispose timer safely
+            _searchTimer?.Dispose();
+            _searchTimer = null;
+            
+            // 2. Save current state before disposal - BEST EFFORT
+            if (_gridSettings != null)
             {
-                // Best effort save - don't await in Dispose
-                _ = Task.Run(async () =>
+                try
                 {
-                    var json = JsonSerializer.Serialize(_gridSettings);
-                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", GRID_SETTINGS_KEY, json);
-                });
+                    // Fire and forget - don't await in Dispose
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, _gridSettings);
+                        }
+                        catch
+                        {
+                            // Ignore errors during disposal
+                        }
+                    });
+                }
+                catch
+                {
+                    // Ignore errors during disposal
+                }
             }
-            catch
-            {
-                // Ignore errors during disposal
-            }
+            
+            // 3. Clear collections to help GC
+            _groupStates?.Clear();
+            _currentGroups?.Clear();
+        }
+        catch (Exception)
+        {
+            // Ignore all errors during disposal
+        }
+        finally
+        {
+            // 4. Suppress finalization
+            GC.SuppressFinalize(this);
         }
     }
 
@@ -450,17 +482,50 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
 
     private async Task DelayedSearch()
     {
-        _searchTimer?.Dispose();
+        if (_isDisposed) return;
+
+        // Dispose previous timer safely
+        try
+        {
+            _searchTimer?.Dispose();
+        }
+        catch
+        {
+            // Ignore timer disposal errors
+        }
+
         _searchTimer = new Timer(async _ =>
         {
-            _searchQuery.Page = 1;
-            await InvokeAsync(async () =>
+            // Check disposal status in timer callback
+            if (_isDisposed) return;
+
+            try
             {
-                if (_dataGrid != null)
-                    await _dataGrid.Reload();
-                else
-                    await LoadDataAsync(new LoadDataArgs());
-            });
+                _searchQuery.Page = 1;
+                await InvokeAsync(async () =>
+                {
+                    if (_isDisposed) return;
+
+                    try
+                    {
+                        if (_dataGrid != null)
+                            await _dataGrid.Reload();
+                        else
+                            await LoadDataAsync(new LoadDataArgs());
+                            
+                        if (!_isDisposed)
+                            StateHasChanged();
+                    }
+                    catch (Exception)
+                    {
+                        // Log error if needed, but don't throw in InvokeAsync
+                    }
+                });
+            }
+            catch (Exception)
+            {
+                // Ignore all errors in timer callback to prevent crashes
+            }
         }, null, 300, Timeout.Infinite);
     }
 
@@ -578,24 +643,19 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
     }
 
-    // Settings Management
+    // Settings Management - IMPROVED WITH CENTRALIZED SERVICE
     public async Task OnSettingsChanged(DataGridSettings settings)
     {
         _gridSettings = settings;
         
         try
         {
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-            
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", GRID_SETTINGS_KEY, json);
+            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
         }
         catch (Exception ex)
         {
-            // Log error silently
+            Console.WriteLine($"[GestionarePersonal] OnSettingsChanged error: {ex.Message}");
+            // Set?rile sunt salvate în memory cache prin service
         }
     }
 
@@ -603,26 +663,30 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
     {
         try
         {
-            var json = await JSRuntime.InvokeAsync<string>("localStorage.getItem", GRID_SETTINGS_KEY);
+            _gridSettings = await DataGridSettingsService.LoadSettingsAsync(GRID_SETTINGS_KEY);
             
-            if (!string.IsNullOrEmpty(json))
+            if (_gridSettings == null)
             {
-                _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(json, new JsonSerializerOptions 
-                { 
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+                // Set?ri implicite pentru grid
+                _gridSettings = new DataGridSettings();
                 
-                // Restore grouping state
-                if (_gridSettings?.Groups?.Any() == true)
-                {
-                    _isGrouped = true;
-                    await UpdateCurrentGroups();
-                }
+                // Salveaz? set?rile implicite în memory cache
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+            }
+            
+            // Restore grouping state
+            if (_gridSettings?.Groups?.Any() == true)
+            {
+                _isGrouped = true;
+                await UpdateCurrentGroups();
             }
         }
         catch (Exception ex)
         {
-            // Log error silently
+            Console.WriteLine($"[GestionarePersonal] LoadGridSettings error: {ex.Message}");
+            
+            // Folose?te set?ri implicite
+            _gridSettings = new DataGridSettings();
         }
     }
 

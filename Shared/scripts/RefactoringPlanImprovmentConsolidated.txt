@@ -1,0 +1,103 @@
+Plan Final de Refactorizare - Lista Consolidată
+După verificarea completă a documentelor, iată lista finală ordonată după prioritate:
+🔴 CRITICE - Blocker-uri Imediate
+1.	DataGrid Settings Persistence Fix ⚠️
+•	LocalStorage poate eșua fără error handling
+•	Implementare fallback cu memory cache
+2.	Memory Leaks în Components ⚠️
+•	Timer-uri ne-disposed în GestionarePersoane.razor.cs
+•	Implementare Dispose pattern complet
+3.	Group State Management ⚠️
+•	State complex pentru grupări fără persistență
+•	Creare DataGridStateService centralizat
+4.	Eliminare completă diacritice din UI
+•	Găsite în DTOs: "Numărul de licență este obligatoriu"
+•	Audit complet toate string-urile
+5.	Migrare completă MudBlazor → Radzen
+•	Inconsistență: cod folosește Radzen, CSS referă MudBlazor
+•	patient-list.css conține 500+ linii pentru MudBlazor
+
+📌 OBSERVAȚII SPECIFICE DIN COD
+Probleme Critice Găsite:
+•	GestionarePersoane.razor.cs: Timer disposal în best-effort mode
+•	PersonalMedicalView.razor: Duplicate back buttons
+•	patient-list.css: 15+ culori definite vs cerința de max 2
+•	Stored Procedures: Diacritice în error messages ("Partenerul nu exist?")
+Inconsistențe:
+•	Unele pagini folosesc Radzen, altele MudBlazor
+•	CSS files pentru MudBlazor dar cod folosește Radzen
+•	Diacritice în unele DTOs dar nu în UI
+
+🟠 URGENTE - Calitate Cod
+6.	Eliminare Magic Strings - Implementare Enum-uri
+•	StatusOptions, TipPersonalMedical, MedicationStatus
+7.	Result Pattern Implementation
+•	Înlocuire bool/exception cu Result<T>
+•	Metode helper pentru Blazor notifications
+8.	Exception Handling Specific
+•	ValidationException, NotFoundException, BusinessRuleException
+•	Global Exception Middleware
+9.	FluentValidation pe toate formularele
+•	Validators pentru Create/Update operations
+•	Async validation pentru unicitate
+10.	Component Code-Behind Separation
+•	.razor doar markup, .razor.cs toată logica
+•	Pattern consistent în toată aplicația
+
+🟡 IMPORTANTE - Arhitectură
+11.	CSS Reorganizare - Max 2 culori
+•	Eliminare patient-list.css (500+ linii)
+•	Doar radzen-theme.css cu 2 culori
+12.	Rich Services Implementation
+•	Services cu business logic, nu doar forwarding
+•	Validări, calcule, domain events
+13.	CQRS pentru operații complexe
+•	Commands pentru write, Queries pentru read
+•	Handlers cu validare și events
+14.	Domain Models în loc de DTOs Everywhere
+•	DTOs doar la API boundaries
+•	Domain models pentru business logic
+15.	Caching Strategy Implementation
+•	ICacheService cu fallback mechanisms
+•	Cache invalidation strategy
+
+🟢 NECESARE - Features
+16.	SignalR Real-Time Notifications
+•	MedicalNotificationHub pentru updates
+•	Group-based notifications
+17.	Unit of Work Pattern
+•	Transaction management
+•	Batch operations support
+18.	Health Checks Implementation
+•	Database connectivity
+•	External services monitoring
+19.	Header Global Pattern Component
+•	PageHeader reusable component
+•	Consistent UI patterns
+20.	Background Services
+•	Stock monitoring
+•	Scheduled tasks
+
+🔵 UTILE - Îmbunătățiri
+21.	AutoMapper Integration
+•	DTO ↔ Domain mapping
+•	Profile-based configuration
+22.	Serilog Structured Logging
+•	Înlocuire console logging
+•	Log aggregation ready
+23.	API Versioning
+•	Version în route
+•	Backward compatibility
+24.	Audit Trail Implementation
+•	Track changes automatizat
+•	User activity logging
+25.	Data Protection Implementation
+•	Encrypt sensitive data
+•	GDPR compliance
+
+⚪ NICE TO HAVE - Optimizări
+26.	MediatR pentru CQRS complet
+27.	Hangfire pentru task-uri background
+28.	Database Migrations (DbUp/FluentMigrator)
+29.	Application Insights Integration
+30.	Testing Strategy (Unit/Integration/E2E)

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Shared.DTOs.Medical;
 
 // =============================================
-// PERSONAL MEDICAL DTOs - ACTUALIZAT CU IERARHIE
+// PERSONAL MEDICAL DTOs - ACTUALIZAT FARA DIACRITICE
 // =============================================
 
 public class PersonalMedicalListDto
@@ -20,7 +20,7 @@ public class PersonalMedicalListDto
     public bool EsteActiv { get; set; }
     public DateTime DataCreare { get; set; }
     
-    // Noi propriet??i pentru ierarhie
+    // Noi proprietati pentru ierarhie
     public Guid? CategorieID { get; set; }
     public Guid? SpecializareID { get; set; }
     public Guid? SubspecializareID { get; set; }
@@ -31,7 +31,7 @@ public class PersonalMedicalListDto
     // Computed properties
     public string NumeComplet => $"{Nume} {Prenume}";
     public string StatusText => EsteActiv ? "Activ" : "Inactiv";
-    public string SpecializareCompleta => SpecializareNume ?? Specializare ?? "Nu este specificat?";
+    public string SpecializareCompleta => SpecializareNume ?? Specializare ?? "Nu este specificata";
     public string DepartamentAfisare => CategorieNume ?? Departament ?? "Nu este specificat";
 }
 
@@ -49,7 +49,7 @@ public class PersonalMedicalDetailDto
     public bool EsteActiv { get; set; }
     public DateTime DataCreare { get; set; }
     
-    // Noi propriet??i pentru ierarhie
+    // Noi proprietati pentru ierarhie
     public Guid? CategorieID { get; set; }
     public Guid? SpecializareID { get; set; }
     public Guid? SubspecializareID { get; set; }
@@ -57,7 +57,7 @@ public class PersonalMedicalDetailDto
     public string? SpecializareNume { get; set; }
     public string? SubspecializareNume { get; set; }
 
-    // Data adi?ionale pentru pagina de detalii
+    // Data aditionale pentru pagina de detalii
     public IEnumerable<ProgramareListDto> ProgramariRecente { get; set; } = new List<ProgramareListDto>();
     public IEnumerable<ConsultatieListDto> ConsultatiiRecente { get; set; } = new List<ConsultatieListDto>();
     public int TotalProgramari { get; set; }
@@ -90,29 +90,29 @@ public class CreatePersonalMedicalRequest
     [StringLength(100, ErrorMessage = "Prenumele nu poate avea mai mult de 100 de caractere")]
     public string Prenume { get; set; } = string.Empty;
     
-    [Required(ErrorMessage = "Pozi?ia este obligatorie")]
+    [Required(ErrorMessage = "Pozitia este obligatorie")]
     public string Pozitie { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Specializarea este obligatorie")]
     [StringLength(100, ErrorMessage = "Specializarea nu poate avea mai mult de 100 de caractere")]
     public string Specializare { get; set; } = string.Empty;
     
-    [Required(ErrorMessage = "Num?rul de licen?? este obligatoriu")]
-    [StringLength(50, ErrorMessage = "Num?rul de licen?? nu poate avea mai mult de 50 de caractere")]
+    [Required(ErrorMessage = "Numarul de licenta este obligatoriu")]
+    [StringLength(50, ErrorMessage = "Numarul de licenta nu poate avea mai mult de 50 de caractere")]
     public string NumarLicenta { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Telefonul este obligatoriu")]
-    [Phone(ErrorMessage = "Num?rul de telefon nu este valid")]
+    [Phone(ErrorMessage = "Numarul de telefon nu este valid")]
     public string Telefon { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Email-ul este obligatoriu")]
-    [EmailAddress(ErrorMessage = "Adresa de email nu este valid?")]
+    [EmailAddress(ErrorMessage = "Adresa de email nu este valida")]
     public string Email { get; set; } = string.Empty;
     
     public string? Departament { get; set; }
     public bool EsteActiv { get; set; } = true;
     
-    // Noi propriet??i pentru ierarhie
+    // Noi proprietati pentru ierarhie
     public Guid? CategorieID { get; set; }
     public Guid? SpecializareID { get; set; }
     public Guid? SubspecializareID { get; set; }
@@ -131,29 +131,29 @@ public class UpdatePersonalMedicalRequest
     [StringLength(100, ErrorMessage = "Prenumele nu poate avea mai mult de 100 de caractere")]
     public string Prenume { get; set; } = string.Empty;
     
-    [Required(ErrorMessage = "Pozi?ia este obligatorie")]
+    [Required(ErrorMessage = "Pozitia este obligatorie")]
     public string Pozitie { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Specializarea este obligatorie")]
     [StringLength(100, ErrorMessage = "Specializarea nu poate avea mai mult de 100 de caractere")]
     public string Specializare { get; set; } = string.Empty;
     
-    [Required(ErrorMessage = "Num?rul de licen?? este obligatoriu")]
-    [StringLength(50, ErrorMessage = "Num?rul de licen?? nu poate avea mai mult de 50 de caractere")]
+    [Required(ErrorMessage = "Numarul de licenta este obligatoriu")]
+    [StringLength(50, ErrorMessage = "Numarul de licenta nu poate avea mai mult de 50 de caractere")]
     public string NumarLicenta { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Telefonul este obligatoriu")]
-    [Phone(ErrorMessage = "Num?rul de telefon nu este valid")]
+    [Phone(ErrorMessage = "Numarul de telefon nu este valid")]
     public string Telefon { get; set; } = string.Empty;
     
     [Required(ErrorMessage = "Email-ul este obligatoriu")]
-    [EmailAddress(ErrorMessage = "Adresa de email nu este valid?")]
+    [EmailAddress(ErrorMessage = "Adresa de email nu este valida")]
     public string Email { get; set; } = string.Empty;
     
     public string? Departament { get; set; }
     public bool EsteActiv { get; set; } = true;
     
-    // Noi propriet??i pentru ierarhie
+    // Noi proprietati pentru ierarhie
     public Guid? CategorieID { get; set; }
     public Guid? SpecializareID { get; set; }
     public Guid? SubspecializareID { get; set; }
@@ -177,7 +177,7 @@ public class PersonalMedicalSearchQuery
     public IEnumerable<string>? Departamente { get; set; }
     public IEnumerable<string>? Pozitii { get; set; }
     
-    // Noi propriet??i pentru ierarhie
+    // Noi proprietati pentru ierarhie
     public Guid? CategorieID { get; set; }
     public Guid? SpecializareID { get; set; }
     public Guid? SubspecializareID { get; set; }
@@ -218,7 +218,7 @@ public class DepartamentIerarhicDto
 }
 
 // =============================================
-// PROGRAM?RI DTOs
+// PROGRAMARI DTOs
 // =============================================
 
 public class ProgramareListDto
@@ -239,7 +239,7 @@ public class ProgramareListDto
 }
 
 // =============================================
-// CONSULTA?II DTOs
+// CONSULTATII DTOs
 // =============================================
 
 public class ConsultatieListDto
@@ -273,7 +273,7 @@ public class PersonalMedicalDataGridRequest
     public string? Telefon { get; set; }
     public string? Email { get; set; }
     
-    // Noi propriet??i pentru ierarhie
+    // Noi proprietati pentru ierarhie
     public Guid? CategorieID { get; set; }
     public Guid? SpecializareID { get; set; }
     public Guid? SubspecializareID { get; set; }
@@ -319,7 +319,7 @@ public class PersonalMedicalGroupAggregateQuery
     public string? Pozitie { get; set; }
     public bool? EsteActiv { get; set; }
     
-    // Propriet??i din PersonalMedicalApiService care lipseau
+    // Proprietati din PersonalMedicalApiService care lipseau
     public string? Nume { get; set; }
     public string? Prenume { get; set; }
     public string? Specializare { get; set; }

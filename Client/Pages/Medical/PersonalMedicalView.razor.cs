@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Components;
 using global::Shared.DTOs.Medical;
 using Radzen;
 using Client.Services.Medical;
+using Client.Extensions;
 
 namespace Client.Pages.Medical;
 
-public partial class PersonalMedicalView : ComponentBase
+public partial class PersonalMedicalView : ComponentBase, IDisposable
 {
     [Inject] private IPersonalMedicalApiService PersonalMedicalApiService { get; set; } = null!;
     [Inject] private NotificationService NotificationService { get; set; } = null!;
@@ -18,6 +19,7 @@ public partial class PersonalMedicalView : ComponentBase
     private bool _isLoading = true;
     private bool _hasError = false;
     private string _errorMessage = string.Empty;
+    private bool _isDisposed = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -27,7 +29,7 @@ public partial class PersonalMedicalView : ComponentBase
 
     protected override async Task OnParametersSetAsync()
     {
-        if (PersonalId != Guid.Empty)
+        if (PersonalId != Guid.Empty && !_isDisposed)
         {
             await LoadPersonalDetails();
         }
@@ -36,6 +38,8 @@ public partial class PersonalMedicalView : ComponentBase
 
     private async Task LoadPersonalDetails()
     {
+        if (_isDisposed) return;
+
         _isLoading = true;
         _hasError = false;
         _errorMessage = string.Empty;
@@ -52,28 +56,31 @@ public partial class PersonalMedicalView : ComponentBase
                 {
                     _hasError = true;
                     _errorMessage = "Personal medical nu a fost gasit.";
+                    NotificationService.ShowWarning(_errorMessage);
                 }
             }
             else
             {
                 _hasError = true;
                 _errorMessage = string.Join(", ", result.Errors);
-                ShowErrorNotification(_errorMessage);
+                result.ShowNotification(NotificationService);
             }
         }
         catch (Exception ex)
         {
             _hasError = true;
             _errorMessage = "Eroare la incarcarea datelor personalului medical.";
-            ShowErrorNotification($"{_errorMessage} Detalii: {ex.Message}");
+            NotificationService.ShowError($"{_errorMessage} Detalii: {ex.Message}");
         }
         finally
         {
             _isLoading = false;
-            StateHasChanged();
+            if (!_isDisposed)
+                StateHasChanged();
         }
     }
 
+    // SINGLE BACK BUTTON - eliminam duplicatul
     private void GoBack()
     {
         Navigation.NavigateTo("/medical/gestionare-personal");
@@ -81,18 +88,15 @@ public partial class PersonalMedicalView : ComponentBase
 
     private void EditPersonal(Guid personalId)
     {
-        // Navigare direct? la pagina de editare
         Navigation.NavigateTo($"/medical/personal/editare/{personalId}");
     }
 
-    private void ShowErrorNotification(string message)
+    // IMPLEMENTARE DISPOSE PATTERN
+    public void Dispose()
     {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Error,
-            Summary = "Eroare",
-            Detail = message,
-            Duration = 6000
-        });
+        if (_isDisposed) return;
+        
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
     }
 }

@@ -1,0 +1,523 @@
+/* ValyanMed - Radzen Theme Simplificat - MAX 2 CULORI */
+
+/* =====================================================
+   SCHEMA DE CULORI - DOAR 2 CULORI PRINCIPALE
+   ===================================================== */
+:root {
+    /* PRIMARY - Albastru medical */
+    --valyan-primary: #2563eb;
+    --valyan-primary-light: #dbeafe;
+    --valyan-primary-dark: #1d4ed8;
+    
+    /* ACCENT - Verde success */
+    --valyan-accent: #10b981;
+    --valyan-accent-light: #d1fae5;
+    --valyan-accent-dark: #059669;
+    
+    /* NEUTRALS - Doar pentru fundal si text */
+    --valyan-background: #ffffff;
+    --valyan-surface: #f8fafc;
+    --valyan-border: #e2e8f0;
+    --valyan-text: #0f172a;
+    --valyan-text-muted: #64748b;
+    
+    /* SHADOWS */
+    --valyan-shadow: rgba(37, 99, 235, 0.1);
+    --valyan-shadow-light: rgba(37, 99, 235, 0.05);
+}
+
+/* =====================================================
+   RADZEN COMPONENT OVERRIDES - MINIMAL
+   ===================================================== */
+
+/* Primary buttons */
+.rz-button-primary {
+    background: var(--valyan-primary) !important;
+    border-color: var(--valyan-primary) !important;
+    color: white !important;
+}
+
+.rz-button-primary:hover {
+    background: var(--valyan-primary-dark) !important;
+    border-color: var(--valyan-primary-dark) !important;
+}
+
+/* Success buttons */
+.rz-button-success {
+    background: var(--valyan-accent) !important;
+    border-color: var(--valyan-accent) !important;
+    color: white !important;
+}
+
+.rz-button-success:hover {
+    background: var(--valyan-accent-dark) !important;
+    border-color: var(--valyan-accent-dark) !important;
+}
+
+/* Cards */
+.rz-card {
+    background: var(--valyan-background) !important;
+    border: 1px solid var(--valyan-border) !important;
+    box-shadow: 0 1px 3px var(--valyan-shadow-light) !important;
+}
+
+/* DataGrid */
+.rz-datatable {
+    border: 1px solid var(--valyan-border) !important;
+}
+
+.rz-datatable-header {
+    background: var(--valyan-surface) !important;
+    border-bottom: 2px solid var(--valyan-border) !important;
+}
+
+.rz-datatable-data tr:hover {
+    background: var(--valyan-primary-light) !important;
+}
+
+/* Notifications */
+.rz-notification-success {
+    background: var(--valyan-accent-light) !important;
+    border-left: 4px solid var(--valyan-accent) !important;
+    color: var(--valyan-text) !important;
+}
+
+.rz-notification-info {
+    background: var(--valyan-primary-light) !important;
+    border-left: 4px solid var(--valyan-primary) !important;
+    color: var(--valyan-text) !important;
+}
+
+/* Badges */
+.rz-badge-success {
+    background: var(--valyan-accent) !important;
+    color: white !important;
+}
+
+.rz-badge-primary {
+    background: var(--valyan-primary) !important;
+    color: white !important;
+}
+
+/* =====================================================
+   GLOBAL HEADER CLASSES - SIMPLIFICAT
+   ===================================================== */
+
+.page-header-card {
+    background: linear-gradient(135deg, var(--valyan-primary-light) 0%, #bbdefb 100%) !important;
+    border: 1px solid var(--valyan-primary) !important;
+    box-shadow: 0 4px 8px var(--valyan-shadow) !important;
+    border-radius: 8px !important;
+    margin-bottom: 20px !important;
+    padding: 16px !important;
+}
+
+.page-header-card.view-mode {
+    background: linear-gradient(135deg, #f3e8ff 0%, #ddd6fe 100%) !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2) !important;
+}
+
+.page-header-card.list-mode {
+    background: linear-gradient(135deg, var(--valyan-accent-light) 0%, #a7f3d0 100%) !important;
+    border-color: var(--valyan-accent) !important;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2) !important;
+}
+
+.page-header-card.edit-mode {
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%) !important;
+    border-color: #f97316 !important;
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.2) !important;
+}
+
+.page-header-icon {
+    color: var(--valyan-primary) !important;
+    font-size: 2rem !important;
+}
+
+.page-header-icon.view-mode {
+    color: #8b5cf6 !important;
+}
+
+.page-header-icon.list-mode {
+    color: var(--valyan-accent) !important;
+}
+
+.page-header-icon.edit-mode {
+    color: #f97316 !important;
+}
+
+.page-header-title {
+    color: var(--valyan-text) !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+
+/* =====================================================
+   COMPONENT SPECIFIC CLASSES - MINIMAL
+   ===================================================== */
+
+/* Action Buttons Card */
+.action-buttons-card {
+    background: linear-gradient(135deg, var(--valyan-surface) 0%, #e9ecef 100%) !important;
+    border: 1px solid var(--valyan-border) !important;
+    margin-bottom: 1rem !important;
+}
+
+/* Grouping Info Card */
+.grouping-info-card {
+    background-color: var(--valyan-surface) !important;
+    border-left: 4px solid var(--valyan-primary) !important;
+    margin-bottom: 1rem !important;
+}
+
+.grouping-icon {
+    color: var(--valyan-primary) !important;
+    font-size: 1.2rem !important;
+}
+
+.grouping-label {
+    margin-left: 8px !important;
+}
+
+/* Detail Cards */
+.detail-card {
+    background-color: var(--valyan-surface) !important;
+    border: 1px solid var(--valyan-border) !important;
+    margin: 1rem !important;
+}
+
+.detail-header-title {
+    margin-bottom: 0 !important;
+}
+
+.detail-header-icon {
+    margin-right: 0.5rem !important;
+    color: var(--valyan-primary) !important;
+}
+
+.info-section-card {
+    height: 100% !important;
+    background-color: var(--valyan-background) !important;
+}
+
+.info-section-title {
+    margin-bottom: 1rem !important;
+}
+
+.info-section-icon {
+    margin-right: 0.5rem !important;
+}
+
+.personal-icon {
+    color: var(--valyan-accent) !important;
+}
+
+.contact-icon {
+    color: #fd7e14 !important;
+}
+
+/* Form-specific classes */
+.form-card {
+    max-width: 900px !important;
+}
+
+.loading-container {
+    padding: 2rem !important;
+}
+
+.processing-card {
+    border-left: 4px solid var(--valyan-primary) !important;
+}
+
+.processing-container {
+    padding: 1.5rem !important;
+}
+
+.status-container {
+    height: 40px !important;
+    border: 1px solid var(--valyan-border) !important;
+    border-radius: 4px !important;
+    padding: 0 12px !important;
+    background: var(--valyan-background) !important;
+}
+
+.required-field {
+    color: #dc3545 !important;
+    font-weight: bold !important;
+}
+
+.action-buttons-final-card {
+    background: linear-gradient(135deg, var(--valyan-surface) 0%, #e9ecef 100%) !important;
+    border: 2px solid var(--valyan-border) !important;
+}
+
+.preview-grid {
+    border: 1px solid var(--valyan-border) !important;
+    height: 300px !important;
+}
+
+.preview-grid-small {
+    border: 1px solid var(--valyan-border) !important;
+    height: 250px !important;
+}
+
+/* Page View Specific Classes */
+.error-card {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+    border-left: 4px solid #dc2626 !important;
+}
+
+.warning-card {
+    background: linear-gradient(135deg, #fef3cd 0%, #fde68a 100%) !important;
+    border-left: 4px solid #f59e0b !important;
+}
+
+.statistics-card {
+    background: linear-gradient(135deg, var(--valyan-primary-light) 0%, #bfdbfe 100%) !important;
+    border: 1px solid var(--valyan-primary) !important;
+}
+
+.statistics-title {
+    margin-bottom: 1rem !important;
+    color: var(--valyan-primary) !important;
+}
+
+.statistics-icon {
+    margin-right: 0.5rem !important;
+    color: var(--valyan-primary) !important;
+}
+
+.error-icon {
+    font-size: 3rem !important;
+    color: #dc2626 !important;
+}
+
+.warning-icon {
+    font-size: 3rem !important;
+    color: #f59e0b !important;
+}
+
+.stat-icon {
+    font-size: 2rem !important;
+    color: var(--valyan-primary) !important;
+}
+
+.empty-icon {
+    font-size: 4rem !important;
+    color: var(--valyan-text-muted) !important;
+}
+
+/* Buttons */
+.back-button {
+    font-weight: 600 !important;
+    padding: 12px 20px !important;
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3) !important;
+}
+
+.edit-button {
+    font-weight: 600 !important;
+    padding: 12px 20px !important;
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3) !important;
+}
+
+.reset-button {
+    font-weight: 600 !important;
+    padding: 10px 20px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.primary-action-button {
+    font-weight: bold !important;
+    padding: 12px 24px !important;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+    text-transform: uppercase !important;
+}
+
+.cancel-button {
+    font-weight: 600 !important;
+    padding: 12px 20px !important;
+}
+
+.save-button {
+    font-weight: bold !important;
+    padding: 12px 24px !important;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3) !important;
+    text-transform: uppercase !important;
+}
+
+/* Badges */
+.status-badge {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+    white-space: nowrap !important;
+}
+
+.status-badge-large {
+    font-weight: bold !important;
+}
+
+/* =====================================================
+   BUSINESS WARNING COMPONENTS
+   ===================================================== */
+
+.business-warning {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    padding: 0.5rem !important;
+    background-color: #fff3cd !important;
+    border: 1px solid #ffeaa7 !important;
+    border-radius: 4px !important;
+    color: #856404 !important;
+    font-size: 0.875rem !important;
+}
+
+.business-warning .rz-icon {
+    color: #856404 !important;
+}
+
+.info-message {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    padding: 0.5rem !important;
+    background-color: #d1ecf1 !important;
+    border: 1px solid #bee5eb !important;
+    border-radius: 4px !important;
+    color: #0c5460 !important;
+    font-size: 0.875rem !important;
+}
+
+.info-message .rz-icon {
+    color: #0c5460 !important;
+}
+
+/* =====================================================
+   GRID STYLING MINIMAL
+   ===================================================== */
+
+/* CSS minimal pentru grupuri - conform Plan_refactoring.txt: maxim 2 culori, f?r? override-uri stufoase */
+.personal-grid .rz-group-header-custom,
+.utilizatori-grid .rz-group-header-custom,
+.persoane-grid .rz-group-header-custom {
+    transition: background-color 0.2s ease !important;
+}
+
+.personal-grid .rz-group-header-custom:hover,
+.utilizatori-grid .rz-group-header-custom:hover,
+.persoane-grid .rz-group-header-custom:hover {
+    background-color: var(--valyan-surface) !important;
+}
+
+/* Stilizare minimal? pentru grupurile native RadzenDataGrid */
+.personal-grid .rz-group-row,
+.utilizatori-grid .rz-group-row,
+.persoane-grid .rz-group-row {
+    border-left: 3px solid var(--valyan-primary) !important;
+}
+
+/* =====================================================
+   RESPONSIVENESS
+   ===================================================== */
+
+@media (max-width: 768px) {
+    .page-header-card {
+        padding: 12px !important;
+        margin-bottom: 16px !important;
+        border-radius: 6px !important;
+    }
+    
+    .page-header-icon {
+        font-size: 1.5rem !important;
+    }
+    
+    .primary-action-button,
+    .save-button {
+        padding: 10px 16px !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .detail-card {
+        margin: 0.5rem !important;
+    }
+    
+    .form-card {
+        max-width: 100% !important;
+    }
+    
+    .loading-container,
+    .processing-container {
+        padding: 1rem !important;
+    }
+    
+    .preview-grid,
+    .preview-grid-small {
+        height: 200px !important;
+    }
+    
+    .error-icon,
+    .warning-icon {
+        font-size: 2rem !important;
+    }
+    
+    .stat-icon {
+        font-size: 1.5rem !important;
+    }
+    
+    .empty-icon {
+        font-size: 3rem !important;
+    }
+}
+
+/* =====================================================
+   PRINT STYLES
+   ===================================================== */
+
+@media print {
+    .page-header-card {
+        background: white !important;
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    * {
+        color: #000 !important;
+        background: white !important;
+    }
+}
+
+/* =====================================================
+   ACCESSIBILITY
+   ===================================================== */
+
+.rz-button:focus,
+.rz-input:focus,
+.rz-dropdown:focus {
+    outline: 2px solid var(--valyan-primary) !important;
+    outline-offset: 2px !important;
+}
+
+/* =====================================================
+   TYPOGRAPHY - CLEAN
+   ===================================================== */
+
+body, .rz-body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    color: var(--valyan-text) !important;
+    background: var(--valyan-background) !important;
+}
+
+.text-primary {
+    color: var(--valyan-primary) !important;
+}
+
+.text-success {
+    color: var(--valyan-accent) !important;
+}
+
+.text-muted {
+    color: var(--valyan-text-muted) !important;
+}

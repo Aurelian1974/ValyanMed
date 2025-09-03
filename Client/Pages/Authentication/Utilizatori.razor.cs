@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using MudBlazor;
+using Radzen;
+using Radzen.Blazor;
 using Shared.Models.Authentication;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Client.Shared.Dialogs;
 using Client.Services;
-using MudSeverity = MudBlazor.Severity;
+using Client.Extensions;
 
 namespace Client.Pages.Authentication;
 
@@ -15,9 +15,11 @@ public class UtilizatoriBase : ComponentBase, IDisposable
     #region Dependencies
 
     [Inject] protected HttpClient Http { get; set; } = null!;
-    [Inject] protected ISnackbar Snackbar { get; set; } = null!;
-    [Inject] protected IDialogService DialogService { get; set; } = null!;
+    [Inject] protected NotificationService NotificationService { get; set; } = null!;
+    [Inject] protected DialogService DialogService { get; set; } = null!;
+    [Inject] protected NavigationManager Navigation { get; set; } = null!;
     [Inject] protected IJsonService JsonService { get; set; } = null!;
+    [Inject] protected IDataGridSettingsService DataGridSettingsService { get; set; } = null!;
 
     #endregion
 
@@ -25,6 +27,11 @@ public class UtilizatoriBase : ComponentBase, IDisposable
 
     protected UtilizatoriState State { get; set; } = new();
     private Timer? searchTimer;
+    private bool _isDisposed = false;
+
+    // DataGrid Settings Persistence
+    protected DataGridSettings? _gridSettings;
+    private const string GRID_SETTINGS_KEY = "utilizatori_grid_settings";
 
     #endregion
 
@@ -32,12 +39,136 @@ public class UtilizatoriBase : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        // Load grid settings first
+        await LoadGridSettingsAsync();
+        
         await LoadUsersAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _gridSettings != null)
+        {
+            try
+            {
+                // Mic? întârziere pentru ini?ializarea complet? a grid-ului
+                await Task.Delay(100);
+                if (!_isDisposed)
+                    StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Utilizatori] OnAfterRender error: {ex.Message}");
+            }
+        }
     }
 
     public void Dispose()
     {
-        searchTimer?.Dispose();
+        if (_isDisposed) return;
+        
+        _isDisposed = true;
+        
+        try
+        {
+            // 1. Dispose timer safely
+            searchTimer?.Dispose();
+            searchTimer = null;
+            
+            // 2. Save current settings before disposal - best effort
+            if (_gridSettings != null)
+            {
+                try
+                {
+                    // Fire and forget - nu a?tepta în Dispose
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, _gridSettings);
+                        }
+                        catch
+                        {
+                            // Ignore errors during disposal
+                        }
+                    });
+                }
+                catch
+                {
+                    // Ignore errors during disposal
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore all errors during disposal
+        }
+        finally
+        {
+            // 3. Suppress finalization
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    #endregion
+
+    #region Grid Settings Management
+
+    protected async Task LoadGridSettingsAsync()
+    {
+        if (_isDisposed) return;
+
+        try
+        {
+            _gridSettings = await DataGridSettingsService.LoadSettingsAsync(GRID_SETTINGS_KEY);
+            
+            if (_gridSettings == null)
+            {
+                // Set?ri implicite pentru grid
+                _gridSettings = new DataGridSettings();
+                
+                // Salveaz? set?rile implicite în memory cache
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Utilizatori] LoadGridSettings error: {ex.Message}");
+            
+            // Folose?te set?ri implicite
+            _gridSettings = new DataGridSettings();
+        }
+    }
+
+    protected async Task OnSettingsChanged(DataGridSettings settings)
+    {
+        if (_isDisposed) return;
+
+        _gridSettings = settings;
+        
+        try
+        {
+            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Utilizatori] OnSettingsChanged error: {ex.Message}");
+            // Set?rile sunt salvate în memory cache prin service
+        }
+    }
+
+    protected async Task ResetGridSettings()
+    {
+        try
+        {
+            await DataGridSettingsService.ClearSettingsAsync(GRID_SETTINGS_KEY);
+            await LoadGridSettingsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Utilizatori] ResetGridSettings error: {ex.Message}");
+        }
     }
 
     #endregion
@@ -46,145 +177,70 @@ public class UtilizatoriBase : ComponentBase, IDisposable
 
     protected async Task LoadUsersAsync()
     {
+        if (_isDisposed) return;
+
         State.IsLoading = true;
         StateHasChanged();
 
         try
         {
             var response = await Http.GetAsync("api/utilizatori");
-
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                var result = JsonService.Deserialize<List<Utilizator>>(content);
-                State.Users = result ?? new List<Utilizator>();
-                State.FilterUsers();
-                ShowSuccess("Utilizatorii au fost incarcati cu succes");
-            }
-            else
-            {
-                await HandleErrorResponse(response);
-            }
+            var result = await response.HandleApiResponse<List<Utilizator>>(
+                NotificationService, 
+                "Utilizatorii au fost incarcati cu succes"
+            );
+            
+            State.Users = result ?? new List<Utilizator>();
+            State.FilterUsers();
         }
         catch (HttpRequestException ex)
         {
-            ShowError($"Eroare de conectare: {ex.Message}");
+            NotificationService.ShowError($"Eroare de conectare: {ex.Message}");
         }
         catch (TaskCanceledException)
         {
-            ShowError("Cererea a expirat. Va rugam incercati din nou.");
+            NotificationService.ShowError("Cererea a expirat. Va rugam incercati din nou.");
         }
         catch (JsonException ex)
         {
-            ShowError($"Eroare la procesarea datelor: {ex.Message}");
+            NotificationService.ShowError($"Eroare la procesarea datelor: {ex.Message}");
         }
         catch (Exception ex)
         {
-            ShowError($"Eroare neasteptata: {ex.Message}");
+            NotificationService.ShowError($"Eroare neasteptata: {ex.Message}");
         }
         finally
         {
             State.IsLoading = false;
-            StateHasChanged();
+            if (!_isDisposed)
+                StateHasChanged();
         }
     }
 
-    protected async Task OpenCreateUserDialog()
+    protected void CreateNewUser()
     {
-        var parameters = new DialogParameters
-        {
-            { nameof(UserDialog.IsEditMode), false },
-            { nameof(UserDialog.IsReadOnly), false }
-        };
-
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseButton = true,
-            BackdropClick = false,
-            Position = DialogPosition.Center
-        };
-
-        var dialog = await DialogService.ShowAsync<UserDialog>("Adauga Utilizator", parameters, options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            await LoadUsersAsync();
-        }
+        Navigation.NavigateTo("/administrare/utilizatori/nou");
     }
 
-    // Vizualizare utilizator (read-only)
-    protected async Task ViewUser(Utilizator utilizator)
+    protected void ViewUser(Utilizator utilizator)
     {
-        var parameters = new DialogParameters
-        {
-            { nameof(UserDialog.Utilizator), utilizator },
-            { nameof(UserDialog.IsEditMode), false },
-            { nameof(UserDialog.IsReadOnly), true }
-        };
-
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseButton = true,
-            BackdropClick = false,
-            Position = DialogPosition.Center
-        };
-
-        await DialogService.ShowAsync<UserDialog>("Vizualizare Utilizator", parameters, options);
+        Navigation.NavigateTo($"/administrare/utilizatori/view/{utilizator.Id}");
     }
 
-    protected async Task OpenEditUserDialog(Utilizator utilizator)
+    protected void EditUser(Utilizator utilizator)
     {
-        var parameters = new DialogParameters
-        {
-            { nameof(UserDialog.Utilizator), utilizator },
-            { nameof(UserDialog.IsEditMode), true },
-            { nameof(UserDialog.IsReadOnly), false }
-        };
-
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseButton = true,
-            BackdropClick = false,
-            Position = DialogPosition.Center
-        };
-
-        var dialog = await DialogService.ShowAsync<UserDialog>("Editeaza Utilizator", parameters, options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            await LoadUsersAsync();
-        }
+        Navigation.NavigateTo($"/administrare/utilizatori/editare/{utilizator.Id}");
     }
 
     protected async Task DeleteUser(Utilizator utilizator)
     {
-        var parameters = new DialogParameters
-        {
-            { nameof(ConfirmDialog.Title), "Confirmare Stergere" },
-            { nameof(ConfirmDialog.ContentText), $"Sunteti sigur ca doriti sa stergeti utilizatorul '{utilizator.NumeUtilizator}'?" },
-            { nameof(ConfirmDialog.Color), Color.Error }
-        };
+        var confirmed = await DialogService.Confirm(
+            $"Sunteti sigur ca doriti sa stergeti utilizatorul '{utilizator.NumeUtilizator}'?",
+            "Confirmare Stergere",
+            new ConfirmOptions() { OkButtonText = "Sterge", CancelButtonText = "Anuleaza" }
+        );
 
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            CloseButton = true,
-            BackdropClick = false,
-            Position = DialogPosition.Center
-        };
-
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmare", parameters, options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled && result.Data is true)
+        if (confirmed == true)
         {
             await DeleteUserAsync(utilizator.Id);
         }
@@ -196,27 +252,22 @@ public class UtilizatoriBase : ComponentBase, IDisposable
         {
             var response = await Http.DeleteAsync($"api/utilizatori/{userId}");
 
-            if (response.IsSuccessStatusCode)
+            if (await response.HandleApiResponse(NotificationService, "Utilizatorul a fost sters cu succes"))
             {
-                ShowSuccess("Utilizatorul a fost sters cu succes");
                 await LoadUsersAsync();
-            }
-            else
-            {
-                await HandleErrorResponse(response);
             }
         }
         catch (HttpRequestException ex)
         {
-            ShowError($"Eroare de conectare: {ex.Message}");
+            NotificationService.ShowError($"Eroare de conectare: {ex.Message}");
         }
         catch (TaskCanceledException)
         {
-            ShowError("Cererea a expirat. Va rugam incercati din nou.");
+            NotificationService.ShowError("Cererea a expirat. Va rugam incercati din nou.");
         }
         catch (Exception ex)
         {
-            ShowError($"Eroare neasteptata: {ex.Message}");
+            NotificationService.ShowError($"Eroare neasteptata: {ex.Message}");
         }
     }
 
@@ -245,7 +296,6 @@ public class UtilizatoriBase : ComponentBase, IDisposable
         StateHasChanged();
     }
 
-    // Noi metode pentru controlul expansiunii conform principiilor PLAN_REFACTORING
     protected void ToggleRowExpansion(int userId)
     {
         State.ToggleRowExpansion(userId);
@@ -262,60 +312,6 @@ public class UtilizatoriBase : ComponentBase, IDisposable
     {
         State.CollapseAllRows();
         StateHasChanged();
-    }
-
-    #endregion
-
-    #region Helper Methods
-
-    private async Task HandleErrorResponse(HttpResponseMessage response)
-    {
-        try
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            var errorResponse = JsonService.Deserialize<ErrorResponse>(errorContent);
-
-            if (errorResponse?.Errors != null && errorResponse.Errors.Any())
-            {
-                foreach (var error in errorResponse.Errors)
-                {
-                    ShowError(error);
-                }
-            }
-            else if (!string.IsNullOrEmpty(errorResponse?.Message))
-            {
-                ShowError(errorResponse.Message);
-            }
-            else
-            {
-                ShowError($"Eroare HTTP: {response.StatusCode} - {response.ReasonPhrase}");
-            }
-        }
-        catch (Exception)
-        {
-            ShowError($"Eroare HTTP: {response.StatusCode} - {response.ReasonPhrase}");
-        }
-    }
-
-    private void ShowSuccess(string message)
-    {
-        Snackbar.Add(message, MudSeverity.Success, configure =>
-        {
-            configure.VisibleStateDuration = 3000;
-            configure.ShowTransitionDuration = 200;
-            configure.HideTransitionDuration = 200;
-        });
-    }
-
-    private void ShowError(string message)
-    {
-        Snackbar.Add(message, MudSeverity.Error, configure =>
-        {
-            configure.VisibleStateDuration = 5000;
-            configure.ShowTransitionDuration = 200;
-            configure.HideTransitionDuration = 200;
-            configure.RequireInteraction = true;
-        });
     }
 
     #endregion

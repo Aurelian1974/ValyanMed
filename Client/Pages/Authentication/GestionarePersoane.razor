@@ -9,11 +9,18 @@
 
 <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
     
-    <!-- Header -->
-    <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Gestionare Persoane</RadzenText>
+    <!-- Header - FOLOSESTE CLASELE GLOBALE -->
+    <RadzenCard Class="page-header-card list-mode">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="people" Class="page-header-icon list-mode" />
+            <RadzenText TextStyle="TextStyle.H4" Class="page-header-title list-mode">
+                Gestionare Persoane
+            </RadzenText>
+        </RadzenStack>
+    </RadzenCard>
     
-    <!-- Header Actions -->
-    <RadzenCard Class="mb-4">
+    <!-- Header Actions - FOLOSESTE CLASELE GLOBALE CSS -->
+    <RadzenCard Class="action-buttons-card">
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.End">
                 <RadzenFormField Text="Cautare rapida" Style="width: 300px;">
@@ -23,14 +30,19 @@
                                    Style="width: 100%;" />
                 </RadzenFormField>
                 <RadzenButton Text="Reseteaza filtre" 
-                             Icon="clear" 
-                             ButtonStyle="ButtonStyle.Light" 
-                             Variant="Radzen.Variant.Outlined"
+                             Icon="clear_all" 
+                             ButtonStyle="ButtonStyle.Warning" 
+                             Variant="Radzen.Variant.Filled"
+                             Size="ButtonSize.Medium"
+                             Class="reset-button"
                              Click="@ResetFilters" />
             </RadzenStack>
             <RadzenButton Text="ADAUGA PERSOANA NOUA" 
-                         Icon="add" 
-                         ButtonStyle="ButtonStyle.Primary" 
+                         Icon="person_add" 
+                         ButtonStyle="ButtonStyle.Success" 
+                         Variant="Radzen.Variant.Filled"
+                         Size="ButtonSize.Large"
+                         Class="primary-action-button"
                          Click="@CreateNewPersoana" />
         </RadzenStack>
     </RadzenCard>
@@ -39,11 +51,11 @@
     <RadzenCard>
         @if (_isGrouped && _currentGroups.Any())
         {
-            <!-- Informa?ii despre grupare -->
-            <RadzenCard Class="mb-3" Style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+            <!-- Informatii despre grupare - FOLOSESTE CLASELE GLOBALE -->
+            <RadzenCard Class="grouping-info-card">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
-                        <RadzenIcon Icon="view_module" Style="color: #0d6efd; font-size: 1.2rem;" />
+                        <RadzenIcon Icon="view_module" Class="grouping-icon" />
                         <RadzenText TextStyle="TextStyle.Body1">
                             <strong>Grupat dupa:</strong> @string.Join(", ", _currentGroups.Select(g => g.Property))
                         </RadzenText>
@@ -51,7 +63,7 @@
                                        Name="allGroupsExpanded" 
                                        TValue="bool" 
                                        Change="@OnAllGroupsExpandedChange" />
-                        <RadzenLabel Text="Toate grupurile expandate" Component="allGroupsExpanded" Style="margin-left: 8px;" />
+                        <RadzenLabel Text="Toate grupurile expandate" Component="allGroupsExpanded" Class="grouping-label" />
                     </RadzenStack>
                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
                         <RadzenButton Icon="clear" 
@@ -129,7 +141,7 @@
                         <RadzenBadge Text="@(persoana.EsteActiva ? "Activa" : "Inactiva")" 
                                      BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
                                      Variant="Radzen.Variant.Filled"
-                                     Style="font-size: 12px; padding: 4px 8px; white-space: nowrap;" />
+                                     Class="status-badge" />
                     </Template>
                 </Radzen.Blazor.RadzenDataGridColumn>
                 <Radzen.Blazor.RadzenDataGridColumn TItem="PersoanaListDto" Property="DataCreare" Title="Data crearii" Width="130px" Filterable="true" Sortable="true" FormatString="{0:dd.MM.yyyy}" />
@@ -161,14 +173,14 @@
 
             <!-- Master-Detail Template pentru fiecare rând -->
             <Template Context="persoana">
-                <RadzenCard Class="m-3" Style="background-color: #f8f9fa; border: 1px solid #e9ecef;">
+                <RadzenCard Class="detail-card">
                     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
                         
                         <!-- Header Detail -->
                         <RadzenRow>
                             <RadzenColumn Size="12">
-                                <RadzenText TextStyle="TextStyle.H5" Class="mb-0">
-                                    <RadzenIcon Icon="badge" Class="me-2" Style="color: #0d6efd;" />
+                                <RadzenText TextStyle="TextStyle.H5" Class="detail-header-title">
+                                    <RadzenIcon Icon="badge" Class="detail-header-icon" />
                                     Detalii Complete - @persoana.NumeComplet
                                 </RadzenText>
                             </RadzenColumn>
@@ -178,9 +190,9 @@
                         <RadzenRow Gap="2rem">
                             <!-- Personal Information -->
                             <RadzenColumn Size="12" SizeMD="6">
-                                <RadzenCard Style="height: 100%; background-color: white;">
-                                    <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
-                                        <RadzenIcon Icon="person" Class="me-2" Style="color: #28a745;" />
+                                <RadzenCard Class="info-section-card">
+                                    <RadzenText TextStyle="TextStyle.H6" Class="info-section-title">
+                                        <RadzenIcon Icon="person" Class="info-section-icon personal-icon" />
                                         Informatii Personale
                                     </RadzenText>
                                     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
@@ -216,9 +228,9 @@
 
                             <!-- Contact & Location Information -->
                             <RadzenColumn Size="12" SizeMD="6">
-                                <RadzenCard Style="height: 100%; background-color: white;">
-                                    <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
-                                        <RadzenIcon Icon="contact_phone" Class="me-2" Style="color: #fd7e14;" />
+                                <RadzenCard Class="info-section-card">
+                                    <RadzenText TextStyle="TextStyle.H6" Class="info-section-title">
+                                        <RadzenIcon Icon="contact_phone" Class="info-section-icon contact-icon" />
                                         Contact & Locatie
                                     </RadzenText>
                                     <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
@@ -262,7 +274,7 @@
                                                 <RadzenBadge Text="@(persoana.EsteActiva ? "ACTIVA" : "INACTIVA")" 
                                                            BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Danger)" 
                                                            Variant="Radzen.Variant.Filled"
-                                                           Style="font-weight: bold;" />
+                                                           Class="status-badge-large" />
                                             </RadzenColumn>
                                         </RadzenRow>
                                         <RadzenRow>
@@ -304,22 +316,6 @@
         </RadzenDataGrid>
     </RadzenCard>
 </RadzenStack>
-
-<style>
-    /* CSS minimal pentru grupuri - conform Plan_refactoring.txt: maxim 2 culori, f?r? override-uri stufoase */
-    .persoane-grid .rz-group-header-custom {
-        transition: background-color 0.2s ease;
-    }
-    
-    .persoane-grid .rz-group-header-custom:hover {
-        background-color: #f8f9fa;
-    }
-    
-    /* Stilizare minimal? pentru grupurile native RadzenDataGrid */
-    .persoane-grid .rz-group-row {
-        border-left: 3px solid #0d6efd;
-    }
-</style>
 
 @code {
 }

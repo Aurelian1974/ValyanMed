@@ -23,6 +23,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     private bool _isProcessing = false;
     private bool _isLoading = false;
     private bool _isEditMode => PersoanaId.HasValue && PersoanaId.Value > 0;
+    private bool _isDisposed = false;
     
     // Dropdown options
     private readonly string[] _genOptions = { "Masculin", "Feminin", "Neprecizat" };
@@ -165,7 +166,23 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
 
     public void Dispose()
     {
-        // Cleanup if needed
+        if (_isDisposed) return;
+        
+        _isDisposed = true;
+        
+        try
+        {
+            // Clear preview data collection
+            _previewData?.Clear();
+        }
+        catch (Exception)
+        {
+            // Ignore errors during disposal
+        }
+        finally
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 
     private void OnFieldChanged(string fieldName)

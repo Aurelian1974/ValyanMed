@@ -1,0 +1,84 @@
+Plan de Îmbunătățire - Ordonat după Prioritate
+🔴 CRITICE - Blocker-uri pentru Development
+Added
+====================================================================================================================================
+VERY IMPORTANT --> 📊 PROBLEME SPECIFICE GĂSITE - DE REZOLVAT ACTIUNE IMEDIATA
+====================================================================================================================================
+1. DataGrid Settings Persistence ⚠️
+// PROBLEMĂ: Salvare în localStorage poate eșua
+await JSRuntime.InvokeVoidAsync("localStorage.setItem", GRID_SETTINGS_KEY, json);
+
+// SOLUȚIE: Error handling și fallback
+try 
+{
+    await JSRuntime.InvokeVoidAsync("localStorage.setItem", GRID_SETTINGS_KEY, json);
+}
+catch
+{
+    // Salvare în memory cache ca fallback
+    _memoryCache.Set(GRID_SETTINGS_KEY, settings);
+}
+====================================================================================================================================
+2. Memory Leaks în Components ⚠️
+// PROBLEMĂ: Timer ne-disposed corect
+private Timer? _searchTimer;
+
+// SOLUȚIE: Dispose pattern complet
+public void Dispose()
+{
+    _searchTimer?.Dispose();
+    _cancellationTokenSource?.Cancel();
+    _cancellationTokenSource?.Dispose();
+    GC.SuppressFinalize(this);
+}
+====================================================================================================================================
+3. Group State Management ⚠️
+// PROBLEMĂ: State complex pentru grupări
+private Dictionary<string, bool> _groupStates = new();
+
+// SOLUȚIE: State management service
+public class DataGridStateService
+{
+    private readonly Dictionary<string, GridState> _states = new();
+    
+    public async Task SaveStateAsync(string gridId, GridState state)
+    {
+        _states[gridId] = state;
+        await PersistToStorageAsync(gridId, state);
+    }
+}
+4.	Eliminare completă diacritice din UI
+5.	Migrare completă MudBlazor → Radzen
+6.	Eliminare Magic Strings - Implementare Enum-uri
+7.	Result Pattern Implementation
+8.	Exception Handling Specific
+🟠 URGENTE - Calitate și Mentenanță
+9.	FluentValidation pe toate formularele
+10.	Component Code-Behind Separation
+11.	Memory Leaks Fix (Dispose Pattern)
+12.	CSS Reorganizare - Eliminare duplicate
+13.	Radzen Theme Simplificat (max 2 culori)
+🟡 IMPORTANTE - Arhitectură și Patterns
+14.	Rich Services Implementation
+15.	CQRS Implementation pentru operații complexe
+16.	Domain Models în loc de DTOs Everywhere
+17.	Caching Strategy Implementation
+18.	Unit of Work Pattern
+🟢 NECESARE - Features și Performanță
+17.	SignalR Real-Time Notifications
+18.	Global Exception Middleware
+19.	DataGrid Settings Persistence Fix
+20.	Group State Management Service
+21.	Health Checks Implementation
+🔵 UTILE - Îmbunătățiri Adiționale
+22.	Header Global Pattern Component
+23.	Background Services (Stock Monitoring)
+24.	API Versioning
+25.	AutoMapper Integration
+26.	Serilog Structured Logging
+⚪ NICE TO HAVE - Optimizări Finale
+27.	Database Migrations Strategy (DbUp/FluentMigrator)
+28.	Testing Strategy Implementation
+29.	MediatR pentru CQRS complet
+30.	Hangfire pentru task-uri background
+31.	Application Insights Integration

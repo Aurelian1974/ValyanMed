@@ -2,6 +2,7 @@
 @using Radzen
 @using Radzen.Blazor
 @using Client.Services.Medical
+@using Client.Extensions
 @inject Radzen.NotificationService NotificationService
 @inject Radzen.DialogService DialogService
 @inject IPersonalMedicalApiService PersonalMedicalApiService
@@ -247,27 +248,11 @@
 
                 var updateResult = await PersonalMedicalApiService.UpdateAsync(PersonalId.Value, updateRequest);
                 
+                updateResult.ShowNotification(NotificationService);
+                
                 if (updateResult.IsSuccess)
                 {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Succes",
-                        Detail = $"Personal medical '{model.Nume} {model.Prenume}' a fost actualizat cu succes",
-                        Duration = 3000
-                    });
-
                     DialogService.Close(true);
-                }
-                else
-                {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Error,
-                        Summary = "Eroare",
-                        Detail = string.Join(", ", updateResult.Errors),
-                        Duration = 4000
-                    });
                 }
             }
             else
@@ -275,39 +260,17 @@
                 // Create new personal medical
                 var createResult = await PersonalMedicalApiService.CreateAsync(model);
                 
+                createResult.ShowNotification(NotificationService);
+                
                 if (createResult.IsSuccess)
                 {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Succes",
-                        Detail = $"Personal medical '{model.Nume} {model.Prenume}' a fost adaugat cu succes",
-                        Duration = 3000
-                    });
-
                     DialogService.Close(true);
-                }
-                else
-                {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Error,
-                        Summary = "Eroare",
-                        Detail = string.Join(", ", createResult.Errors),
-                        Duration = 4000
-                    });
                 }
             }
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Eroare",
-                Detail = $"Eroare neasteptata: {ex.Message}",
-                Duration = 4000
-            });
+            NotificationService.ShowError($"Eroare neasteptata: {ex.Message}");
         }
         finally
         {

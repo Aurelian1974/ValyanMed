@@ -6,6 +6,8 @@ using Radzen.Blazor;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.JSInterop;
+using Client.Extensions;
+using Client.Services;
 
 namespace Client.Pages.Authentication;
 
@@ -16,6 +18,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     [Inject] private DialogService DialogService { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
+    [Inject] private IDataGridSettingsService DataGridSettingsService { get; set; } = null!;
 
     // PUBLIC PROPERTIES FOR RAZOR BINDING
     public Radzen.Blazor.RadzenDataGrid<PersoanaListDto> _dataGrid = null!;
@@ -30,8 +33,10 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     public int _pageSize = 10;
     public int[] _pageSizeOptions = { 5, 10, 20, 50, 100 };
 
-    // PRIVATE FIELDS
+    // PRIVATE FIELDS - FIXED MEMORY MANAGEMENT
     private Timer? _searchTimer;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private bool _isDisposed = false;
     private bool _isGrouped = false;
     private List<DataGridGroupRequest> _currentGroups = new();
     private bool _allGroupsExpanded = true;
@@ -57,6 +62,9 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     private Dictionary<string, bool> _groupStates = new();
     private bool _isUpdatingGroupStates = false;
 
+    // SERVICES - pentru State Management centralizat
+    private DataGridStateService? _stateService;
+
     private class EnhancedGroupInfo
     {
         public string GroupName { get; set; } = string.Empty;
@@ -81,6 +89,69 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         public string SortOrder { get; set; } = "asc";
     }
 
+    // IMPLEMENTARE STATE SERVICE PENTRU GROUP MANAGEMENT - SIMPLIFIED
+    private class DataGridStateService
+    {
+        private readonly Dictionary<string, GridState> _states = new();
+        private readonly IJSRuntime _jsRuntime;
+
+        public DataGridStateService(IJSRuntime jsRuntime)
+        {
+            _jsRuntime = jsRuntime;
+        }
+
+        public async Task SaveStateAsync(string gridId, GridState state)
+        {
+            _states[gridId] = state;
+            await PersistToStorageAsync(gridId, state);
+        }
+
+        public async Task<GridState?> LoadStateAsync(string gridId)
+        {
+            if (_states.TryGetValue(gridId, out var state))
+                return state;
+
+            return await LoadFromStorageAsync(gridId);
+        }
+
+        private async Task PersistToStorageAsync(string gridId, GridState state)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(state);
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", gridId, json);
+            }
+            catch
+            {
+                // Ignore localStorage errors - not critical
+            }
+        }
+
+        private async Task<GridState?> LoadFromStorageAsync(string gridId)
+        {
+            try
+            {
+                var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", gridId);
+                if (!string.IsNullOrEmpty(json))
+                {
+                    return JsonSerializer.Deserialize<GridState>(json);
+                }
+            }
+            catch
+            {
+                // Ignore localStorage errors
+            }
+            return null;
+        }
+    }
+
+    private class GridState
+    {
+        public Dictionary<string, bool> GroupStates { get; set; } = new();
+        public bool AllGroupsExpanded { get; set; } = true;
+        public List<DataGridGroupRequest> Groups { get; set; } = new();
+    }
+
     private string GetGroupDisplayName(string property)
     {
         return property?.ToLower() switch
@@ -98,6 +169,12 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        // Initialize cancellation token
+        _cancellationTokenSource = new CancellationTokenSource();
+        
+        // Initialize state service
+        _stateService = new DataGridStateService(JSRuntime);
+        
         // Load grid settings first
         await LoadGridSettings();
         
@@ -117,7 +194,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && !_isDisposed)
         {
             // Apply loaded settings if any
             if (_gridSettings != null && _dataGrid != null)
@@ -125,8 +202,13 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
                 try
                 {
                     // Force apply settings after first render
-                    await Task.Delay(100); // Small delay to ensure grid is fully initialized
-                    StateHasChanged();
+                    await Task.Delay(100, _cancellationTokenSource?.Token ?? CancellationToken.None);
+                    if (!_isDisposed)
+                        StateHasChanged();
+                }
+                catch (OperationCanceledException)
+                {
+                    // Normal during disposal
                 }
                 catch (Exception ex)
                 {
@@ -138,26 +220,261 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         await base.OnAfterRenderAsync(firstRender);
     }
 
+    // FIXED DISPOSE PATTERN - COMPLET
     public void Dispose()
     {
-        _searchTimer?.Dispose();
+        if (_isDisposed)
+            return;
+
+        _isDisposed = true;
         
-        // Save current state before disposal
-        if (_gridSettings != null)
+        try
         {
-            try
+            // 1. Cancel all pending operations FIRST
+            _cancellationTokenSource?.Cancel();
+            
+            // 2. Dispose timer safely
+            _searchTimer?.Dispose();
+            _searchTimer = null;
+            
+            // 3. Save current state before disposal - BEST EFFORT
+            if (_gridSettings != null && _stateService != null)
             {
-                // Best effort save - don't await in Dispose
-                _ = Task.Run(async () =>
+                try
                 {
-                    var json = JsonSerializer.Serialize(_gridSettings);
-                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", GRID_SETTINGS_KEY, json);
-                });
+                    // Fire and forget - don't await in Dispose
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var gridState = new GridState
+                            {
+                                GroupStates = _groupStates,
+                                AllGroupsExpanded = _allGroupsExpanded,
+                                Groups = _currentGroups
+                            };
+                            await _stateService.SaveStateAsync(GRID_SETTINGS_KEY, gridState);
+                        }
+                        catch
+                        {
+                            // Ignore errors during disposal
+                        }
+                    });
+                }
+                catch
+                {
+                    // Ignore errors during disposal
+                }
             }
-            catch
+            
+            // 4. Dispose cancellation token
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = null;
+            
+            // 5. Clear collections to help GC
+            _groupStates?.Clear();
+            _currentGroups?.Clear();
+            
+            // 6. Null out references
+            _stateService = null;
+        }
+        catch (Exception)
+        {
+            // Ignore all errors during disposal
+        }
+        finally
+        {
+            // 7. Suppress finalization
+            GC.SuppressFinalize(this);
+        }
+    }
+
+    // IMPROVED LOCALSTORAGE WITH CENTRALIZED SERVICE AND FALLBACK
+    private async Task SaveGridSettingsAsync(DataGridSettings settings)
+    {
+        if (_isDisposed) return;
+
+        try
+        {
+            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GestionarePersoane] SaveGridSettings error: {ex.Message}");
+            // Set?rile sunt salvate în memory cache prin service
+        }
+    }
+
+    private async Task LoadGridSettings()
+    {
+        if (_isDisposed) return;
+
+        try
+        {
+            _gridSettings = await DataGridSettingsService.LoadSettingsAsync(GRID_SETTINGS_KEY);
+            
+            if (_gridSettings == null)
             {
-                // Ignore errors during disposal
+                // Set?ri implicite pentru grid
+                _gridSettings = new DataGridSettings();
+                
+                // Salveaz? set?rile implicite în memory cache
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
             }
+            
+            // Restore grouping state
+            if (_gridSettings?.Groups?.Any() == true)
+            {
+                _isGrouped = true;
+                await UpdateCurrentGroupsInternal();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GestionarePersoane] LoadGridSettings error: {ex.Message}");
+            
+            // Folose?te set?ri implicite
+            _gridSettings = new DataGridSettings();
+        }
+    }
+
+    // Settings Management - IMPROVED WITH CENTRALIZED SERVICE
+    public async Task OnSettingsChanged(DataGridSettings settings)
+    {
+        _gridSettings = settings;
+        await SaveGridSettingsAsync(settings);
+    }
+
+    public void OnRender(DataGridRenderEventArgs<PersoanaListDto> args)
+    {
+        var hasGroups = args.Grid.Groups?.Any() == true;
+        var groupsChanged = hasGroups && GroupsChanged(args.Grid.Groups);
+        
+        // Batch state changes to avoid multiple renders
+        var shouldUpdateState = false;
+        
+        if (hasGroups != _isGrouped)
+        {
+            _isGrouped = hasGroups;
+            shouldUpdateState = true;
+        }
+        
+        if (groupsChanged)
+        {
+            shouldUpdateState = true;
+        }
+        
+        if (shouldUpdateState)
+        {
+            // Use InvokeAsync for better performance with batch updates
+            InvokeAsync(async () => 
+            {
+                if (_isDisposed) return;
+
+                try
+                {
+                    if (hasGroups)
+                    {
+                        await UpdateCurrentGroupsInternal();
+                        await UpdateGroupInfoInternal();
+                        
+                        // Initialize group states for new groups
+                        if (args.Grid.GroupedPagedView?.Any() == true)
+                        {
+                            foreach (var group in args.Grid.GroupedPagedView)
+                            {
+                                var groupKey = $"{group.Key}";
+                                if (!_groupStates.ContainsKey(groupKey))
+                                {
+                                    _groupStates[groupKey] = _allGroupsExpanded;
+                                }
+                            }
+                        }
+                        
+                        // Reload data for server-side grouping
+                        if (args.Grid != null)
+                        {
+                            await args.Grid.Reload();
+                        }
+                    }
+                    else
+                    {
+                        // Clear grouping state
+                        _currentGroups.Clear();
+                        _currentGroupInfo = null;
+                        _groupStates.Clear();
+                        
+                        if (args.Grid != null)
+                        {
+                            await args.Grid.Reload();
+                        }
+                    }
+                    
+                    // Single state update at the end
+                    if (!_isDisposed)
+                        StateHasChanged();
+                }
+                catch (OperationCanceledException)
+                {
+                    // Normal during disposal
+                }
+                catch (Exception)
+                {
+                    // Log error if needed
+                }
+            });
+        }
+    }
+
+    private async Task UpdateCurrentGroupsInternal()
+    {
+        if (_dataGrid?.Groups?.Any() == true)
+        {
+            _currentGroups = _dataGrid.Groups.Select(g => new DataGridGroupRequest
+            {
+                Property = g.Property,
+                SortOrder = g.SortOrder?.ToString().ToLower() ?? "asc"
+            }).ToList();
+        }
+    }
+
+    private async Task UpdateGroupInfoInternal()
+    {
+        if (!_isGrouped || _dataGrid?.Groups?.Any() != true)
+        {
+            _currentGroupInfo = null;
+            return;
+        }
+
+        try
+        {
+            var groups = _dataGrid.Groups;
+            var groupedView = _dataGrid.GroupedPagedView;
+            
+            if (groupedView?.Any() == true)
+            {
+                var groupDetails = groupedView.Select(g => new GroupDetails
+                {
+                    Name = g.Key?.ToString() ?? "Unknown",
+                    Value = g.Key ?? "Unknown",
+                    ItemCount = g.Count,
+                    IsExpanded = _groupStates.GetValueOrDefault($"{g.Key}", true)
+                }).ToList();
+
+                _currentGroupInfo = new EnhancedGroupInfo
+                {
+                    GroupName = string.Join(", ", groups.Select(g => GetGroupDisplayName(g.Property))),
+                    TotalGroups = groupDetails.Count,
+                    TotalItems = groupDetails.Sum(g => g.ItemCount),
+                    ExpandedGroups = groupDetails.Count(g => g.IsExpanded),
+                    CollapsedGroups = groupDetails.Count(g => !g.IsExpanded),
+                    GroupDetails = groupDetails
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error silently
         }
     }
 
@@ -185,15 +502,13 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         }
     }
 
-    // Enhanced Group Event Handlers
     public async Task OnGroupRowExpand(Group group)
     {
         var groupKey = $"{group.Data}";
         _groupStates[groupKey] = true;
         
-        await UpdateGroupInfo();
+        await UpdateGroupInfoInternal();
         
-        // Sync checkbox state if all groups are now expanded
         if (!_isUpdatingGroupStates && _groupStates.Values.All(expanded => expanded))
         {
             _allGroupsExpanded = true;
@@ -206,9 +521,8 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         var groupKey = $"{group.Data}";
         _groupStates[groupKey] = false;
         
-        await UpdateGroupInfo();
+        await UpdateGroupInfoInternal();
         
-        // Sync checkbox state if any group is collapsed
         if (!_isUpdatingGroupStates)
         {
             _allGroupsExpanded = false;
@@ -220,7 +534,6 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     {
         _allGroupsExpanded = value ?? true;
         
-        // Update internal group states
         _isUpdatingGroupStates = true;
         try
         {
@@ -229,7 +542,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
                 _groupStates[key] = _allGroupsExpanded;
             }
             
-            await UpdateGroupInfo();
+            await UpdateGroupInfoInternal();
         }
         finally
         {
@@ -242,8 +555,6 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     public async Task OnAllGroupsExpandedChange(bool value)
     {
         _allGroupsExpanded = value;
-        
-        // This will trigger the RadzenDataGrid's internal logic
         StateHasChanged();
     }
 
@@ -257,7 +568,6 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         if (newGroupsList.Count != _currentGroups.Count)
             return true;
             
-        // Enhanced comparison including sort order
         for (int i = 0; i < newGroupsList.Count; i++)
         {
             var newGroup = newGroupsList[i];
@@ -275,6 +585,8 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
 
     public async Task LoadDataAsync(LoadDataArgs args)
     {
+        if (_isDisposed) return;
+
         _isLoading = true;
         _hasError = false;
         _errorMessage = string.Empty;
@@ -304,11 +616,15 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
             }
 
             var queryString = BuildQueryString();
-            var response = await Http.GetAsync($"api/Persoane{queryString}");
+            
+            // Use cancellation token for HTTP requests
+            var response = await Http.GetAsync($"api/Persoane{queryString}", 
+                _cancellationTokenSource?.Token ?? CancellationToken.None);
             
             if (response.IsSuccessStatusCode)
             {
-                var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<PersoanaListDto>>();
+                var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<PersoanaListDto>>(
+                    cancellationToken: _cancellationTokenSource?.Token ?? CancellationToken.None);
                 
                 if (pagedResult != null)
                 {
@@ -334,6 +650,11 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
                 _totalCount = 0;
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Normal during disposal or cancellation
+            return;
+        }
         catch (HttpRequestException)
         {
             _hasError = true;
@@ -351,13 +672,13 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         finally
         {
             _isLoading = false;
-            StateHasChanged();
+            if (!_isDisposed)
+                StateHasChanged();
         }
     }
 
     private void ApplyFilter(FilterDescriptor filter)
     {
-        // Basic filter implementation - can be extended
         var property = filter.Property?.ToLower();
         var value = filter.FilterValue?.ToString();
 
@@ -417,18 +738,54 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
 
     private async Task DelayedSearch()
     {
-        _searchTimer?.Dispose();
+        if (_isDisposed) return;
+
+        // Dispose previous timer safely
+        try
+        {
+            _searchTimer?.Dispose();
+        }
+        catch
+        {
+            // Ignore timer disposal errors
+        }
+
         _searchTimer = new Timer(async _ =>
         {
-            _searchQuery.Page = 1;
-            await InvokeAsync(async () => 
+            // Check disposal status in timer callback
+            if (_isDisposed) return;
+
+            try
             {
-                if (_dataGrid != null)
-                    await _dataGrid.Reload();
-                else
-                    await LoadDataAsync(new LoadDataArgs());
-                StateHasChanged();
-            });
+                _searchQuery.Page = 1;
+                await InvokeAsync(async () => 
+                {
+                    if (_isDisposed) return;
+
+                    try
+                    {
+                        if (_dataGrid != null)
+                            await _dataGrid.Reload();
+                        else
+                            await LoadDataAsync(new LoadDataArgs());
+                        
+                        if (!_isDisposed)
+                            StateHasChanged();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Normal during disposal
+                    }
+                    catch (Exception)
+                    {
+                        // Log error if needed, but don't throw in timer callback
+                    }
+                });
+            }
+            catch (Exception)
+            {
+                // Ignore all errors in timer callback to prevent crashes
+            }
         }, null, 300, Timeout.Infinite);
     }
 
@@ -448,17 +805,14 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         {
             if (_dataGrid != null)
             {
-                // Clear groups using RadzenDataGrid API
                 _dataGrid.Groups.Clear();
                 
-                // Reset internal state
                 _isGrouped = false;
                 _currentGroups.Clear();
                 _currentGroupInfo = null;
                 _groupStates.Clear();
                 _allGroupsExpanded = true;
                 
-                // Reload data
                 await _dataGrid.Reload();
                 
                 StateHasChanged();
@@ -466,13 +820,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Summary = "Eroare",
-                Detail = "Nu s-a putut elimina gruparea",
-                Duration = 4000
-            });
+            NotificationService.ShowError("Nu s-a putut elimina gruparea");
         }
     }
 
@@ -503,209 +851,23 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         {
             try
             {
-                var response = await Http.DeleteAsync($"api/Persoane/{persoanaId}");
+                var response = await Http.DeleteAsync($"api/Persoane/{persoanaId}",
+                    _cancellationTokenSource?.Token ?? CancellationToken.None);
                 
-                if (response.IsSuccessStatusCode)
+                if (await response.HandleApiResponse(NotificationService, $"Persoana '{numeComplet}' a fost stearsa cu succes"))
                 {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Succes",
-                        Detail = $"Persoana '{numeComplet}' a fost stearsa cu succes",
-                        Duration = 3000
-                    });
                     if (_dataGrid != null) await _dataGrid.Reload();
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Error,
-                        Summary = "Eroare",
-                        Detail = $"Eroare la stergerea persoanei: {errorContent}",
-                        Duration = 4000
-                    });
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal during disposal
+                return;
             }
             catch (Exception ex)
             {
-                NotificationService.Notify(new NotificationMessage
-                {
-                    Severity = NotificationSeverity.Error,
-                    Summary = "Eroare",
-                    Detail = $"Eroare la stergerea persoanei: {ex.Message}",
-                    Duration = 4000
-                });
+                NotificationService.ShowError($"Eroare la stergerea persoanei: {ex.Message}");
             }
-        }
-    }
-
-    // Settings Management
-    public async Task OnSettingsChanged(DataGridSettings settings)
-    {
-        _gridSettings = settings;
-        
-        try
-        {
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
-            
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", GRID_SETTINGS_KEY, json);
-        }
-        catch (Exception ex)
-        {
-            // Log error silently
-        }
-    }
-
-    private async Task LoadGridSettings()
-    {
-        try
-        {
-            var json = await JSRuntime.InvokeAsync<string>("localStorage.getItem", GRID_SETTINGS_KEY);
-            
-            if (!string.IsNullOrEmpty(json))
-            {
-                _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(json, new JsonSerializerOptions 
-                { 
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-                
-                // Restore grouping state
-                if (_gridSettings?.Groups?.Any() == true)
-                {
-                    _isGrouped = true;
-                    await UpdateCurrentGroups();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log error silently
-        }
-    }
-
-    private async Task UpdateCurrentGroups()
-    {
-        if (_dataGrid?.Groups?.Any() == true)
-        {
-            _currentGroups = _dataGrid.Groups.Select(g => new DataGridGroupRequest
-            {
-                Property = g.Property,
-                SortOrder = g.SortOrder?.ToString().ToLower() ?? "asc"
-            }).ToList();
-        }
-    }
-
-    private async Task UpdateGroupInfo()
-    {
-        if (!_isGrouped || _dataGrid?.Groups?.Any() != true)
-        {
-            _currentGroupInfo = null;
-            return;
-        }
-
-        try
-        {
-            // Get group information from RadzenDataGrid's internal state
-            var groups = _dataGrid.Groups;
-            var groupedView = _dataGrid.GroupedPagedView;
-            
-            if (groupedView?.Any() == true)
-            {
-                var groupDetails = groupedView.Select(g => new GroupDetails
-                {
-                    Name = g.Key?.ToString() ?? "Unknown",
-                    Value = g.Key ?? "Unknown",
-                    ItemCount = g.Count,
-                    IsExpanded = _groupStates.GetValueOrDefault($"{g.Key}", true)
-                }).ToList();
-
-                _currentGroupInfo = new EnhancedGroupInfo
-                {
-                    GroupName = string.Join(", ", groups.Select(g => GetGroupDisplayName(g.Property))),
-                    TotalGroups = groupDetails.Count,
-                    TotalItems = groupDetails.Sum(g => g.ItemCount),
-                    ExpandedGroups = groupDetails.Count(g => g.IsExpanded),
-                    CollapsedGroups = groupDetails.Count(g => !g.IsExpanded),
-                    GroupDetails = groupDetails
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log error silently
-        }
-    }
-
-    public void OnRender(DataGridRenderEventArgs<PersoanaListDto> args)
-    {
-        var hasGroups = args.Grid.Groups?.Any() == true;
-        var groupsChanged = hasGroups && GroupsChanged(args.Grid.Groups);
-        
-        // Batch state changes to avoid multiple renders
-        var shouldUpdateState = false;
-        
-        if (hasGroups != _isGrouped)
-        {
-            _isGrouped = hasGroups;
-            shouldUpdateState = true;
-        }
-        
-        if (groupsChanged)
-        {
-            shouldUpdateState = true;
-        }
-        
-        if (shouldUpdateState)
-        {
-            // Use InvokeAsync for better performance with batch updates
-            InvokeAsync(async () => 
-            {
-                if (hasGroups)
-                {
-                    await UpdateCurrentGroups();
-                    await UpdateGroupInfo();
-                    
-                    // Initialize group states for new groups
-                    if (_dataGrid.GroupedPagedView?.Any() == true)
-                    {
-                        foreach (var group in _dataGrid.GroupedPagedView)
-                        {
-                            var groupKey = $"{group.Key}";
-                            if (!_groupStates.ContainsKey(groupKey))
-                            {
-                                _groupStates[groupKey] = _allGroupsExpanded;
-                            }
-                        }
-                    }
-                    
-                    // Reload data for server-side grouping
-                    if (_dataGrid != null)
-                    {
-                        await _dataGrid.Reload();
-                    }
-                }
-                else
-                {
-                    // Clear grouping state
-                    _currentGroups.Clear();
-                    _currentGroupInfo = null;
-                    _groupStates.Clear();
-                    
-                    if (_dataGrid != null)
-                    {
-                        await _dataGrid.Reload();
-                    }
-                }
-                
-                // Single state update at the end
-                StateHasChanged();
-            });
         }
     }
 }

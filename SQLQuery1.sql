@@ -1,0 +1,1 @@
+select * from UtilizatoriSistem where UtilizatorID = 'B395EC9F-B4FF-4B27-A521-3AD1200C7F21'

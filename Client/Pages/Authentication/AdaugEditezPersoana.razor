@@ -29,7 +29,7 @@
                                      ButtonStyle="ButtonStyle.Info" 
                                      Variant="Radzen.Variant.Filled"
                                      Size="ButtonSize.Large"
-                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
+                                     Class="back-button"
                                      Click="@BackToList" />
                     </RadzenStack>
                 </RadzenColumn>
@@ -40,13 +40,13 @@
         @if (_isLoading)
         {
             <RadzenCard>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Style="padding: 2rem;">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Class="loading-container">
                     <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
                     <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
                         <RadzenText TextStyle="TextStyle.Body1">
                             @(_isEditMode ? "Se incarca datele persoanei..." : "Se initializeaza formularul...")
                         </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">
+                        <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
                             Va rugam sa asteptati...
                         </RadzenText>
                     </RadzenStack>
@@ -56,14 +56,14 @@
         else if (_isProcessing)
         {
             <!-- Processing Indicator -->
-            <RadzenCard Style="border-left: 4px solid #0d6efd;">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Style="padding: 1.5rem;">
+            <RadzenCard Class="processing-card">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Class="processing-container">
                     <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" />
                     <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
-                        <RadzenText TextStyle="TextStyle.Body1" Style="color: #0d6efd;">
+                        <RadzenText TextStyle="TextStyle.Body1" Class="text-primary">
                             @(_isEditMode ? "Se actualizeaza..." : "Se salveaza...")
                         </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #6c757d;">
+                        <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
                             Procesarea datelor in curs...
                         </RadzenText>
                     </RadzenStack>
@@ -76,7 +76,7 @@
                 <!-- Form Section -->
                 <RadzenColumn Size="12" SizeLG="8">
                     <!-- Form Card -->
-                    <RadzenCard Style="max-width: 900px;">
+                    <RadzenCard Class="form-card">
                         <RadzenTemplateForm TItem="CreatePersoanaRequest" Data="@_model" Submit="@OnSubmitAsync">
                             <DataAnnotationsValidator />
                             
@@ -88,7 +88,7 @@
                                         <!-- Nume -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
-                                                Nume <span style="color: #dc3545; font-weight: bold;">*</span>
+                                                Nume <span Class="required-field">*</span>
                                             </RadzenText>
                                             <RadzenTextBox @bind-Value="_model.Nume" 
                                                           Name="Nume"
@@ -105,7 +105,7 @@
                                         <!-- Prenume -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
-                                                Prenume <span style="color: #dc3545; font-weight: bold;">*</span>
+                                                Prenume <span Class="required-field">*</span>
                                             </RadzenText>
                                             <RadzenTextBox @bind-Value="_model.Prenume" 
                                                           Name="Prenume"
@@ -137,7 +137,7 @@
                                         <!-- Data Nasterii -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
-                                                Data nasterii <span style="color: #dc3545; font-weight: bold;">*</span>
+                                                Data nasterii <span Class="required-field">*</span>
                                             </RadzenText>
                                             <RadzenDatePicker @bind-Value="_model.DataNasterii" 
                                                              Name="DataNasterii"
@@ -153,7 +153,7 @@
                                         <!-- Gen -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">
-                                                Gen <span style="color: #dc3545; font-weight: bold;">*</span>
+                                                Gen <span Class="required-field">*</span>
                                             </RadzenText>
                                             <RadzenDropDown @bind-Value="_model.Gen" 
                                                            Name="Gen"
@@ -170,7 +170,7 @@
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Status</RadzenText>
                                             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0.75rem" 
-                                                       Style="height: 40px; border: 1px solid #dee2e6; border-radius: 4px; padding: 0 12px; background: white;">
+                                                       Class="status-container">
                                                 <RadzenCheckBox @bind-Value="_model.EsteActiva" Name="EsteActiva" />
                                                 <RadzenLabel Text="Persoana activa in sistem" Component="EsteActiva" />
                                             </RadzenStack>
@@ -258,12 +258,14 @@
                                 </RadzenFieldset>
 
                                 <!-- Action Buttons -->
-                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="rz-background-color-base-100">
+                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="action-buttons-final-card">
                                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="1rem">
                                         <RadzenButton Text="Anuleaza" 
                                                      Icon="cancel" 
                                                      ButtonStyle="ButtonStyle.Danger" 
                                                      Variant="Radzen.Variant.Outlined"
+                                                     Size="ButtonSize.Large"
+                                                     Class="cancel-button"
                                                      Click="@BackToList"
                                                      Disabled="@_isProcessing" />
                                                      
@@ -272,9 +274,10 @@
                                                      Icon="@GetSaveButtonIcon()" 
                                                      ButtonStyle="ButtonStyle.Success" 
                                                      Variant="Radzen.Variant.Filled"
+                                                     Size="ButtonSize.Large"
+                                                     Class="save-button"
                                                      Disabled="@_isProcessing"
-                                                     IsBusy="@_isProcessing" 
-                                                     Style="@GetSaveButtonStyle()" />
+                                                     IsBusy="@_isProcessing" />
                                     </RadzenStack>
                                 </RadzenCard>
                             </RadzenStack>
@@ -301,7 +304,7 @@
                                            AllowFiltering="false"
                                            ShowPagingSummary="false"
                                            Density="Density.Compact"
-                                           Style="border: 1px solid var(--rz-border-color); height: 300px;">
+                                           Class="preview-grid">
                                     <Columns>
                                         <RadzenGridColumn TItem="PersoanaPreview" Property="Nume" Title="Nume" Width="100px" />
                                         <RadzenGridColumn TItem="PersoanaPreview" Property="Prenume" Title="Prenume" Width="100px" />
@@ -352,21 +355,5 @@
     </RadzenColumn>
 </RadzenRow>
 
-<style>
-.business-warning {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background-color: #fff3cd;
-    border: 1px solid #ffeaa7;
-    border-radius: 4px;
-    color: #856404;
-    font-size: 0.875rem;
+@code {
 }
-
-.business-warning .rz-icon {
-    color: #856404;
-}
-</style>

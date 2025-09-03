@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using global::Shared.DTOs.Authentication;
 using Radzen;
 using System.Net.Http.Json;
+using Client.Extensions;
 
 namespace Client.Pages.Authentication;
 
@@ -15,6 +16,7 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
 
     private PersoanaListDto? _persoana;
     private bool _isLoading = true;
+    private bool _isDisposed = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -23,7 +25,7 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
 
     protected override async Task OnParametersSetAsync()
     {
-        if (PersoanaId > 0)
+        if (PersoanaId > 0 && !_isDisposed)
         {
             await LoadPersoanaAsync();
         }
@@ -31,6 +33,8 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
 
     private async Task LoadPersoanaAsync()
     {
+        if (_isDisposed) return;
+
         _isLoading = true;
         StateHasChanged();
 
@@ -38,75 +42,39 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
         {
             var response = await Http.GetAsync($"api/Persoane/{PersoanaId}");
             
-            if (response.IsSuccessStatusCode)
+            _persoana = await response.HandleApiResponse<PersoanaListDto>(
+                NotificationService, 
+                _persoana != null ? $"Datele pentru '{_persoana.NumeComplet}' au fost incarcate cu succes." : null
+            );
+            
+            if (_persoana == null && response.IsSuccessStatusCode)
             {
-                _persoana = await response.Content.ReadFromJsonAsync<PersoanaListDto>();
-                
-                if (_persoana != null)
-                {
-                    NotificationService.Notify(new NotificationMessage
-                    {
-                        Severity = NotificationSeverity.Success,
-                        Summary = "Date incarcate",
-                        Detail = $"Datele pentru '{_persoana.NumeComplet}' au fost incarcate cu succes.",
-                        Duration = 3000
-                    });
-                }
-                else
-                {
-                    ShowNotFoundNotification();
-                }
-            }
-            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _persoana = null;
-                ShowNotFoundNotification();
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                ShowErrorNotification($"Eroare la incarcarea datelor: {errorContent}");
+                NotificationService.ShowWarning("Persoana cautata nu a fost gasita.");
             }
         }
         catch (HttpRequestException)
         {
-            ShowErrorNotification("Nu se poate conecta la server");
+            NotificationService.ShowError("Nu se poate conecta la server");
         }
         catch (TaskCanceledException)
         {
-            ShowErrorNotification("Cererea a expirat");
+            NotificationService.ShowError("Cererea a expirat");
         }
         catch (Exception ex)
         {
-            ShowErrorNotification($"Eroare neasteptata: {ex.Message}");
+            NotificationService.ShowError($"Eroare neasteptata: {ex.Message}");
         }
         finally
         {
             _isLoading = false;
-            StateHasChanged();
+            if (!_isDisposed)
+                StateHasChanged();
         }
     }
 
-    private void ShowNotFoundNotification()
+    private void GoBack()
     {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Warning,
-            Summary = "Nu s-a gasit",
-            Detail = "Persoana cautata nu a fost gasita.",
-            Duration = 4000
-        });
-    }
-
-    private void ShowErrorNotification(string message)
-    {
-        NotificationService.Notify(new NotificationMessage
-        {
-            Severity = NotificationSeverity.Error,
-            Summary = "Eroare de conectare",
-            Detail = $"{message}. Verificati ca API-ul ruleaza pe https://localhost:7294",
-            Duration = 6000
-        });
+        Navigation.NavigateTo("/administrare/persoane");
     }
 
     private void EditPersoana(int persoanaId)
@@ -114,13 +82,11 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
         Navigation.NavigateTo($"/administrare/persoane/editare/{persoanaId}");
     }
 
-    private void GoBack()
-    {
-        Navigation.NavigateTo("/administrare/gestionare-persoane");
-    }
-
     public void Dispose()
     {
-        // Cleanup if needed
+        if (_isDisposed) return;
+        
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
     }
 }

@@ -38,6 +38,9 @@ try
     // JSON service for enum handling
     builder.Services.AddSingleton<IJsonService, JsonService>();
 
+    // DataGrid Settings Service - NEW
+    builder.Services.AddScoped<IDataGridSettingsService, DataGridSettingsService>();
+
     // Simple authentication service for backup
     builder.Services.AddScoped<ISimpleAuthService, SimpleAuthService>();
 

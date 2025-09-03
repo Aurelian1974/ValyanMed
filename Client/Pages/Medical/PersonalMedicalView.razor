@@ -11,7 +11,7 @@
     
     <!-- Header Card cu navigare - FOLOSESTE CLASELE GLOBALE -->
     <RadzenCard Class="page-header-card view-mode mb-3">
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
                 <RadzenIcon Icon="visibility" Class="page-header-icon view-mode" />
                 <RadzenText TextStyle="TextStyle.H4" Class="page-header-title view-mode mb-0">
@@ -34,7 +34,7 @@
                                  ButtonStyle="ButtonStyle.Warning"
                                  Variant="Radzen.Variant.Filled"
                                  Size="ButtonSize.Large"
-                                 Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);"
+                                 Class="edit-button"
                                  Click="@(() => EditPersonal(_personalDetail.PersonalID))" />
                 </RadzenStack>
             }
@@ -54,9 +54,9 @@
     else if (_hasError)
     {
         <!-- Error State -->
-        <RadzenCard Class="text-center p-5" Style="border-left: 4px solid #dc3545;">
+        <RadzenCard Class="text-center p-5 error-card">
             <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-                <RadzenIcon Icon="error" Style="font-size: 3rem; color: #dc3545;" />
+                <RadzenIcon Icon="error" Class="error-icon" />
                 <RadzenText TextStyle="TextStyle.H6">Nu s-au putut incarca datele</RadzenText>
                 <RadzenText TextStyle="TextStyle.Body2">@_errorMessage</RadzenText>
                 <RadzenButton Text="Incearca din nou" 
@@ -69,9 +69,9 @@
     else if (_personalDetail == null)
     {
         <!-- Not Found State -->
-        <RadzenCard Class="text-center p-5" Style="border-left: 4px solid #ffc107;">
+        <RadzenCard Class="text-center p-5 warning-card">
             <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-                <RadzenIcon Icon="person_off" Style="font-size: 3rem; color: #ffc107;" />
+                <RadzenIcon Icon="person_off" Class="warning-icon" />
                 <RadzenText TextStyle="TextStyle.H6">Personal medical nu a fost gasit</RadzenText>
                 <RadzenText TextStyle="TextStyle.Body2">ID-ul personalului medical nu existe sau a fost sters.</RadzenText>
             </RadzenStack>
@@ -85,9 +85,9 @@
             <RadzenRow Gap="2rem" Class="mb-4">
                 <!-- Informatii Personale -->
                 <RadzenColumn Size="12" SizeMD="6">
-                    <RadzenCard Style="height: 100%; background-color: #f8f9fa;">
-                        <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
-                            <RadzenIcon Icon="person" Class="me-2" Style="color: #28a745;" />
+                    <RadzenCard Class="info-section-card">
+                        <RadzenText TextStyle="TextStyle.H6" Class="info-section-title">
+                            <RadzenIcon Icon="person" Class="info-section-icon personal-icon" />
                             Informatii Personale
                         </RadzenText>
                         <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
@@ -125,9 +125,9 @@
 
                 <!-- Contact & Status -->
                 <RadzenColumn Size="12" SizeMD="6">
-                    <RadzenCard Style="height: 100%; background-color: #f8f9fa;">
-                        <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
-                            <RadzenIcon Icon="contact_phone" Class="me-2" Style="color: #fd7e14;" />
+                    <RadzenCard Class="info-section-card">
+                        <RadzenText TextStyle="TextStyle.H6" Class="info-section-title">
+                            <RadzenIcon Icon="contact_phone" Class="info-section-icon contact-icon" />
                             Contact & Status
                         </RadzenText>
                         <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
@@ -163,7 +163,7 @@
                                     <RadzenBadge Text="@(_personalDetail.EsteActiv ? "ACTIV" : "INACTIV")" 
                                                BadgeStyle="@(_personalDetail.EsteActiv ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Danger)" 
                                                Variant="Radzen.Variant.Filled"
-                                               Style="font-weight: bold;" />
+                                               Class="status-badge-large" />
                                 </RadzenColumn>
                             </RadzenRow>
                             <RadzenRow>
@@ -182,15 +182,15 @@
             <!-- Statistici -->
             <RadzenRow Class="mb-4">
                 <RadzenColumn Size="12">
-                    <RadzenCard Style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
-                        <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
-                            <RadzenIcon Icon="analytics" Class="me-2" Style="color: #0d6efd;" />
+                    <RadzenCard Class="statistics-card">
+                        <RadzenText TextStyle="TextStyle.H6" Class="statistics-title">
+                            <RadzenIcon Icon="analytics" Class="statistics-icon" />
                             Statistici & Informatii Suplimentare
                         </RadzenText>
                         <RadzenRow Gap="2rem">
                             <RadzenColumn Size="12" SizeMD="4">
                                 <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" Class="text-center">
-                                    <RadzenIcon Icon="schedule" Style="font-size: 2rem; color: #0d6efd;" />
+                                    <RadzenIcon Icon="schedule" Class="stat-icon" />
                                     <RadzenText TextStyle="TextStyle.H6">Vechime</RadzenText>
                                     <RadzenText TextStyle="TextStyle.Body1">
                                         @((DateTime.Now - _personalDetail.DataCreare).Days) zile
@@ -199,14 +199,14 @@
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="4">
                                 <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" Class="text-center">
-                                    <RadzenIcon Icon="medical_services" Style="font-size: 2rem; color: #0d6efd;" />
+                                    <RadzenIcon Icon="medical_services" Class="stat-icon" />
                                     <RadzenText TextStyle="TextStyle.H6">Programari</RadzenText>
                                     <RadzenText TextStyle="TextStyle.Body1">@_personalDetail.TotalProgramari</RadzenText>
                                 </RadzenStack>
                             </RadzenColumn>
                             <RadzenColumn Size="12" SizeMD="4">
                                 <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" Class="text-center">
-                                    <RadzenIcon Icon="people" Style="font-size: 2rem; color: #0d6efd;" />
+                                    <RadzenIcon Icon="people" Class="stat-icon" />
                                     <RadzenText TextStyle="TextStyle.H6">Consultatii</RadzenText>
                                     <RadzenText TextStyle="TextStyle.Body1">@_personalDetail.TotalConsultatii</RadzenText>
                                 </RadzenStack>
@@ -217,8 +217,8 @@
             </RadzenRow>
 
             <!-- Butoane de actiune - UN SINGUR BUTON INAPOI IN STANGA JOS -->
-            <RadzenCard Variant="Radzen.Variant.Outlined" Style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Gap="1rem">
+            <RadzenCard Variant="Radzen.Variant.Outlined" Class="action-buttons-final-card">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.SpaceBetween" Gap="1rem">
                     
                     <!-- BUTON INAPOI PRINCIPAL - DOAR ACESTA RAMANE (STANGA JOS) -->
                     <RadzenButton Text="Inapoi la lista" 
@@ -226,7 +226,7 @@
                                  ButtonStyle="ButtonStyle.Info" 
                                  Variant="Radzen.Variant.Filled"
                                  Size="ButtonSize.Large"
-                                 Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);"
+                                 Class="back-button"
                                  Click="@GoBack" />
                     
                     <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem">
@@ -235,7 +235,7 @@
                                      ButtonStyle="ButtonStyle.Warning"
                                      Variant="Radzen.Variant.Filled"
                                      Size="ButtonSize.Large"
-                                     Style="font-weight: 600; padding: 12px 20px; box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);"
+                                     Class="edit-button"
                                      Click="@(() => EditPersonal(_personalDetail.PersonalID))" />
                     </RadzenStack>
                 </RadzenStack>
@@ -264,3 +264,6 @@
         box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
     }
 </style>
+
+@code {
+}
