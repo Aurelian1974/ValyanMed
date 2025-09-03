@@ -63,7 +63,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     private bool _isUpdatingGroupStates = false;
 
     // SERVICES - pentru State Management centralizat
-    private DataGridStateService? _stateService;
+    // ELIMINAT: DataGridStateService duplicat - folosim IDataGridSettingsService centralizat
 
     private class EnhancedGroupInfo
     {
@@ -89,69 +89,6 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         public string SortOrder { get; set; } = "asc";
     }
 
-    // IMPLEMENTARE STATE SERVICE PENTRU GROUP MANAGEMENT - SIMPLIFIED
-    private class DataGridStateService
-    {
-        private readonly Dictionary<string, GridState> _states = new();
-        private readonly IJSRuntime _jsRuntime;
-
-        public DataGridStateService(IJSRuntime jsRuntime)
-        {
-            _jsRuntime = jsRuntime;
-        }
-
-        public async Task SaveStateAsync(string gridId, GridState state)
-        {
-            _states[gridId] = state;
-            await PersistToStorageAsync(gridId, state);
-        }
-
-        public async Task<GridState?> LoadStateAsync(string gridId)
-        {
-            if (_states.TryGetValue(gridId, out var state))
-                return state;
-
-            return await LoadFromStorageAsync(gridId);
-        }
-
-        private async Task PersistToStorageAsync(string gridId, GridState state)
-        {
-            try
-            {
-                var json = JsonSerializer.Serialize(state);
-                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", gridId, json);
-            }
-            catch
-            {
-                // Ignore localStorage errors - not critical
-            }
-        }
-
-        private async Task<GridState?> LoadFromStorageAsync(string gridId)
-        {
-            try
-            {
-                var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", gridId);
-                if (!string.IsNullOrEmpty(json))
-                {
-                    return JsonSerializer.Deserialize<GridState>(json);
-                }
-            }
-            catch
-            {
-                // Ignore localStorage errors
-            }
-            return null;
-        }
-    }
-
-    private class GridState
-    {
-        public Dictionary<string, bool> GroupStates { get; set; } = new();
-        public bool AllGroupsExpanded { get; set; } = true;
-        public List<DataGridGroupRequest> Groups { get; set; } = new();
-    }
-
     private string GetGroupDisplayName(string property)
     {
         return property?.ToLower() switch
@@ -171,9 +108,6 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     {
         // Initialize cancellation token
         _cancellationTokenSource = new CancellationTokenSource();
-        
-        // Initialize state service
-        _stateService = new DataGridStateService(JSRuntime);
         
         // Load grid settings first
         await LoadGridSettings();
@@ -237,27 +171,26 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
             _searchTimer?.Dispose();
             _searchTimer = null;
             
-            // 3. Save current state before disposal - BEST EFFORT
-            if (_gridSettings != null && _stateService != null)
+            // 3. Save current state before disposal - IMPROVED WITH PROPER FALLBACK
+            if (_gridSettings != null && DataGridSettingsService != null)
             {
                 try
                 {
-                    // Fire and forget - don't await in Dispose
+                    // Salvare sincron? în memory cache înainte de disposal
+                    DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                    Console.WriteLine($"[GestionarePersoane] Settings saved to memory cache before disposal");
+                    
+                    // Fire and forget pentru localStorage save
                     _ = Task.Run(async () =>
                     {
                         try
                         {
-                            var gridState = new GridState
-                            {
-                                GroupStates = _groupStates,
-                                AllGroupsExpanded = _allGroupsExpanded,
-                                Groups = _currentGroups
-                            };
-                            await _stateService.SaveStateAsync(GRID_SETTINGS_KEY, gridState);
+                            // Try to persist to localStorage as well
+                            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, _gridSettings);
                         }
                         catch
                         {
-                            // Ignore errors during disposal
+                            // Best effort - memory cache deja are datele
                         }
                     });
                 }
@@ -275,8 +208,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
             _groupStates?.Clear();
             _currentGroups?.Clear();
             
-            // 6. Null out references
-            _stateService = null;
+            // 6. Null out references - ELIMINAT: _stateService nu mai este necesar
         }
         catch (Exception)
         {
@@ -289,19 +221,38 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         }
     }
 
-    // IMPROVED LOCALSTORAGE WITH CENTRALIZED SERVICE AND FALLBACK
+    // IMPROVED LOCALSTORAGE WITH CENTRALIZED SERVICE AND PROPER FALLBACK
     private async Task SaveGridSettingsAsync(DataGridSettings settings)
     {
         if (_isDisposed) return;
 
         try
         {
+            // Serviciul salveaz? automat în memory cache ÎNTÂI (reliable)
+            // apoi încearc? localStorage (poate e?ua)
             await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
+            
+            // Success - set?rile sunt salvate cel pu?in în memory cache
+            Console.WriteLine($"[GestionarePersoane] Settings saved successfully for {GRID_SETTINGS_KEY}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GestionarePersoane] SaveGridSettings error: {ex.Message}");
-            // Set?rile sunt salvate în memory cache prin service
+            // Chiar dac? SaveSettingsAsync e?ueaz? complet,
+            // salv?m explicit în memory cache ca fallback final
+            Console.WriteLine($"[GestionarePersoane] SaveGridSettings failed: {ex.Message}");
+            Console.WriteLine($"[GestionarePersoane] Using explicit memory fallback");
+            
+            try
+            {
+                // Fallback explicit la memory cache
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, settings);
+                Console.WriteLine($"[GestionarePersoane] Memory fallback successful");
+            }
+            catch (Exception fallbackEx)
+            {
+                // Dac? ?i fallback-ul e?ueaz?, log?m dar continu?m
+                Console.WriteLine($"[GestionarePersoane] Memory fallback also failed: {fallbackEx.Message}");
+            }
         }
     }
 
@@ -311,6 +262,7 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
 
         try
         {
+            // LoadSettingsAsync încearc? localStorage APOI memory cache automat
             _gridSettings = await DataGridSettingsService.LoadSettingsAsync(GRID_SETTINGS_KEY);
             
             if (_gridSettings == null)
@@ -318,8 +270,13 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
                 // Set?ri implicite pentru grid
                 _gridSettings = new DataGridSettings();
                 
-                // Salveaz? set?rile implicite în memory cache
+                // Salveaz? set?rile implicite în memory cache pentru sesiunea curent?
                 DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                Console.WriteLine($"[GestionarePersoane] Created default settings for {GRID_SETTINGS_KEY}");
+            }
+            else
+            {
+                Console.WriteLine($"[GestionarePersoane] Loaded settings from storage/cache");
             }
             
             // Restore grouping state
@@ -333,15 +290,31 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         {
             Console.WriteLine($"[GestionarePersoane] LoadGridSettings error: {ex.Message}");
             
-            // Folose?te set?ri implicite
+            // În caz de eroare total?, folose?te set?ri implicite
             _gridSettings = new DataGridSettings();
+            
+            // ?i salveaz? în memory cache pentru consisten??
+            try
+            {
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                Console.WriteLine($"[GestionarePersoane] Fallback to default settings successful");
+            }
+            catch
+            {
+                // Ignore fallback errors - continue with defaults
+                Console.WriteLine($"[GestionarePersoane] Using basic default settings");
+            }
         }
     }
 
-    // Settings Management - IMPROVED WITH CENTRALIZED SERVICE
+    // Settings Management - IMPROVED WITH PROPER FALLBACK
     public async Task OnSettingsChanged(DataGridSettings settings)
     {
+        if (_isDisposed) return;
+        
         _gridSettings = settings;
+        
+        // Salveaz? cu fallback complet
         await SaveGridSettingsAsync(settings);
     }
 

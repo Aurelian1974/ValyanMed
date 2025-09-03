@@ -7,10 +7,7 @@
     <title>ValyanMed - Clinic Management System</title>
     <base href="/" />
     
-    <!-- MudBlazor CSS -->
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    
-    <!-- Radzen CSS -->
+    <!-- Radzen CSS - PRIMARY UI FRAMEWORK -->
     <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
     
     <!-- Custom CSS -->
@@ -22,7 +19,7 @@
     <link rel="stylesheet" href="css/pages/patient-registration.css" />
     <link rel="stylesheet" href="css/pages/gestionare-personal.css" />
     
-    <!-- Fonts required by MudBlazor -->
+    <!-- Fonts required by Material Design components -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
@@ -106,8 +103,7 @@
                                 computedStyle.background.includes('black')) {
                                 // Only hide if it's not intentionally black content
                                 if (!node.classList.contains('intentional-black') && 
-                                    !node.closest('.fab-container') &&
-                                    !node.closest('.mud-fab')) {
+                                    !node.closest('.fab-container')) {
                                     console.warn('Found potentially unwanted black element:', node);
                                     node.style.display = 'none';
                                 }
@@ -142,18 +138,15 @@
         document.addEventListener('DOMContentLoaded', function(){
             setTimeout(function(){
                 // Initialize for the first pagination select found
-                var anchor = document.querySelector('.pagination-section .mud-select');
+                var anchor = document.querySelector('.pagination-section .rz-dropdown');
                 if(window.paginationDropdown && anchor){
                     window.paginationDropdown.init(anchor);
                 }
             }, 500);
         });
     </script>
-
-    <!-- MudBlazor JavaScript -->
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     
-    <!-- Radzen JavaScript -->
+    <!-- Radzen JavaScript - PRIMARY UI FRAMEWORK -->
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
     
     <!-- Blazor WebAssembly - Enhanced startup -->

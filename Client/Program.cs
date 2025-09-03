@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Http;
-using MudBlazor.Services;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Text.Json;
@@ -26,10 +25,9 @@ try
     builder.RootComponents.Add<HeadOutlet>("head::after");
 
     // Core services
-    builder.Services.AddMudServices();
     builder.Services.AddBlazoredLocalStorage();
     
-    // Add Radzen services
+    // Add Radzen services - PRIMARY UI FRAMEWORK
     builder.Services.AddScoped<DialogService>();
     builder.Services.AddScoped<NotificationService>();
     builder.Services.AddScoped<TooltipService>();
@@ -38,7 +36,7 @@ try
     // JSON service for enum handling
     builder.Services.AddSingleton<IJsonService, JsonService>();
 
-    // DataGrid Settings Service - NEW
+    // DataGrid Settings Service
     builder.Services.AddScoped<IDataGridSettingsService, DataGridSettingsService>();
 
     // Simple authentication service for backup
@@ -52,7 +50,7 @@ try
 
     // Medical API services
     builder.Services.AddScoped<IPersonalMedicalApiService, PersonalMedicalApiService>();
-    builder.Services.AddScoped<IDepartamenteApiService, DepartamenteApiService>(); // NOU - serviciul pentru departamente
+    builder.Services.AddScoped<IDepartamenteApiService, DepartamenteApiService>();
 
     // Authentication state provider and authorization
     builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();

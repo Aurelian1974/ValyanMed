@@ -4,11 +4,6 @@
 @using Radzen.Blazor
 @using System.ComponentModel
 
-<MudThemeProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
-<MudPopoverProvider />
-
 <RadzenLayout>
     <!-- Header Bar -->
     <RadzenHeader>
@@ -16,10 +11,9 @@
             <!-- Left Side - Logo & Breadcrumbs -->
             <div class="header-left">
                 <div class="app-logo">
-                    <MudIcon Icon="@Icons.Material.Filled.LocalHospital" Size="Size.Medium" Class="logo-icon" />
-                    <MudText Typo="Typo.h6" Class="logo-text">ValyanMed</MudText>
+                    <RadzenIcon Icon="local_hospital" Style="font-size: 24px; color: white;" />
+                    <RadzenText TextStyle="TextStyle.H6" Style="color: white; font-weight: 600; margin: 0;">ValyanMed</RadzenText>
                 </div>
-                <!-- Breadcrumbs -->
                 <!-- Breadcrumbs -->
                 <div class="breadcrumbs-container">
                     <RadzenBreadCrumb>
@@ -98,9 +92,9 @@
 
     <!-- Main Content -->
     <RadzenBody>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+        <RadzenStack Style="padding: 1rem; max-width: 1400px; margin: 0 auto;">
             @Body
-        </MudContainer>
+        </RadzenStack>
     </RadzenBody>
 </RadzenLayout>
 

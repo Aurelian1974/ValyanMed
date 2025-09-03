@@ -149,12 +149,16 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
             _searchTimer?.Dispose();
             _searchTimer = null;
             
-            // 2. Save current state before disposal - BEST EFFORT
-            if (_gridSettings != null)
+            // 2. Save current state before disposal - IMPROVED WITH PROPER FALLBACK
+            if (_gridSettings != null && DataGridSettingsService != null)
             {
                 try
                 {
-                    // Fire and forget - don't await in Dispose
+                    // Sync save to memory cache
+                    DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                    Console.WriteLine($"[GestionarePersonal] Settings saved to memory cache before disposal");
+                    
+                    // Async save to localStorage - fire and forget
                     _ = Task.Run(async () =>
                     {
                         try
@@ -163,13 +167,13 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
                         }
                         catch
                         {
-                            // Ignore errors during disposal
+                            // Memory cache has the data
                         }
                     });
                 }
                 catch
                 {
-                    // Ignore errors during disposal
+                    // Ignore disposal errors
                 }
             }
             
@@ -643,19 +647,32 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
     }
 
-    // Settings Management - IMPROVED WITH CENTRALIZED SERVICE
+    // Settings Management - IMPROVED WITH PROPER FALLBACK
     public async Task OnSettingsChanged(DataGridSettings settings)
     {
+        if (_isDisposed) return;
+        
         _gridSettings = settings;
         
         try
         {
             await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
+            Console.WriteLine($"[GestionarePersonal] Settings saved for {GRID_SETTINGS_KEY}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GestionarePersonal] OnSettingsChanged error: {ex.Message}");
-            // Set?rile sunt salvate în memory cache prin service
+            Console.WriteLine($"[GestionarePersonal] SaveSettings failed: {ex.Message}");
+            
+            // Fallback explicit la memory cache
+            try
+            {
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, settings);
+                Console.WriteLine($"[GestionarePersonal] Fallback to memory cache successful");
+            }
+            catch (Exception fallbackEx)
+            {
+                Console.WriteLine($"[GestionarePersonal] Memory fallback also failed: {fallbackEx.Message}");
+            }
         }
     }
 
@@ -667,11 +684,16 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
             
             if (_gridSettings == null)
             {
-                // Set?ri implicite pentru grid
+                // Set?ri implicite
                 _gridSettings = new DataGridSettings();
                 
-                // Salveaz? set?rile implicite în memory cache
+                // Salveaz? în memory cache
                 DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                Console.WriteLine($"[GestionarePersonal] Using default settings");
+            }
+            else
+            {
+                Console.WriteLine($"[GestionarePersonal] Settings loaded successfully");
             }
             
             // Restore grouping state
@@ -683,10 +705,21 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[GestionarePersonal] LoadGridSettings error: {ex.Message}");
+            Console.WriteLine($"[GestionarePersonal] LoadSettings error: {ex.Message}");
             
-            // Folose?te set?ri implicite
+            // Folose?te set?ri implicite cu fallback
             _gridSettings = new DataGridSettings();
+            
+            try
+            {
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                Console.WriteLine($"[GestionarePersonal] Fallback to default settings successful");
+            }
+            catch
+            {
+                // Continue with defaults
+                Console.WriteLine($"[GestionarePersonal] Using basic default settings");
+            }
         }
     }
 

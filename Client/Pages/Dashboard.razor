@@ -5,148 +5,143 @@
 
 <PageTitle>Dashboard - ValyanMed</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h3" Class="mb-6">Dashboard</MudText>
+<RadzenStack Style="padding: 1rem; max-width: 1400px;">
+    <RadzenText TextStyle="TextStyle.H3" Style="margin-bottom: 1.5rem;">Dashboard</RadzenText>
     
     @if (_currentUser != null)
     {
-        <MudAlert Severity="MudSeverity.Success" Class="mb-4">
+        <RadzenAlert AlertStyle="AlertStyle.Success" Style="margin-bottom: 1rem;">
             Bun venit, @_currentUser.NumeComplet! Sunteti conectat cu succes in sistemul ValyanMed.
-        </MudAlert>
+        </RadzenAlert>
     }
 
-    <MudGrid>
-        <MudItem xs="12" md="6" lg="3">
-            <MudCard>
-                <MudCardContent>
-                    <div class="d-flex justify-space-between">
-                        <div>
-                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Pacienti inregistrati</MudText>
-                            <MudText Typo="Typo.h4">1,234</MudText>
-                        </div>
-                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="MudColor.Primary" />
-                    </div>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+    <RadzenRow Gap="1rem">
+        <RadzenColumn SizeXS="12" SizeMD="6" SizeLG="3">
+            <RadzenCard>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #666;">Pacienti inregistrati</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">1,234</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="people" Style="font-size: 48px; color: #1976d2;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
 
-        <MudItem xs="12" md="6" lg="3">
-            <MudCard>
-                <MudCardContent>
-                    <div class="d-flex justify-space-between">
-                        <div>
-                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Consultatii Astazi</MudText>
-                            <MudText Typo="Typo.h4">45</MudText>
-                        </div>
-                        <MudIcon Icon="@Icons.Material.Filled.Event" Size="Size.Large" Color="MudColor.Success" />
-                    </div>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+        <RadzenColumn SizeXS="12" SizeMD="6" SizeLG="3">
+            <RadzenCard>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #666;">Consultatii Astazi</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">45</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="event" Style="font-size: 48px; color: #4caf50;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
 
-        <MudItem xs="12" md="6" lg="3">
-            <MudCard>
-                <MudCardContent>
-                    <div class="d-flex justify-space-between">
-                        <div>
-                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Stoc Medicamente</MudText>
-                            <MudText Typo="Typo.h4">892</MudText>
-                        </div>
-                        <MudIcon Icon="@Icons.Material.Filled.Medication" Size="Size.Large" Color="MudColor.Warning" />
-                    </div>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+        <RadzenColumn SizeXS="12" SizeMD="6" SizeLG="3">
+            <RadzenCard>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #666;">Stoc Medicamente</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">892</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="medication" Style="font-size: 48px; color: #ff9800;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
 
-        <MudItem xs="12" md="6" lg="3">
-            <MudCard>
-                <MudCardContent>
-                    <div class="d-flex justify-space-between">
-                        <div>
-                            <MudText Typo="Typo.body2" Color="MudColor.Secondary">Venit Luna Curenta</MudText>
-                            <MudText Typo="Typo.h4">€15,450</MudText>
-                        </div>
-                        <MudIcon Icon="@Icons.Material.Filled.MonetizationOn" Size="Size.Large" Color="MudColor.Tertiary" />
-                    </div>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+        <RadzenColumn SizeXS="12" SizeMD="6" SizeLG="3">
+            <RadzenCard>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenStack>
+                        <RadzenText TextStyle="TextStyle.Body2" Style="color: #666;">Venit Luna Curenta</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4">€15,450</RadzenText>
+                    </RadzenStack>
+                    <RadzenIcon Icon="monetization_on" Style="font-size: 48px; color: #9c27b0;" />
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
 
-        <MudItem xs="12" lg="8">
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Activitate Recente</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudList T="string">
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.PersonAdd" Text="Pacient nou inregistrat: Maria Popescu" />
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.EventAvailable" Text="Consultatie programata pentru 14:30" />
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.LocalPharmacy" Text="Stoc medicament actualizat: Paracetamol" />
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Payment" Text="Factura generata: #FAC-2024-001" />
-                        <MudListItem T="string" Icon="@Icons.Material.Filled.Assessment" Text="Raport lunar generat cu succes" />
-                    </MudList>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+        <RadzenColumn SizeXS="12" SizeLG="8">
+            <RadzenCard>
+                <RadzenText TextStyle="TextStyle.H6" Style="margin-bottom: 1rem;">Activitate Recente</RadzenText>
+                <RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="person_add" Style="color: #1976d2;" />
+                        <RadzenText>Pacient nou inregistrat: Maria Popescu</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="event_available" Style="color: #4caf50;" />
+                        <RadzenText>Consultatie programata pentru 14:30</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="local_pharmacy" Style="color: #ff9800;" />
+                        <RadzenText>Stoc medicament actualizat: Paracetamol</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="payment" Style="color: #9c27b0;" />
+                        <RadzenText>Factura generata: #FAC-2024-001</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenIcon Icon="assessment" Style="color: #f44336;" />
+                        <RadzenText>Raport lunar generat cu succes</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
 
-        <MudItem xs="12" lg="4">
-            <MudCard>
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">Actiuni Rapide</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudStack Spacing="3">
-                        <MudButton Variant="MudVariant.Filled" 
-                                   Color="MudColor.Primary" 
-                                   StartIcon="@Icons.Material.Filled.PersonAdd"
-                                   FullWidth="true"
-                                   Href="/pacienti">
-                            Adauga Pacient
-                        </MudButton>
-                        
-                        <MudButton Variant="MudVariant.Filled" 
-                                   Color="MudColor.Secondary" 
-                                   StartIcon="@Icons.Material.Filled.Event"
-                                   FullWidth="true"
-                                   Href="/programari">
-                            Programeaza Consultatie
-                        </MudButton>
-                        
-                        <MudButton Variant="MudVariant.Filled" 
-                                   Color="MudColor.Tertiary" 
-                                   StartIcon="@Icons.Material.Filled.LocalPharmacy"
-                                   FullWidth="true"
-                                   Href="/farmacie/medicamente">
-                            Gestioneaza Medicamente
-                        </MudButton>
-                        
-                        <MudButton Variant="MudVariant.Filled" 
-                                   Color="MudColor.Success" 
-                                   StartIcon="@Icons.Material.Filled.Assessment"
-                                   FullWidth="true"
-                                   Href="/rapoarte">
-                            Vezi Rapoarte
-                        </MudButton>
-                        
-                        <MudDivider />
-                        
-                        <MudButton Variant="MudVariant.Outlined"
-                                   Color="MudColor.Error"
-                                   StartIcon="@Icons.Material.Filled.Logout"
-                                   FullWidth="true"
-                                   OnClick="@LogoutNow">
-                            Delogare
-                        </MudButton>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
-</MudContainer>
+        <RadzenColumn SizeXS="12" SizeLG="4">
+            <RadzenCard>
+                <RadzenText TextStyle="TextStyle.H6" Style="margin-bottom: 1rem;">Actiuni Rapide</RadzenText>
+                <RadzenStack Gap="0.75rem">
+                    <RadzenButton Variant="Variant.Filled" 
+                                  ButtonStyle="ButtonStyle.Primary" 
+                                  Icon="person_add"
+                                  Style="width: 100%;"
+                                  Click="@(() => Nav.NavigateTo("/pacienti"))">
+                        Adauga Pacient
+                    </RadzenButton>
+                    
+                    <RadzenButton Variant="Variant.Filled" 
+                                  ButtonStyle="ButtonStyle.Secondary" 
+                                  Icon="event"
+                                  Style="width: 100%;"
+                                  Click="@(() => Nav.NavigateTo("/programari"))">
+                        Programeaza Consultatie
+                    </RadzenButton>
+                    
+                    <RadzenButton Variant="Variant.Filled" 
+                                  ButtonStyle="ButtonStyle.Warning" 
+                                  Icon="local_pharmacy"
+                                  Style="width: 100%;"
+                                  Click="@(() => Nav.NavigateTo("/farmacie/medicamente"))">
+                        Gestioneaza Medicamente
+                    </RadzenButton>
+                    
+                    <RadzenButton Variant="Variant.Filled" 
+                                  ButtonStyle="ButtonStyle.Success" 
+                                  Icon="assessment"
+                                  Style="width: 100%;"
+                                  Click="@(() => Nav.NavigateTo("/rapoarte"))">
+                        Vezi Rapoarte
+                    </RadzenButton>
+                    
+                    <RadzenSeparator />
+                    
+                    <RadzenButton Variant="Variant.Outlined"
+                                  ButtonStyle="ButtonStyle.Danger"
+                                  Icon="logout"
+                                  Style="width: 100%;"
+                                  Click="@LogoutNow">
+                        Delogare
+                    </RadzenButton>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
 
 @code {
     private AuthenticationResponse? _currentUser;

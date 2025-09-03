@@ -16,11 +16,8 @@
     <PackageReference Include="Blazored.FluentValidation" Version="2.2.0" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     
-    <!-- Radzen Blazor - Primary UI Framework -->
+    <!-- Radzen Blazor - PRIMARY UI FRAMEWORK -->
     <PackageReference Include="Radzen.Blazor" Version="5.5.4" />
-    
-    <!-- MudBlazor - For existing components during transition -->
-    <PackageReference Include="MudBlazor" Version="7.20.0" />
   </ItemGroup>
 
   <ItemGroup>

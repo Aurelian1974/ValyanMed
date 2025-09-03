@@ -75,12 +75,16 @@ public class UtilizatoriBase : ComponentBase, IDisposable
             searchTimer?.Dispose();
             searchTimer = null;
             
-            // 2. Save current settings before disposal - best effort
-            if (_gridSettings != null)
+            // 2. Save settings to memory cache before disposal - IMPROVED
+            if (_gridSettings != null && DataGridSettingsService != null)
             {
                 try
                 {
-                    // Fire and forget - nu a?tepta în Dispose
+                    // Sync save to memory cache
+                    DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                    Console.WriteLine($"[Utilizatori] Settings saved to memory cache before disposal");
+                    
+                    // Fire and forget pentru localStorage
                     _ = Task.Run(async () =>
                     {
                         try
@@ -89,13 +93,13 @@ public class UtilizatoriBase : ComponentBase, IDisposable
                         }
                         catch
                         {
-                            // Ignore errors during disposal
+                            // Memory cache has the data
                         }
                     });
                 }
                 catch
                 {
-                    // Ignore errors during disposal
+                    // Ignore disposal errors
                 }
             }
         }
@@ -129,14 +133,30 @@ public class UtilizatoriBase : ComponentBase, IDisposable
                 
                 // Salveaz? set?rile implicite în memory cache
                 DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                Console.WriteLine($"[Utilizatori] Using default settings");
+            }
+            else
+            {
+                Console.WriteLine($"[Utilizatori] Settings loaded successfully");
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Utilizatori] LoadGridSettings error: {ex.Message}");
             
-            // Folose?te set?ri implicite
+            // Folose?te set?ri implicite cu fallback
             _gridSettings = new DataGridSettings();
+            
+            try
+            {
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+                Console.WriteLine($"[Utilizatori] Fallback to default settings successful");
+            }
+            catch
+            {
+                // Continue with defaults
+                Console.WriteLine($"[Utilizatori] Using basic default settings");
+            }
         }
     }
 
@@ -149,11 +169,22 @@ public class UtilizatoriBase : ComponentBase, IDisposable
         try
         {
             await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
+            Console.WriteLine($"[Utilizatori] Settings saved for {GRID_SETTINGS_KEY}");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Utilizatori] OnSettingsChanged error: {ex.Message}");
-            // Set?rile sunt salvate în memory cache prin service
+            
+            // Fallback explicit la memory cache
+            try
+            {
+                DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, settings);
+                Console.WriteLine($"[Utilizatori] Fallback to memory cache successful");
+            }
+            catch (Exception fallbackEx)
+            {
+                Console.WriteLine($"[Utilizatori] Memory fallback also failed: {fallbackEx.Message}");
+            }
         }
     }
 
