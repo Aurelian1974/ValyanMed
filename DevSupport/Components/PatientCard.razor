@@ -1,0 +1,110 @@
+@using DevSupport.Models
+@using System.Globalization
+
+<div class="patient-card">
+    <div class="card">
+        <div class="card-header">
+            <h3>@Patient.LastName, @Patient.FirstName</h3>
+            @if (ShowActions)
+            {
+                <div class="actions">
+                    <button class="btn btn-primary btn-sm edit-button action-button" @onclick="() => OnEdit?.Invoke(Patient)">
+                        <i class="fas fa-edit"></i> Editeaz?
+                    </button>
+                    <button class="btn btn-info btn-sm view-button action-button" @onclick="() => OnView?.Invoke(Patient)">
+                        <i class="fas fa-eye"></i> Vizualizeaz?
+                    </button>
+                </div>
+            }
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>CNP:</strong> <span class="patient-cnp">@Patient.CNP</span></p>
+                    <p><strong>Vârsta:</strong> <span class="patient-age">@CalculateAge(Patient.DateOfBirth) ani</span></p>
+                    <p><strong>Sex:</strong> @Patient.Gender</p>
+                </div>
+                <div class="col-md-6">
+                    @if (!string.IsNullOrEmpty(Patient.Phone))
+                    {
+                        <p><strong>Telefon:</strong> <span class="patient-phone">@Patient.Phone</span></p>
+                    }
+                    @if (!string.IsNullOrEmpty(Patient.Email))
+                    {
+                        <p><strong>Email:</strong> <span class="patient-email">@Patient.Email</span></p>
+                    }
+                    @if (!string.IsNullOrEmpty(Patient.Address))
+                    {
+                        <p><strong>Adres?:</strong> <span class="patient-address">@Patient.Address</span></p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Patient Patient { get; set; } = null!;
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public Action<Patient>? OnEdit { get; set; }
+    [Parameter] public Action<Patient>? OnView { get; set; }
+    [Parameter] public Action<Patient>? OnDelete { get; set; }
+
+    private int CalculateAge(DateTime birthDate)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - birthDate.Year;
+        
+        if (birthDate.Date > today.AddYears(-age))
+            age--;
+            
+        return age;
+    }
+}
+
+<style>
+    .patient-card {
+        margin-bottom: 1rem;
+    }
+
+    .patient-card .card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .patient-card .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .patient-card .card-header h3 {
+        margin: 0;
+        color: #495057;
+        font-size: 1.1rem;
+    }
+
+    .patient-card .actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .patient-card .card-body {
+        padding: 1.25rem;
+    }
+
+    .patient-card .card-body p {
+        margin-bottom: 0.5rem;
+    }
+
+    .patient-card .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
+    }
+</style>

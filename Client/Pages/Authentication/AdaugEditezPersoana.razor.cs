@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Components;
 using global::Shared.DTOs.Authentication;
 using global::Shared.Common;
 using global::Shared.Enums;
+using global::Shared.DTOs.Common;
 using Radzen;
 using System.Net.Http.Json;
+using Client.Services.Common;
 
 namespace Client.Pages.Authentication;
 
@@ -13,6 +15,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     [Inject] private NotificationService NotificationService { get; set; } = null!;
     [Inject] private DialogService DialogService { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private ILocationApiService LocationService { get; set; } = null!;
 
     [Parameter] public int? PersoanaId { get; set; }
 
@@ -27,20 +30,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     
     // Dropdown options
     private readonly string[] _genOptions = { "Masculin", "Feminin", "Neprecizat" };
-    private readonly string[] _judeteOptions = {
-        "Alba", "Arad", "Arges", "Bacau", "Bihor", "Bistrita-Nasaud", "Botosani", "Brasov",
-        "Braila", "Buzau", "Caras-Severin", "Calarasi", "Cluj", "Constanta", "Covasna", "Dambovita",
-        "Dolj", "Galati", "Giurgiu", "Gorj", "Harghita", "Hunedoara", "Ialomita", "Iasi",
-        "Ilfov", "Maramures", "Mehedinti", "Mures", "Neamt", "Olt", "Prahova", "Salaj",
-        "Satu Mare", "Sibiu", "Suceava", "Teleorman", "Timis", "Tulcea", "Vaslui", "Valcea", 
-        "Vrancea", "Bucuresti"
-    };
-
-    private readonly string[] _localitatiOptions = {
-        "Bucuresti", "Cluj-Napoca", "Timisoara", "Iasi", "Constanta", "Craiova", "Brasov", 
-        "Galati", "Ploiesti", "Oradea", "Braila", "Arad", "Pitesti", "Sibiu", "Bacau",
-        "Targu Mures", "Baia Mare", "Buzau", "Botosani", "Satu Mare", "Ramnicu Valcea"
-    };
+    private List<JudetDto> _judeteOptions = new();
+    private List<LocalitateDto> _localitatiOptions = new();
     
     // Preview data for grid
     private List<PersoanaPreview> _previewData = new();
@@ -62,7 +53,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        UpdatePreviewData();
+        await LoadJudeteAsync();
         
         if (_isEditMode)
         {
@@ -71,6 +62,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         else
         {
             _model.EsteActiva = true;
+            UpdatePreviewData();
         }
         
         await base.OnInitializedAsync();
@@ -81,6 +73,19 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         if (_isEditMode && PersoanaId.HasValue)
         {
             await LoadPersoanaDataAsync();
+        }
+    }
+
+    private async Task LoadJudeteAsync()
+    {
+        try
+        {
+            _judeteOptions = await LocationService.GetJudeteAsync();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification($"Eroare la incarcarea judetelor: {ex.Message}");
+            _judeteOptions = new List<JudetDto>();
         }
     }
 
@@ -115,6 +120,12 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                         Gen = ParseGen(persoana.Gen),
                         EsteActiva = persoana.EsteActiva
                     };
+                    
+                    // Load localities based on loaded county
+                    if (!string.IsNullOrEmpty(_model.Judet))
+                    {
+                        await OnJudetChangedAsync(_model.Judet);
+                    }
                     
                     UpdatePreviewData();
                     
@@ -174,6 +185,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         {
             // Clear preview data collection
             _previewData?.Clear();
+            _judeteOptions?.Clear();
+            _localitatiOptions?.Clear();
         }
         catch (Exception)
         {
@@ -188,43 +201,104 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     private void OnFieldChanged(string fieldName)
     {
         UpdatePreviewData();
-        StateHasChanged();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnJudetChangedAsync(string? selectedJudet)
+    {
+        // Clear locality when county changes
+        if (_model.Judet != selectedJudet)
+        {
+            _model.Localitate = null;
+        }
+        
+        _model.Judet = selectedJudet;
+        
+        // Load localities based on selected county
+        if (!string.IsNullOrEmpty(selectedJudet))
+        {
+            try
+            {
+                _localitatiOptions = await LocationService.GetLocalitatiByJudetAsync(selectedJudet);
+            }
+            catch (Exception ex)
+            {
+                ShowErrorNotification($"Eroare la incarcarea localitatilor: {ex.Message}");
+                _localitatiOptions = new List<LocalitateDto>();
+            }
+        }
+        else
+        {
+            _localitatiOptions = new List<LocalitateDto>();
+        }
+        
+        UpdatePreviewData();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnJudetChanged(object? selectedJudet)
+    {
+        var judet = selectedJudet?.ToString();
+        _ = OnJudetChangedAsync(judet);
+    }
+
+    private void OnStatusChanged(bool value)
+    {
+        _model.EsteActiva = value;
+        OnFieldChanged(nameof(_model.EsteActiva));
     }
 
     private void UpdatePreviewData()
     {
-        if (!string.IsNullOrEmpty(_model.Nume) || !string.IsNullOrEmpty(_model.Prenume) || _isEditMode)
-        {
-            var varsta = _model.DataNasterii.HasValue ? 
-                DateTime.Now.Year - _model.DataNasterii.Value.Year : 0;
-            
-            _previewData = new List<PersoanaPreview>
-            {
-                new PersoanaPreview
-                {
-                    Nume = _model.Nume ?? "...",
-                    Prenume = _model.Prenume ?? "...",
-                    CNP = _model.CNP ?? "Nu este specificat",
-                    Varsta = varsta,
-                    Gen = _model.Gen?.ToString() ?? "Nu este specificat",
-                    Telefon = _model.Telefon ?? "Nu este specificat",
-                    Email = _model.Email ?? "Nu este specificat",
-                    Judet = _model.Judet ?? "Nu este specificat",
-                    Localitate = _model.Localitate ?? "Nu este specificat",
-                    StatusText = _model.EsteActiva ? "Activ" : "Inactiv"
-                }
-            };
-        }
-        else
-        {
-            _previewData = new List<PersoanaPreview>();
-        }
+        // Always create preview data, even for empty fields
+        var varsta = _model.DataNasterii.HasValue ? 
+            DateTime.Now.Year - _model.DataNasterii.Value.Year : 0;
         
-        StateHasChanged(); // For?ez re-render pentru preview
+        _previewData = new List<PersoanaPreview>
+        {
+            new PersoanaPreview
+            {
+                Nume = string.IsNullOrEmpty(_model.Nume) ? "..." : _model.Nume,
+                Prenume = string.IsNullOrEmpty(_model.Prenume) ? "..." : _model.Prenume,
+                CNP = string.IsNullOrEmpty(_model.CNP) ? "Nu este specificat" : _model.CNP,
+                Varsta = varsta,
+                Gen = _model.Gen?.ToString() ?? "Nu este specificat",
+                Telefon = string.IsNullOrEmpty(_model.Telefon) ? "Nu este specificat" : _model.Telefon,
+                Email = string.IsNullOrEmpty(_model.Email) ? "Nu este specificat" : _model.Email,
+                Judet = string.IsNullOrEmpty(_model.Judet) ? "Nu este specificat" : _model.Judet,
+                Localitate = string.IsNullOrEmpty(_model.Localitate) ? "Nu este specificat" : _model.Localitate,
+                StatusText = _model.EsteActiva ? "Activ" : "Inactiv"
+            }
+        };
     }
 
-    private async Task OnSubmitAsync(CreatePersoanaRequest model)
+    private async Task SubmitForm()
     {
+        // Basic validation before submit
+        if (string.IsNullOrEmpty(_model.Nume))
+        {
+            ShowErrorNotification("Numele este obligatoriu");
+            return;
+        }
+        
+        if (string.IsNullOrEmpty(_model.Prenume))
+        {
+            ShowErrorNotification("Prenumele este obligatoriu");
+            return;
+        }
+        
+        if (_model.DataNasterii == null)
+        {
+            ShowErrorNotification("Data nasterii este obligatorie");
+            return;
+        }
+        
+        if (_model.Gen == null)
+        {
+            ShowErrorNotification("Genul este obligatoriu");
+            return;
+        }
+
         if (_isEditMode)
         {
             await UpdatePersoana();
@@ -233,6 +307,11 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         {
             await SavePersoana();
         }
+    }
+
+    private async Task OnSubmitAsync(CreatePersoanaRequest model)
+    {
+        await SubmitForm();
     }
 
     private async Task SavePersoana()
@@ -397,5 +476,12 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
             Detail = message,
             Duration = 4000
         });
+    }
+
+    private void CancelProcessing()
+    {
+        _isProcessing = false;
+        StateHasChanged();
+        ShowErrorNotification("Operatiunea a fost anulata de utilizator");
     }
 }

@@ -19,6 +19,10 @@ using Infrastructure.Repositories.Medical;
 using Shared.Validators.Authentication;
 using Shared.Validators.Medical;
 
+// Common services
+using Application.Services.Common;
+using Infrastructure.Services.Common;
+
 // Data layer
 using Infrastructure.Data;
 
@@ -106,6 +110,9 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IPacientService, PacientService>();
 builder.Services.AddScoped<IJudetService, JudetService>();
 builder.Services.AddScoped<IPersonalMedicalService, PersonalMedicalService>();
+
+// Common Services
+builder.Services.AddScoped<ILocationService, LocationService>();
 
 // FluentValidation Validators
 builder.Services.AddScoped<IValidator<Shared.DTOs.Authentication.CreatePersoanaRequest>, CreatePersoanaValidator>();

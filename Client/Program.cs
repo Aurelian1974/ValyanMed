@@ -17,6 +17,9 @@ using Client.Services;
 // Medical services
 using Client.Services.Medical;
 
+// Common services
+using Client.Services.Common;
+
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 try
@@ -51,6 +54,9 @@ try
     // Medical API services
     builder.Services.AddScoped<IPersonalMedicalApiService, PersonalMedicalApiService>();
     builder.Services.AddScoped<IDepartamenteApiService, DepartamenteApiService>();
+
+    // Common API services
+    builder.Services.AddScoped<ILocationApiService, LocationApiService>();
 
     // Authentication state provider and authorization
     builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();

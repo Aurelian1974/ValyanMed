@@ -1,0 +1,101 @@
+@using Bunit
+@using Microsoft.Extensions.DependencyInjection
+@using Xunit
+@using FluentAssertions
+@using DevSupport.Models
+@using DevSupport.Components
+@inherits TestContext
+
+@code {
+    [Fact]
+    public void Should_RenderPatientCard_When_ValidPatientProvided()
+    {
+        // Arrange
+        var patient = new Patient
+        {
+            Id = Guid.NewGuid(),
+            CNP = "1234567890123",
+            FirstName = "Ion",
+            LastName = "Popescu",
+            DateOfBirth = new DateTime(1990, 1, 1),
+            Gender = "Masculin",
+            Phone = "0721234567",
+            Email = "ion.popescu@email.ro"
+        };
+
+        // Act
+        var component = RenderComponent<PatientCard>(parameters => parameters
+            .Add(p => p.Patient, patient)
+            .Add(p => p.ShowActions, true)
+        );
+
+        // Assert
+        component.Find("h3").TextContent.Should().Contain("Popescu, Ion");
+        component.Find(".patient-cnp").TextContent.Should().Contain("1234567890123");
+        component.Find(".patient-age").TextContent.Should().Contain("35 ani"); // aproximativ
+        component.Find(".patient-phone").TextContent.Should().Contain("0721234567");
+        
+        // Verific? c? butoanele de ac?iune sunt afi?ate
+        var editButton = component.Find(".edit-button");
+        var viewButton = component.Find(".view-button");
+        
+        editButton.Should().NotBeNull();
+        viewButton.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Should_HideActions_When_ShowActionsIsFalse()
+    {
+        // Arrange
+        var patient = new Patient
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Ion",
+            LastName = "Popescu",
+            CNP = "1234567890123",
+            DateOfBirth = new DateTime(1990, 1, 1),
+            Gender = "Masculin"
+        };
+
+        // Act
+        var component = RenderComponent<PatientCard>(parameters => parameters
+            .Add(p => p.Patient, patient)
+            .Add(p => p.ShowActions, false)
+        );
+
+        // Assert
+        component.FindAll(".action-button").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Should_TriggerEditEvent_When_EditButtonClicked()
+    {
+        // Arrange
+        var patient = new Patient
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Ion",
+            LastName = "Popescu",
+            CNP = "1234567890123",
+            DateOfBirth = new DateTime(1990, 1, 1),
+            Gender = "Masculin"
+        };
+
+        bool editTriggered = false;
+        Patient? editedPatient = null;
+
+        var component = RenderComponent<PatientCard>(parameters => parameters
+            .Add(p => p.Patient, patient)
+            .Add(p => p.ShowActions, true)
+            .Add(p => p.OnEdit, (p) => { editTriggered = true; editedPatient = p; })
+        );
+
+        // Act
+        var editButton = component.Find(".edit-button");
+        editButton.Click();
+
+        // Assert
+        editTriggered.Should().BeTrue();
+        editedPatient.Should().Be(patient);
+    }
+}

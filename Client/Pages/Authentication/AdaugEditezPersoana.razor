@@ -8,78 +8,61 @@
 
 <PageTitle>@(_isEditMode ? "Modifica Persoana" : "Adauga Persoana") - ValyanMed</PageTitle>
 
-<RadzenRow Class="rz-p-4">
-    <RadzenColumn Size="12">
-        
-        <!-- Header Card - FOLOSESTE CLASELE GLOBALE -->
-        <RadzenCard Class="page-header-card edit-mode rz-mb-4">
-            <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
-                <RadzenColumn Size="12" SizeMD="8">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-                        <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Class="page-header-icon edit-mode" />
-                        <RadzenText TextStyle="TextStyle.H4" Class="page-header-title edit-mode rz-m-0">
-                            @(_isEditMode ? "Modifica Persoana" : "Adauga Persoana Noua")
-                        </RadzenText>
-                    </RadzenStack>
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeMD="4">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.5rem">
-                        <RadzenButton Text="Inapoi la lista" 
-                                     Icon="arrow_back" 
-                                     ButtonStyle="ButtonStyle.Info" 
-                                     Variant="Radzen.Variant.Filled"
-                                     Size="ButtonSize.Large"
-                                     Class="back-button"
-                                     Click="@BackToList" />
-                    </RadzenStack>
-                </RadzenColumn>
-            </RadzenRow>
-        </RadzenCard>
+<div class="page-container" style="padding: 1rem; height: 100vh; max-height: 100vh; overflow-y: auto; display: flex; flex-direction: column; box-sizing: border-box;">
+    <!-- Header Card -->
+    <RadzenCard Class="page-header-card edit-mode rz-mb-4" style="flex-shrink: 0;">
+        <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+            <RadzenColumn Size="12" SizeMD="8">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="@(_isEditMode ? "edit" : "person_add")" Class="page-header-icon edit-mode" />
+                    <RadzenText TextStyle="TextStyle.H4" Class="page-header-title edit-mode rz-m-0">
+                        @(_isEditMode ? "Modifica Persoana" : "Adauga Persoana Noua")
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton Text="Inapoi la lista" 
+                                 Icon="arrow_back" 
+                                 ButtonStyle="ButtonStyle.Info" 
+                                 Variant="Radzen.Variant.Filled"
+                                 Size="ButtonSize.Large"
+                                 Class="back-button"
+                                 Click="@BackToList"
+                                 Disabled="@_isProcessing" />
+                </RadzenStack>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenCard>
 
-        <!-- Loading Indicator -->
-        @if (_isLoading)
-        {
-            <RadzenCard>
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Class="loading-container">
-                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
-                    <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
-                        <RadzenText TextStyle="TextStyle.Body1">
-                            @(_isEditMode ? "Se incarca datele persoanei..." : "Se initializeaza formularul...")
-                        </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
-                            Va rugam sa asteptati...
-                        </RadzenText>
-                    </RadzenStack>
+    <!-- Loading State -->
+    @if (_isLoading)
+    {
+        <RadzenCard Class="rz-p-8">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+                <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Body1">
+                        @(_isEditMode ? "Se incarca datele persoanei..." : "Se initializeaza formularul...")
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
+                        Va rugam sa asteptati...
+                    </RadzenText>
                 </RadzenStack>
-            </RadzenCard>
-        }
-        else if (_isProcessing)
-        {
-            <!-- Processing Indicator -->
-            <RadzenCard Class="processing-card">
-                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Class="processing-container">
-                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Small" />
-                    <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
-                        <RadzenText TextStyle="TextStyle.Body1" Class="text-primary">
-                            @(_isEditMode ? "Se actualizeaza..." : "Se salveaza...")
-                        </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
-                            Procesarea datelor in curs...
-                        </RadzenText>
-                    </RadzenStack>
-                </RadzenStack>
-            </RadzenCard>
-        }
-        else
-        {
-            <RadzenRow Gap="2rem">
-                <!-- Form Section -->
-                <RadzenColumn Size="12" SizeLG="8">
-                    <!-- Form Card -->
-                    <RadzenCard Class="form-card">
-                        <RadzenTemplateForm TItem="CreatePersoanaRequest" Data="@_model" Submit="@OnSubmitAsync">
-                            <DataAnnotationsValidator />
-                            
+            </RadzenStack>
+        </RadzenCard>
+    }
+    else
+    {
+        <!-- Main Content Container with controlled height -->
+        <RadzenCard Class="form-container" style="position: relative; margin-bottom: 1rem; flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="form-content-wrapper" style="flex: 1; overflow-y: auto; padding-right: 0.5rem;">
+                <RadzenTemplateForm TItem="CreatePersoanaRequest" Data="@_model" Submit="@OnSubmitAsync">
+                    <DataAnnotationsValidator />
+                    
+                    <RadzenRow Gap="2rem">
+                        <!-- Left Column - Main Form -->
+                        <RadzenColumn Size="12" SizeLG="8">
                             <RadzenStack Gap="2rem">
                                 
                                 <!-- Informatii Personale -->
@@ -97,8 +80,8 @@
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
                                                           Change="@(() => OnFieldChanged(nameof(_model.Nume)))"
-                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Nume)))" />
-
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Nume)))"
+                                                          Disabled="@_isProcessing" />
                                             <RadzenRequiredValidator Component="Nume" Text="Numele este obligatoriu" />
                                         </RadzenColumn>
                                         
@@ -114,8 +97,8 @@
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
                                                           Change="@(() => OnFieldChanged(nameof(_model.Prenume)))"
-                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Prenume)))" />
-
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Prenume)))"
+                                                          Disabled="@_isProcessing" />
                                             <RadzenRequiredValidator Component="Prenume" Text="Prenumele este obligatoriu" />
                                         </RadzenColumn>
                                         
@@ -131,7 +114,8 @@
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
                                                           Change="@(() => OnFieldChanged(nameof(_model.CNP)))"
-                                                          @oninput="@(() => OnFieldChanged(nameof(_model.CNP)))" />
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.CNP)))"
+                                                          Disabled="@_isProcessing" />
                                         </RadzenColumn>
 
                                         <!-- Data Nasterii -->
@@ -146,7 +130,8 @@
                                                              DateFormat="dd.MM.yyyy"
                                                              Style="width: 100%;"
                                                              Variant="Radzen.Variant.Outlined"
-                                                             Change="@(() => OnFieldChanged(nameof(_model.DataNasterii)))" />
+                                                             Change="@(() => OnFieldChanged(nameof(_model.DataNasterii)))"
+                                                             Disabled="@_isProcessing" />
                                             <RadzenRequiredValidator Component="DataNasterii" Text="Data nasterii este obligatorie" />
                                         </RadzenColumn>
 
@@ -162,7 +147,8 @@
                                                            AllowClear="false"
                                                            Style="width: 100%;"
                                                            Variant="Radzen.Variant.Outlined"
-                                                           Change="@(() => OnFieldChanged(nameof(_model.Gen)))" />
+                                                           Change="@(() => OnFieldChanged(nameof(_model.Gen)))"
+                                                           Disabled="@_isProcessing" />
                                             <RadzenRequiredValidator Component="Gen" Text="Genul este obligatoriu" />
                                         </RadzenColumn>
 
@@ -171,7 +157,10 @@
                                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-2">Status</RadzenText>
                                             <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0.75rem" 
                                                        Class="status-container">
-                                                <RadzenCheckBox @bind-Value="_model.EsteActiva" Name="EsteActiva" />
+                                                <RadzenCheckBox @bind-Value="_model.EsteActiva" 
+                                                               Name="EsteActiva"
+                                                               @bind-Value:after="@(() => OnFieldChanged(nameof(_model.EsteActiva)))"
+                                                               Disabled="@_isProcessing" />
                                                 <RadzenLabel Text="Persoana activa in sistem" Component="EsteActiva" />
                                             </RadzenStack>
                                         </RadzenColumn>
@@ -193,7 +182,8 @@
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
                                                           Change="@(() => OnFieldChanged(nameof(_model.Telefon)))"
-                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Telefon)))" />
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Telefon)))"
+                                                          Disabled="@_isProcessing" />
                                         </RadzenColumn>
 
                                         <!-- Email -->
@@ -208,7 +198,8 @@
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
                                                           Change="@(() => OnFieldChanged(nameof(_model.Email)))"
-                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Email)))" />
+                                                          @oninput="@(() => OnFieldChanged(nameof(_model.Email)))"
+                                                          Disabled="@_isProcessing" />
                                             <RadzenEmailValidator Component="Email" Text="Formatul email-ului nu este valid" />
                                         </RadzenColumn>
                                     </RadzenRow>
@@ -223,11 +214,15 @@
                                             <RadzenDropDown @bind-Value="_model.Judet" 
                                                            Name="Judet"
                                                            Data="@_judeteOptions" 
+                                                           ValueProperty="Nume"
+                                                           TextProperty="Nume"
                                                            Placeholder="Selecteaza judetul..." 
                                                            AllowClear="true"
                                                            AllowFiltering="true"
                                                            Style="width: 100%;"
-                                                           Variant="Radzen.Variant.Outlined" />
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Change="@OnJudetChanged"
+                                                           Disabled="@_isProcessing" />
                                         </RadzenColumn>
 
                                         <!-- Localitate -->
@@ -236,11 +231,15 @@
                                             <RadzenDropDown @bind-Value="_model.Localitate" 
                                                            Name="Localitate"
                                                            Data="@_localitatiOptions" 
+                                                           ValueProperty="Nume"
+                                                           TextProperty="Nume"
                                                            Placeholder="Selecteaza localitatea..." 
                                                            AllowClear="true"
                                                            AllowFiltering="true"
                                                            Style="width: 100%;"
-                                                           Variant="Radzen.Variant.Outlined" />
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Disabled="@(string.IsNullOrEmpty(_model.Judet) || _isProcessing)"
+                                                           Change="@(() => OnFieldChanged(nameof(_model.Localitate)))" />
                                         </RadzenColumn>
 
                                         <!-- Adresa -->
@@ -252,108 +251,155 @@
                                                            MaxLength="500"
                                                            Rows="3"
                                                            Style="width: 100%;"
-                                                           Variant="Radzen.Variant.Outlined" />
+                                                           Variant="Radzen.Variant.Outlined"
+                                                           Change="@(() => OnFieldChanged(nameof(_model.Adresa)))"
+                                                           Disabled="@_isProcessing" />
                                         </RadzenColumn>
                                     </RadzenRow>
                                 </RadzenFieldset>
 
-                                <!-- Action Buttons -->
-                                <RadzenCard Variant="Radzen.Variant.Outlined" Class="action-buttons-final-card">
-                                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="1rem">
-                                        <RadzenButton Text="Anuleaza" 
-                                                     Icon="cancel" 
-                                                     ButtonStyle="ButtonStyle.Danger" 
-                                                     Variant="Radzen.Variant.Outlined"
-                                                     Size="ButtonSize.Large"
-                                                     Class="cancel-button"
-                                                     Click="@BackToList"
-                                                     Disabled="@_isProcessing" />
-                                                     
-                                        <RadzenButton ButtonType="Radzen.ButtonType.Submit" 
-                                                     Text="@GetSaveButtonText()" 
-                                                     Icon="@GetSaveButtonIcon()" 
-                                                     ButtonStyle="ButtonStyle.Success" 
-                                                     Variant="Radzen.Variant.Filled"
-                                                     Size="ButtonSize.Large"
-                                                     Class="save-button"
-                                                     Disabled="@_isProcessing"
-                                                     IsBusy="@_isProcessing" />
-                                    </RadzenStack>
-                                </RadzenCard>
+                                <!-- Action Buttons Section -->
+                                <RadzenFieldset Text="Actiuni">
+                                    <RadzenRow Gap="1rem">
+                                        <RadzenColumn Size="12">
+                                            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="1rem" 
+                                                       Wrap="Radzen.FlexWrap.Wrap" AlignItems="Radzen.AlignItems.Center"
+                                                       Class="action-buttons-stack"
+                                                       Style="padding: 1rem; background: linear-gradient(135deg, var(--rz-base-50, #f8f9fa) 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid var(--rz-border-color, #dee2e6);">
+                                                <RadzenButton Text="Anuleaza" 
+                                                             Icon="cancel" 
+                                                             ButtonStyle="ButtonStyle.Danger" 
+                                                             Variant="Radzen.Variant.Outlined"
+                                                             Size="ButtonSize.Large"
+                                                             Class="cancel-button"
+                                                             Click="@BackToList"
+                                                             Disabled="@_isProcessing" />
+                                                             
+                                                <RadzenButton ButtonType="Radzen.ButtonType.Submit" 
+                                                             Text="@GetSaveButtonText()" 
+                                                             Icon="@GetSaveButtonIcon()" 
+                                                             ButtonStyle="ButtonStyle.Success" 
+                                                             Variant="Radzen.Variant.Filled"
+                                                             Size="ButtonSize.Large"
+                                                             Class="save-button"
+                                                             Disabled="@_isProcessing"
+                                                             IsBusy="@_isProcessing" />
+                                            </RadzenStack>
+                                        </RadzenColumn>
+                                    </RadzenRow>
+                                </RadzenFieldset>
                             </RadzenStack>
-                        </RadzenTemplateForm>
-                    </RadzenCard>
-                </RadzenColumn>
+                        </RadzenColumn>
 
-                <!-- Grid Preview Section -->
-                <RadzenColumn Size="12" SizeLG="4">
-                    <RadzenCard>
-                        <RadzenStack Gap="1rem">
-                            <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
-                                <RadzenIcon Icon="grid_view" Class="me-2" />
-                                Preview Persoana
-                            </RadzenText>
-                            
-                            @if (_isEditMode || (!string.IsNullOrEmpty(_model.Nume) || !string.IsNullOrEmpty(_model.Prenume)))
-                            {
-                                <!-- Grid cu preview-ul datelor folosind Radzen Grid -->
-                                <RadzenGrid TItem="PersoanaPreview" 
-                                           Data="@_previewData" 
-                                           AllowPaging="false"
-                                           AllowSorting="false"
-                                           AllowFiltering="false"
-                                           ShowPagingSummary="false"
-                                           Density="Density.Compact"
-                                           Class="preview-grid">
-                                    <Columns>
-                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Nume" Title="Nume" Width="100px" />
-                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Prenume" Title="Prenume" Width="100px" />
-                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Gen" Title="Gen" Width="80px" />
-                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Judet" Title="Judet" Width="100px" />
-                                        <RadzenGridColumn TItem="PersoanaPreview" Property="Localitate" Title="Localitate" Width="120px" />
-                                        <RadzenGridColumn TItem="PersoanaPreview" Property="StatusText" Title="Status" Width="80px" />
-                                    </Columns>
-                                </RadzenGrid>
-
-                                @if (_previewData.Any())
-                                {
-                                    var persoana = _previewData.First();
-                                    <!-- Informatii suplimentare pentru preview -->
-                                    <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
-                                        <RadzenText TextStyle="TextStyle.Body2">
-                                            <strong>Varsta:</strong> @(persoana.Varsta > 0 ? $"{persoana.Varsta} ani" : "Nu este calculata")<br />
-                                            @if (!string.IsNullOrEmpty(persoana.CNP) && persoana.CNP != "Nu este specificat")
-                                            {
-                                                <strong>CNP:</strong> @persoana.CNP<br />
-                                            }
-                                            @if (!string.IsNullOrEmpty(persoana.Email) && persoana.Email != "Nu este specificat")
-                                            {
-                                                <strong>Email:</strong> @persoana.Email<br />
-                                            }
-                                            @if (!string.IsNullOrEmpty(persoana.Telefon) && persoana.Telefon != "Nu este specificat")
-                                            {
-                                                <strong>Telefon:</strong> @persoana.Telefon
-                                            }
-                                        </RadzenText>
-                                    </RadzenAlert>
-                                }
-                            }
-                            else
-                            {
-                                <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
-                                    <RadzenText TextStyle="TextStyle.Body2">
-                                        Completati numele si prenumele pentru a vedea preview-ul.
+                        <!-- Right Column - Preview Section -->
+                        <RadzenColumn Size="12" SizeLG="4" Class="preview-column">
+                            <RadzenCard Class="preview-card" style="height: fit-content; max-height: 65vh; overflow-y: auto; position: sticky; top: 1rem;">
+                                <RadzenStack Gap="1rem">
+                                    <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
+                                        <RadzenIcon Icon="grid_view" Class="me-2" />
+                                        Preview Persoana
                                     </RadzenText>
-                                </RadzenAlert>
-                            }
+                                    
+                                    @if (_previewData.Any())
+                                    {
+                                        <!-- Grid cu preview-ul datelor -->
+                                        <RadzenGrid TItem="PersoanaPreview" 
+                                                   Data="@_previewData" 
+                                                   AllowPaging="false"
+                                                   AllowSorting="false"
+                                                   AllowFiltering="false"
+                                                   ShowPagingSummary="false"
+                                                   Density="Density.Compact"
+                                                   Class="preview-grid"
+                                                   Style="height: 120px;">
+                                            <Columns>
+                                                <RadzenGridColumn TItem="PersoanaPreview" Property="Nume" Title="Nume" Width="100px" />
+                                                <RadzenGridColumn TItem="PersoanaPreview" Property="Prenume" Title="Prenume" Width="100px" />
+                                                <RadzenGridColumn TItem="PersoanaPreview" Property="Gen" Title="Gen" Width="80px" />
+                                                <RadzenGridColumn TItem="PersoanaPreview" Property="StatusText" Title="Status" Width="80px" />
+                                            </Columns>
+                                        </RadzenGrid>
+
+                                        <!-- Informatii suplimentare pentru preview -->
+                                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false" Class="preview-details">
+                                            <RadzenText TextStyle="TextStyle.Body2">
+                                                <strong>Varsta:</strong> @(_previewData.First().Varsta > 0 ? $"{_previewData.First().Varsta} ani" : "Nu este calculata")<br />
+                                                @if (!string.IsNullOrEmpty(_previewData.First().CNP) && _previewData.First().CNP != "Nu este specificat")
+                                                {
+                                                    <strong>CNP:</strong> @_previewData.First().CNP<br />
+                                                }
+                                                @if (!string.IsNullOrEmpty(_previewData.First().Email) && _previewData.First().Email != "Nu este specificat")
+                                                {
+                                                    <strong>Email:</strong> @_previewData.First().Email<br />
+                                                }
+                                                @if (!string.IsNullOrEmpty(_previewData.First().Telefon) && _previewData.First().Telefon != "Nu este specificat")
+                                                {
+                                                    <strong>Telefon:</strong> @_previewData.First().Telefon<br />
+                                                }
+                                                @if (!string.IsNullOrEmpty(_previewData.First().Judet) && _previewData.First().Judet != "Nu este specificat")
+                                                {
+                                                    <strong>Judet:</strong> @_previewData.First().Judet<br />
+                                                }
+                                                @if (!string.IsNullOrEmpty(_previewData.First().Localitate) && _previewData.First().Localitate != "Nu este specificat")
+                                                {
+                                                    <strong>Localitate:</strong> @_previewData.First().Localitate
+                                                }
+                                            </RadzenText>
+                                        </RadzenAlert>
+                                    }
+                                    else
+                                    {
+                                        <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" AllowClose="false">
+                                            <RadzenText TextStyle="TextStyle.Body2">
+                                                Completati datele pentru a vedea preview-ul.
+                                            </RadzenText>
+                                        </RadzenAlert>
+                                    }
+                                </RadzenStack>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenTemplateForm>
+            </div>
+        </RadzenCard>
+    }
+</div>
+
+<!-- Processing Overlay -->
+@if (_isProcessing)
+{
+    <div class="processing-overlay">
+        <div class="processing-content">
+            <RadzenCard Class="processing-dialog">
+                <RadzenStack Gap="1.5rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+                        <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                        <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Start" Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.H6" Class="text-primary">
+                                @(_isEditMode ? "Se actualizeaza..." : "Se salveaza...")
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="text-muted">
+                                Procesarea datelor in curs... Va rugam sa asteptati.
+                            </RadzenText>
                         </RadzenStack>
-                    </RadzenCard>
-                </RadzenColumn>
-            </RadzenRow>
-        }
-        
-    </RadzenColumn>
-</RadzenRow>
+                    </RadzenStack>
+                    
+                    <!-- Emergency Cancel Button -->
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center">
+                        <RadzenButton Text="Anuleaza operatiunea" 
+                                     Icon="close" 
+                                     ButtonStyle="ButtonStyle.Light" 
+                                     Variant="Radzen.Variant.Outlined"
+                                     Size="ButtonSize.Small"
+                                     Class="emergency-cancel-button"
+                                     Click="@CancelProcessing"
+                                     Style="opacity: 0.7;" />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+    </div>
+}
 
 @code {
 }
