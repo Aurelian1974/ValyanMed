@@ -98,6 +98,48 @@ public partial class PersonalMedical : ComponentBase, IDisposable
         }
     }
 
+    public async Task ResetGridSettings()
+    {
+        try
+        {
+            await DataGridSettingsService.ClearSettingsAsync(GRID_SETTINGS_KEY);
+            _gridSettings = null; // notify grid
+            if (_dataGrid != null)
+            {
+                _dataGrid.Reset(true);
+                await _dataGrid.Reload();
+            }
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Setari resetate",
+                Detail = "Setarile grilei au fost resetate la valorile implicite",
+                Duration = 3000
+            });
+        }
+        catch
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Avertisment",
+                Detail = "Resetarea setarilor nu a fost finalizata complet",
+                Duration = 3000
+            });
+        }
+    }
+
+    public async Task ResetFilters()
+    {
+        _searchQuery = new PersonalMedicalSearchQuery { PageSize = _searchQuery.PageSize };
+        _totalCount = 0;
+        if (_dataGrid != null)
+        {
+            _dataGrid.Reset(true);
+        }
+        await LoadDataAsync(new Radzen.LoadDataArgs());
+    }
+
     public async Task LoadDataAsync(Radzen.LoadDataArgs args)
     {
         _isLoading = true;

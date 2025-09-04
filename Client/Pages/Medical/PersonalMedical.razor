@@ -53,6 +53,26 @@
                                     Style="width: 100%;" />
                 </RadzenColumn>
             </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton Text="Reseteaza filtre" 
+                                      Icon="clear_all" 
+                                      ButtonStyle="ButtonStyle.Warning" 
+                                      Variant="Radzen.Variant.Filled"
+                                      Size="ButtonSize.Medium"
+                                      Click="@(() => ResetFilters())" />
+                        <RadzenButton Text="Reset Grid" 
+                                      Icon="settings_backup_restore" 
+                                      ButtonStyle="ButtonStyle.Secondary" 
+                                      Variant="Radzen.Variant.Outlined"
+                                      Size="ButtonSize.Medium"
+                                      Title="Reseteaza setarile grid-ului"
+                                      Click="@(() => ResetGridSettings())" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
         </RadzenStack>
     </RadzenCard>
 
@@ -73,6 +93,7 @@
                         AllowPaging="true"
                         AllowSorting="true"
                         AllowColumnResize="true"
+                        AllowColumnReorder="true"
                         PageSize="10"
                         PagerHorizontalAlign="Radzen.HorizontalAlign.Left"
                         ShowPagingSummary="true"
