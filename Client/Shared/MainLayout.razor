@@ -92,9 +92,9 @@
 
     <!-- Main Content -->
     <RadzenBody>
-        <RadzenStack Style="padding: 1rem; max-width: 1400px; margin: 0 auto;">
+        <div style="width: 100%; height: 100%; margin: 0; padding: 0;">
             @Body
-        </RadzenStack>
+        </div>
     </RadzenBody>
 </RadzenLayout>
 
@@ -488,6 +488,24 @@
     /* Sidebar positioning fix */
     .rz-sidebar {
         z-index: 5 !important;
+    }
+
+    /* Remove any gaps between sidebar and main content */
+    .rz-layout {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .rz-body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Ensure full width content without gaps */
+    .rz-layout .rz-body {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 
     /* BACKUP CSS INLINE pentru a asigura indentarea */
