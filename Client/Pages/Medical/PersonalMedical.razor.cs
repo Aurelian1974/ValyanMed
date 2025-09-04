@@ -3,6 +3,8 @@ using Radzen;
 using Shared.DTOs.Medical;
 using Shared.Common;
 using System.Net.Http.Json;
+using Client.Services;
+using System.Text.Json;
 
 namespace Client.Pages.Medical;
 
@@ -11,6 +13,7 @@ public partial class PersonalMedical : ComponentBase, IDisposable
     [Inject] private HttpClient Http { get; set; } = null!;
     [Inject] private NotificationService NotificationService { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private IDataGridSettingsService DataGridSettingsService { get; set; } = null!;
 
     private Radzen.Blazor.RadzenDataGrid<PersonalMedicalListDto> _dataGrid = null!;
     private IEnumerable<PersonalMedicalListDto> _data = new List<PersonalMedicalListDto>();
@@ -18,6 +21,10 @@ public partial class PersonalMedical : ComponentBase, IDisposable
     private int _totalCount = 0;
     private bool _isLoading = false;
     private Timer? _searchTimer;
+
+    // Grid settings persistence
+    private DataGridSettings? _gridSettings;
+    private const string GRID_SETTINGS_KEY = "personal_medical_grid_settings";
 
     // Dropdown options
     private readonly string[] _departamente = {
@@ -38,7 +45,57 @@ public partial class PersonalMedical : ComponentBase, IDisposable
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadGridSettings();
         await LoadDataAsync(new Radzen.LoadDataArgs());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _gridSettings != null)
+        {
+            try
+            {
+                await Task.Delay(100);
+                // Force a new instance so RadzenDataGrid detects the change and applies settings
+                var json = JsonSerializer.Serialize(_gridSettings);
+                _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(json);
+                StateHasChanged();
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task LoadGridSettings()
+    {
+        try
+        {
+            _gridSettings = await DataGridSettingsService.LoadSettingsAsync(GRID_SETTINGS_KEY) ?? new DataGridSettings();
+            // keep defaults in memory cache for session
+            DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings);
+        }
+        catch
+        {
+            _gridSettings = new DataGridSettings();
+            try { DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, _gridSettings); } catch { }
+        }
+    }
+
+    public async Task OnSettingsChanged(DataGridSettings settings)
+    {
+        _gridSettings = settings;
+        try
+        {
+            await DataGridSettingsService.SaveSettingsAsync(GRID_SETTINGS_KEY, settings);
+        }
+        catch
+        {
+            try { DataGridSettingsService.SetFallbackSettings(GRID_SETTINGS_KEY, settings); } catch { }
+        }
     }
 
     public async Task LoadDataAsync(Radzen.LoadDataArgs args)
@@ -46,7 +103,6 @@ public partial class PersonalMedical : ComponentBase, IDisposable
         _isLoading = true;
         try
         {
-            // Update search query from args
             if (args != null)
             {
                 _searchQuery.Page = ((args.Skip ?? 0) / _searchQuery.PageSize) + 1;

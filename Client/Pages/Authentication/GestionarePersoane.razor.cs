@@ -130,23 +130,26 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
     {
         if (firstRender && !_isDisposed)
         {
-            // Apply loaded settings if any
-            if (_gridSettings != null && _dataGrid != null)
+            if (_gridSettings != null)
             {
                 try
                 {
-                    // Force apply settings after first render
                     await Task.Delay(100, _cancellationTokenSource?.Token ?? CancellationToken.None);
-                    if (!_isDisposed)
-                        StateHasChanged();
+                    if (_isDisposed) return;
+
+                    // Force RadzenDataGrid to treat Settings as changed by creating a new instance
+                    var json = JsonSerializer.Serialize(_gridSettings);
+                    _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(json);
+
+                    StateHasChanged();
                 }
                 catch (OperationCanceledException)
                 {
                     // Normal during disposal
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    // Log error silently
+                    // Ignore when applying settings
                 }
             }
         }
@@ -316,6 +319,37 @@ public partial class GestionarePersoane : ComponentBase, IDisposable
         
         // Salveaz? cu fallback complet
         await SaveGridSettingsAsync(settings);
+    }
+
+    public async Task ResetGridSettings()
+    {
+        try
+        {
+            await DataGridSettingsService.ClearSettingsAsync(GRID_SETTINGS_KEY);
+            _gridSettings = null; // trigger reset
+            if (_dataGrid != null)
+            {
+                _dataGrid.Reset(true);
+                await _dataGrid.Reload();
+            }
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Setari resetate",
+                Detail = "Setarile grilei au fost resetate la valorile implicite",
+                Duration = 3000
+            });
+        }
+        catch
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Avertisment",
+                Detail = "Resetarea setarilor nu a fost finalizata complet",
+                Duration = 3000
+            });
+        }
     }
 
     public void OnRender(DataGridRenderEventArgs<PersoanaListDto> args)

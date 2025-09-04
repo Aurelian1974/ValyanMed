@@ -36,6 +36,14 @@
                              Size="ButtonSize.Medium"
                              Class="reset-button"
                              Click="@ResetFilters" />
+
+                <RadzenButton Text="Reset Grid" 
+                             Icon="settings_backup_restore" 
+                             ButtonStyle="ButtonStyle.Secondary" 
+                             Variant="Radzen.Variant.Outlined"
+                             Size="ButtonSize.Medium"
+                             Title="Reseteaza setarile grid-ului"
+                             Click="@ResetGridSettings" />
             </RadzenStack>
             <RadzenButton Text="ADAUGA PERSOANA NOUA" 
                          Icon="person_add" 
@@ -89,6 +97,7 @@
                         PagerHorizontalAlign="Radzen.HorizontalAlign.Center"
                         AllowSorting="true"
                         AllowColumnResize="true"
+                        AllowColumnReorder="true"
                         AllowFiltering="true"
                         FilterMode="FilterMode.Advanced"
                         ShowFilterRow="true"

@@ -53,8 +53,13 @@ public class UtilizatoriBase : ComponentBase, IDisposable
             {
                 // Mic? întârziere pentru ini?ializarea complet? a grid-ului
                 await Task.Delay(100);
-                if (!_isDisposed)
-                    StateHasChanged();
+                if (_isDisposed) return;
+
+                // Creeaz? o instan?? nou? a settings pentru a for?a aplicarea în RadzenDataGrid
+                var json = JsonSerializer.Serialize(_gridSettings);
+                _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(json);
+
+                StateHasChanged();
             }
             catch (Exception ex)
             {

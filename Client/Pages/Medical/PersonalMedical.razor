@@ -79,6 +79,8 @@
                         PagingSummaryFormat="Pagina {0} din {1} ({2} inregistrari)"
                         IsLoading="@_isLoading"
                         ExpandMode="Radzen.DataGridExpandMode.Single"
+                        Settings="@_gridSettings"
+                        SettingsChanged="@OnSettingsChanged"
                         Style="height: 600px">
             
             <!-- Columns -->

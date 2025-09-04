@@ -122,13 +122,18 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
             {
                 try
                 {
-                    // Force apply settings after first render
-                    await Task.Delay(100); // Small delay to ensure grid is fully initialized
+                    // Small delay to ensure grid is fully initialized
+                    await Task.Delay(100);
+
+                    // Force a new instance so RadzenDataGrid detects Settings param change and loads them
+                    var json = JsonSerializer.Serialize(_gridSettings);
+                    _gridSettings = JsonSerializer.Deserialize<DataGridSettings>(json);
+
                     StateHasChanged();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    // Log error silently
+                    // Ignore errors when applying settings
                 }
             }
         }
@@ -202,7 +207,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
                 {
                     "departament" => item.Departament ?? "Nu este specificat",
                     "pozitie" => item.Pozitie ?? "Nu este specificat", 
-                    "specializare" => item.Specializare ?? "Nu este specificat",
+                    "specializare" => item.Specializare ?? "Nu este specificata",
                     "esteactiv" => item.EsteActiv ? "Activ" : "Inactiv",
                     _ => "Unknown"
                 }).Distinct().Count();
@@ -547,6 +552,37 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
         }
     }
 
+    public async Task ResetGridSettings()
+    {
+        try
+        {
+            await DataGridSettingsService.ClearSettingsAsync(GRID_SETTINGS_KEY);
+            _gridSettings = null; // triggers grid internal reset via two-way binding
+            if (_dataGrid != null)
+            {
+                _dataGrid.Reset(true);
+                await _dataGrid.Reload();
+            }
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Setari resetate",
+                Detail = "Setarile grilei au fost resetate la valorile implicite",
+                Duration = 3000
+            });
+        }
+        catch
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "Avertisment",
+                Detail = "Resetarea setarilor nu a fost finalizata complet",
+                Duration = 3000
+            });
+        }
+    }
+
     public async Task ClearGrouping()
     {
         try
@@ -569,7 +605,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
                 StateHasChanged();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             NotificationService.Notify(new NotificationMessage
             {
@@ -770,7 +806,7 @@ public partial class GestionarePersonal : ComponentBase, IDisposable
                 };
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Log error silently
         }
