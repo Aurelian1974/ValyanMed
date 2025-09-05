@@ -88,7 +88,7 @@
                                         <!-- Prenume -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2">
-                                                Prenume <span Class="required-field">*</span>
+                                                Prenume <span class="required-field">*</span>
                                             </RadzenText>
                                             <RadzenTextBox @bind-Value="_model.Prenume" 
                                                           Name="Prenume"
@@ -108,20 +108,19 @@
                                                 CNP
                                             </RadzenText>
                                             <RadzenTextBox @bind-Value="_model.CNP" 
+                                                          @bind-Value:after="@(() => OnFieldChanged(nameof(_model.CNP)))"
                                                           Name="CNP"
                                                           Placeholder="Introduceti CNP-ul..." 
                                                           MaxLength="13"
                                                           Style="width: 100%;"
                                                           Variant="Radzen.Variant.Outlined"
-                                                          Change="@(() => OnFieldChanged(nameof(_model.CNP)))"
-                                                          @oninput="@(() => OnFieldChanged(nameof(_model.CNP)))"
                                                           Disabled="@_isProcessing" />
                                         </RadzenColumn>
 
                                         <!-- Data Nasterii -->
                                         <RadzenColumn Size="12" SizeMD="6">
                                             <RadzenText TextStyle="TextStyle.Body2">
-                                                Data nasterii <span Class="required-field">*</span>
+                                                Data nasterii <span class="required-field">*</span>
                                             </RadzenText>
                                             <RadzenDatePicker @bind-Value="_model.DataNasterii" 
                                                              Name="DataNasterii"

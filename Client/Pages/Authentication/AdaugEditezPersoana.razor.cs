@@ -29,27 +29,13 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     private bool _isDisposed = false;
     
     // Dropdown options
-    private readonly string[] _genOptions = { "Masculin", "Feminin", "Neprecizat" };
+    // Use enum values directly to match the model type (Gen?)
+    private readonly Gen[] _genOptions = System.Enum.GetValues<Gen>();
     private List<JudetDto> _judeteOptions = new();
     private List<LocalitateDto> _localitatiOptions = new();
     
     // Preview data for grid
     private List<PersoanaPreview> _previewData = new();
-
-    // Preview class for grid display  
-    private class PersoanaPreview
-    {
-        public string Nume { get; set; } = string.Empty;
-        public string Prenume { get; set; } = string.Empty;
-        public string Gen { get; set; } = string.Empty;
-        public string Judet { get; set; } = string.Empty;
-        public string Localitate { get; set; } = string.Empty;
-        public string StatusText { get; set; } = string.Empty;
-        public string CNP { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Telefon { get; set; } = string.Empty;
-        public int Varsta { get; set; }
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -200,6 +186,12 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
 
     private void OnFieldChanged(string fieldName)
     {
+        // Auto-complete from CNP when the CNP field changes (on input or change)
+        if (fieldName == nameof(_model.CNP))
+        {
+            AutoFillFromCnp(_model.CNP);
+        }
+        
         UpdatePreviewData();
         InvokeAsync(StateHasChanged);
     }
@@ -250,26 +242,35 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
 
     private void UpdatePreviewData()
     {
-        // Always create preview data, even for empty fields
-        var varsta = _model.DataNasterii.HasValue ? 
-            DateTime.Now.Year - _model.DataNasterii.Value.Year : 0;
-        
-        _previewData = new List<PersoanaPreview>
+        // Rebuild preview list from current model
+        _previewData.Clear();
+
+        var preview = new PersoanaPreview
         {
-            new PersoanaPreview
-            {
-                Nume = string.IsNullOrEmpty(_model.Nume) ? "..." : _model.Nume,
-                Prenume = string.IsNullOrEmpty(_model.Prenume) ? "..." : _model.Prenume,
-                CNP = string.IsNullOrEmpty(_model.CNP) ? "Nu este specificat" : _model.CNP,
-                Varsta = varsta,
-                Gen = _model.Gen?.ToString() ?? "Nu este specificat",
-                Telefon = string.IsNullOrEmpty(_model.Telefon) ? "Nu este specificat" : _model.Telefon,
-                Email = string.IsNullOrEmpty(_model.Email) ? "Nu este specificat" : _model.Email,
-                Judet = string.IsNullOrEmpty(_model.Judet) ? "Nu este specificat" : _model.Judet,
-                Localitate = string.IsNullOrEmpty(_model.Localitate) ? "Nu este specificat" : _model.Localitate,
-                StatusText = _model.EsteActiva ? "Activ" : "Inactiv"
-            }
+            Nume = string.IsNullOrWhiteSpace(_model.Nume) ? "Nu este specificat" : _model.Nume,
+            Prenume = string.IsNullOrWhiteSpace(_model.Prenume) ? "Nu este specificat" : _model.Prenume,
+            CNP = string.IsNullOrWhiteSpace(_model.CNP) ? "Nu este specificat" : _model.CNP,
+            Gen = _model.Gen?.ToString() ?? "Nu este specificat",
+            StatusText = _model.EsteActiva ? "Activ" : "Inactiv",
+            Email = string.IsNullOrWhiteSpace(_model.Email) ? "Nu este specificat" : _model.Email,
+            Telefon = string.IsNullOrWhiteSpace(_model.Telefon) ? "Nu este specificat" : _model.Telefon,
+            Judet = string.IsNullOrWhiteSpace(_model.Judet) ? "Nu este specificat" : _model.Judet!,
+            Localitate = string.IsNullOrWhiteSpace(_model.Localitate) ? "Nu este specificat" : _model.Localitate!,
+            Varsta = CalculateAge(_model.DataNasterii)
         };
+
+        _previewData.Add(preview);
+        // force re-render
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static int CalculateAge(DateTime? dataNasterii)
+    {
+        if (!dataNasterii.HasValue) return 0;
+        var today = DateTime.Today;
+        var age = today.Year - dataNasterii.Value.Year;
+        if (dataNasterii.Value.Date > today.AddYears(-age)) age--;
+        return Math.Max(age, 0);
     }
 
     private async Task SubmitForm()
@@ -484,4 +485,88 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         StateHasChanged();
         ShowErrorNotification("Operatiunea a fost anulata de utilizator");
     }
+
+    // ==========================
+    // CNP -> Gen + Data Nasterii
+    // ==========================
+    private void AutoFillFromCnp(string? cnp)
+    {
+        if (string.IsNullOrWhiteSpace(cnp)) return;
+
+        // keep only digits
+        var clean = new string(cnp.Where(char.IsDigit).ToArray());
+        if (!string.Equals(clean, _model.CNP))
+        {
+            _model.CNP = clean;
+        }
+
+        if (clean.Length != 13 || !IsValidCnp(clean))
+        {
+            return; // don't modify when invalid/incomplete
+        }
+
+        var firstDigit = int.Parse(clean[0].ToString());
+        // gender
+        if (firstDigit is 1 or 3 or 5 or 7)
+            _model.Gen = Gen.Masculin;
+        else if (firstDigit is 2 or 4 or 6 or 8)
+            _model.Gen = Gen.Feminin;
+        else
+            _model.Gen = Gen.Neprecizat;
+
+        // date
+        try
+        {
+            var year = int.Parse(clean.Substring(1, 2));
+            var month = int.Parse(clean.Substring(3, 2));
+            var day = int.Parse(clean.Substring(5, 2));
+
+            if (firstDigit is 1 or 2) year += 1900;
+            else if (firstDigit is 3 or 4) year += 1800;
+            else if (firstDigit is 5 or 6 or 7 or 8) year += 2000;
+
+            var birth = new DateTime(year, month, day);
+            if (birth <= DateTime.Today)
+            {
+                _model.DataNasterii = birth;
+            }
+        }
+        catch
+        {
+            // ignore invalid date
+        }
+
+        // Immediately refresh preview after auto-fill
+        UpdatePreviewData();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private static bool IsValidCnp(string cnp)
+    {
+        if (cnp.Length != 13 || !cnp.All(char.IsDigit)) return false;
+        var weights = new[] { 2,7,9,1,4,6,3,5,8,2,7,9 };
+        var sum = 0;
+        for (int i = 0; i < 12; i++)
+        {
+            sum += (cnp[i] - '0') * weights[i];
+        }
+        var check = sum % 11;
+        if (check == 10) check = 1;
+        return check == (cnp[12] - '0');
+    }
+}
+
+// Preview class for grid display (moved outside the component to avoid generic binding issues)
+public class PersoanaPreview
+{
+    public string Nume { get; set; } = string.Empty;
+    public string Prenume { get; set; } = string.Empty;
+    public string Gen { get; set; } = string.Empty;
+    public string Judet { get; set; } = string.Empty;
+    public string Localitate { get; set; } = string.Empty;
+    public string StatusText { get; set; } = string.Empty;
+    public string CNP { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Telefon { get; set; } = string.Empty;
+    public int Varsta { get; set; }
 }
