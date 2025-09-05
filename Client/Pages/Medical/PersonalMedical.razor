@@ -7,15 +7,15 @@
 
 <PageTitle>Personal Medical - ValyanMed</PageTitle>
 
-<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Class="p-3 compact">
     
     <!-- Header -->
-    <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Personal Medical</RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Class="mb-2">Personal Medical</RadzenText>
     
     <!-- Search and Filters -->
-    <RadzenCard Class="mb-4">
-        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem">
-            <RadzenRow Gap="1rem">
+    <RadzenCard Class="mb-2">
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+            <RadzenRow Gap="0.5rem">
                 <RadzenColumn Size="12" SizeMD="4">
                     <RadzenLabel Text="Cautare globala" />
                     <RadzenTextBox @bind-Value="_searchQuery.Search"
@@ -56,18 +56,18 @@
 
             <RadzenRow>
                 <RadzenColumn Size="12">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.25rem">
                         <RadzenButton Text="Reseteaza filtre" 
                                       Icon="clear_all" 
                                       ButtonStyle="ButtonStyle.Warning" 
                                       Variant="Radzen.Variant.Filled"
-                                      Size="ButtonSize.Medium"
+                                      Size="ButtonSize.Small"
                                       Click="@(() => ResetFilters())" />
                         <RadzenButton Text="Reset Grid" 
                                       Icon="settings_backup_restore" 
                                       ButtonStyle="ButtonStyle.Secondary" 
                                       Variant="Radzen.Variant.Outlined"
-                                      Size="ButtonSize.Medium"
+                                      Size="ButtonSize.Small"
                                       Title="Reseteaza setarile grid-ului"
                                       Click="@(() => ResetGridSettings())" />
                     </RadzenStack>
@@ -102,16 +102,17 @@
                         ExpandMode="Radzen.DataGridExpandMode.Single"
                         Settings="@_gridSettings"
                         SettingsChanged="@OnSettingsChanged"
-                        Style="height: 600px">
+                        Density="Density.Compact"
+                        Style="height: 520px">
             
             <!-- Columns -->
             <Columns>
-                <RadzenDataGridColumn Property="NumeComplet" Title="Nume complet" Width="200px" />
-                <RadzenDataGridColumn Property="SpecializareCompleta" Title="Specializare/Pozitie" Width="250px" />
-                <RadzenDataGridColumn Property="Departament" Title="Departament" Width="150px" />
-                <RadzenDataGridColumn Property="NumarLicenta" Title="Nr. Licenta" Width="120px" />
-                <RadzenDataGridColumn Property="Telefon" Title="Telefon" Width="120px" />
-                <RadzenDataGridColumn Property="Email" Title="Email" Width="200px" />
+                <RadzenDataGridColumn Property="NumeComplet" Title="Nume complet" Width="180px" />
+                <RadzenDataGridColumn Property="SpecializareCompleta" Title="Specializare/Pozitie" Width="220px" />
+                <RadzenDataGridColumn Property="Departament" Title="Departament" Width="140px" />
+                <RadzenDataGridColumn Property="NumarLicenta" Title="Nr. Licenta" Width="110px" />
+                <RadzenDataGridColumn Property="Telefon" Title="Telefon" Width="110px" />
+                <RadzenDataGridColumn Property="Email" Title="Email" Width="180px" />
                 <RadzenDataGridColumn Property="StatusText" Title="Status" Width="80px">
                     <Template Context="personal">
                         <RadzenBadge Text="@personal.StatusText" 
@@ -119,10 +120,10 @@
                                      Variant="Radzen.Variant.Filled" />
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn Property="DataCreare" Title="Data creare" Width="120px" FormatString="{0:dd.MM.yyyy}" />
+                <RadzenDataGridColumn Property="DataCreare" Title="Data creare" Width="110px" FormatString="{0:dd.MM.yyyy}" />
                 <RadzenDataGridColumn Title="Actiuni" Width="120px" Sortable="false">
                     <Template Context="personal">
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.25rem">
                             <RadzenButton Icon="visibility" 
                                           ButtonStyle="Radzen.ButtonStyle.Primary" 
                                           Variant="Radzen.Variant.Outlined" 
@@ -142,14 +143,14 @@
 
             <!-- Detail Row Template -->
             <Template Context="personal">
-                <RadzenCard Class="m-3">
-                    <RadzenRow Gap="2rem">
+                <RadzenCard Class="m-2">
+                    <RadzenRow Gap="0.75rem">
                         <RadzenColumn Size="12" SizeMD="6">
-                            <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                            <RadzenText TextStyle="TextStyle.Body1" Class="mb-2">
                                 <RadzenIcon Icon="person" Class="me-2" />
                                 Informatii personale
                             </RadzenText>
-                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.25rem">
                                 <RadzenRow>
                                     <RadzenColumn Size="5"><strong>Nume complet:</strong></RadzenColumn>
                                     <RadzenColumn Size="7">@personal.NumeComplet</RadzenColumn>
@@ -173,11 +174,11 @@
                             </RadzenStack>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="6">
-                            <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
+                            <RadzenText TextStyle="TextStyle.Body1" Class="mb-2">
                                 <RadzenIcon Icon="contact_phone" Class="me-2" />
                                 Contact
                             </RadzenText>
-                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
+                            <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.25rem">
                                 <RadzenRow>
                                     <RadzenColumn Size="4"><strong>Telefon:</strong></RadzenColumn>
                                     <RadzenColumn Size="8">@(personal.Telefon ?? "Nu este specificat")</RadzenColumn>

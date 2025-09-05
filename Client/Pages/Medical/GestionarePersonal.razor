@@ -8,13 +8,13 @@
 
 <PageTitle>Gestionare Personal Medical - ValyanMed</PageTitle>
 
-<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem" Class="p-3 compact">
     
     <!-- Header - FOLOSESTE CLASELE GLOBALE -->
     <RadzenCard Class="page-header-card list-mode">
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0.5rem">
             <RadzenIcon Icon="groups" Class="page-header-icon list-mode" />
-            <RadzenText TextStyle="TextStyle.H4" Class="page-header-title list-mode">
+            <RadzenText TextStyle="TextStyle.H5" Class="page-header-title list-mode">
                 Gestionare Personal Medical
             </RadzenText>
         </RadzenStack>
@@ -22,9 +22,9 @@
     
     <!-- Header Actions - ÎMBUNĂTĂȚIT PENTRU VIZIBILITATE -->
     <RadzenCard Class="action-buttons-card">
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.End">
-                <RadzenFormField Text="Cautare rapida" Style="width: 300px;">
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center" Gap="0.5rem">
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.End">
+                <RadzenFormField Text="Cautare rapida" Style="width: 260px;">
                     <RadzenTextBox @bind-Value="_searchQuery.Search"
                                    Placeholder="Cauta personal..."
                                    @oninput="OnSearchInput"
@@ -36,7 +36,7 @@
                              Icon="clear_all" 
                              ButtonStyle="ButtonStyle.Warning" 
                              Variant="Radzen.Variant.Filled"
-                             Size="ButtonSize.Medium"
+                             Size="ButtonSize.Small"
                              Class="reset-button"
                              Click="@ResetFilters" />
 
@@ -45,7 +45,7 @@
                              Icon="settings_backup_restore" 
                              ButtonStyle="ButtonStyle.Secondary" 
                              Variant="Radzen.Variant.Outlined"
-                             Size="ButtonSize.Medium"
+                             Size="ButtonSize.Small"
                              Title="Reseteaza setarile grid-ului"
                              Click="@ResetGridSettings" />
             </RadzenStack>
@@ -55,7 +55,7 @@
                          Icon="person_add" 
                          ButtonStyle="ButtonStyle.Success" 
                          Variant="Radzen.Variant.Filled"
-                         Size="ButtonSize.Large"
+                         Size="ButtonSize.Medium"
                          Class="primary-action-button"
                          Click="@CreateNewPersonal" />
         </RadzenStack>
@@ -68,9 +68,9 @@
             <!-- Informații despre grupare -->
             <RadzenCard Class="grouping-info-card">
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
                         <RadzenIcon Icon="view_module" Class="grouping-icon" />
-                        <RadzenText TextStyle="TextStyle.Body1">
+                        <RadzenText TextStyle="TextStyle.Body2">
                             <strong>Grupat dupa:</strong> @string.Join(", ", _currentGroups.Select(g => g.Property))
                         </RadzenText>
                         <RadzenCheckBox @bind-Value="_allGroupsExpanded" 
@@ -79,7 +79,7 @@
                                        Change="@OnAllGroupsExpandedChange" />
                         <RadzenLabel Text="Toate grupurile expandate" Component="allGroupsExpanded" Class="grouping-label" />
                     </RadzenStack>
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="1rem" AlignItems="Radzen.AlignItems.Center">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
                         <RadzenButton Icon="clear" 
                                      ButtonStyle="ButtonStyle.Light" 
                                      Variant="Radzen.Variant.Text" 
@@ -125,29 +125,30 @@
                         AllowRowSelectOnRowClick="false"
                         Settings="@_gridSettings"
                         SettingsChanged="@OnSettingsChanged"
-                        Style="min-height: 600px;">
+                        Density="Density.Compact"
+                        Style="min-height: 520px;">
 
             <GroupHeaderTemplate>
                 @context.Data.Key: @context.Data.Count inregistrari
             </GroupHeaderTemplate>
 
             <Columns>
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="NumeComplet" Title="Nume complet" Width="200px" Filterable="true" Sortable="true" Groupable="true" />
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Pozitie" Title="Pozitie" Width="150px" Filterable="true" Sortable="true" Groupable="true" />
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Specializare" Title="Specializare" Width="150px" Filterable="true" Sortable="true" Groupable="true">
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="NumeComplet" Title="Nume complet" Width="180px" Filterable="true" Sortable="true" Groupable="true" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Pozitie" Title="Pozitie" Width="140px" Filterable="true" Sortable="true" Groupable="true" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Specializare" Title="Specializare" Width="140px" Filterable="true" Sortable="true" Groupable="true">
                     <Template Context="personal">@(personal.Specializare ?? "Nu este specificata")</Template>
                 </Radzen.Blazor.RadzenDataGridColumn>
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Departament" Title="Departament" Width="130px" Filterable="true" Sortable="true" Groupable="true">
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Departament" Title="Departament" Width="120px" Filterable="true" Sortable="true" Groupable="true">
                     <Template Context="personal">@(personal.Departament ?? "Nu este specificat")</Template>
                 </Radzen.Blazor.RadzenDataGridColumn>
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="NumarLicenta" Title="Nr. Licenta" Width="120px" Filterable="true" Sortable="true" />
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Telefon" Title="Telefon" Width="120px" Filterable="true" Sortable="true">
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="NumarLicenta" Title="Nr. Licenta" Width="110px" Filterable="true" Sortable="true" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Telefon" Title="Telefon" Width="110px" Filterable="true" Sortable="true">
                     <Template Context="personal">@(personal.Telefon ?? "Nu este specificat")</Template>
                 </Radzen.Blazor.RadzenDataGridColumn>
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Email" Title="Email" Width="200px" Filterable="true" Sortable="true">
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="Email" Title="Email" Width="180px" Filterable="true" Sortable="true">
                     <Template Context="personal">@(personal.Email ?? "Nu este specificat")</Template>
                 </Radzen.Blazor.RadzenDataGridColumn>
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="EsteActiv" Title="Status" Width="100px" Filterable="true" Sortable="true" Groupable="true">
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="EsteActiv" Title="Status" Width="90px" Filterable="true" Sortable="true" Groupable="true">
                     <Template Context="personal">
                         <RadzenBadge Text="@(personal.EsteActiv ? "Activ" : "Inactiv")" 
                                      BadgeStyle="@(personal.EsteActiv ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
@@ -155,10 +156,10 @@
                                      Class="status-badge" />
                     </Template>
                 </Radzen.Blazor.RadzenDataGridColumn>
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="DataCreare" Title="Data crearii" Width="130px" Filterable="true" Sortable="true" FormatString="{0:dd.MM.yyyy}" />
-                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Title="Actiuni" Width="220px" Sortable="false" Filterable="false" Groupable="false">
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Property="DataCreare" Title="Data crearii" Width="120px" Filterable="true" Sortable="true" FormatString="{0:dd.MM.yyyy}" />
+                <Radzen.Blazor.RadzenDataGridColumn TItem="PersonalMedicalListDto" Title="Actiuni" Width="200px" Sortable="false" Filterable="false" Groupable="false">
                     <Template Context="personal">
-                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.25rem">
                             <RadzenButton Icon="visibility" 
                                         ButtonStyle="ButtonStyle.Success" 
                                         Variant="Radzen.Variant.Outlined" 
@@ -185,12 +186,12 @@
             <!-- Master-Detail Template pentru fiecare rând -->
             <Template Context="personal">
                 <RadzenCard Class="detail-card">
-                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1.5rem">
+                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.75rem">
                         
                         <!-- Header Detail -->
                         <RadzenRow>
                             <RadzenColumn Size="12">
-                                <RadzenText TextStyle="TextStyle.H5" Class="detail-header-title">
+                                <RadzenText TextStyle="TextStyle.Body1" Class="detail-header-title">
                                     <RadzenIcon Icon="badge" Class="detail-header-icon" />
                                     Detalii Complete - @personal.NumeComplet
                                 </RadzenText>
@@ -198,15 +199,15 @@
                         </RadzenRow>
 
                         <!-- Main Details Row -->
-                        <RadzenRow Gap="2rem">
+                        <RadzenRow Gap="1rem">
                             <!-- Personal Information -->
                             <RadzenColumn Size="12" SizeMD="6">
                                 <RadzenCard Class="info-section-card">
-                                    <RadzenText TextStyle="TextStyle.H6" Class="info-section-title">
+                                    <RadzenText TextStyle="TextStyle.Body1" Class="info-section-title">
                                         <RadzenIcon Icon="person" Class="info-section-icon personal-icon" />
                                         Informatii Personale
                                     </RadzenText>
-                                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
                                         <RadzenRow>
                                             <RadzenColumn Size="5"><strong>Nume complet:</strong></RadzenColumn>
                                             <RadzenColumn Size="7">@personal.NumeComplet</RadzenColumn>
@@ -240,11 +241,11 @@
                             <!-- Contact & Status Information -->
                             <RadzenColumn Size="12" SizeMD="6">
                                 <RadzenCard Class="info-section-card">
-                                    <RadzenText TextStyle="TextStyle.H6" Class="info-section-title">
+                                    <RadzenText TextStyle="TextStyle.Body1" Class="info-section-title">
                                         <RadzenIcon Icon="contact_phone" Class="info-section-icon contact-icon" />
                                         Contact & Status
                                     </RadzenText>
-                                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.8rem">
+                                    <RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="0.5rem">
                                         <RadzenRow>
                                             <RadzenColumn Size="4"><strong>Telefon:</strong></RadzenColumn>
                                             <RadzenColumn Size="8">
@@ -283,7 +284,7 @@
                                         <RadzenRow>
                                             <RadzenColumn Size="4"><strong>Data crearii:</strong></RadzenColumn>
                                             <RadzenColumn Size="8">
-                                                <RadzenText TextStyle="TextStyle.Body2">
+                                                <RadzenText TextStyle="TextStyle.Caption">
                                                     @personal.DataCreare.ToString("dd MMM yyyy, HH:mm")
                                                 </RadzenText>
                                             </RadzenColumn>
@@ -296,18 +297,21 @@
                         <!-- Action Buttons -->
                         <RadzenRow>
                             <RadzenColumn Size="12" Class="text-end">
-                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+                                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
                                     <RadzenButton Text="Vizualizeaza Complet" 
                                                 Icon="launch" 
                                                 ButtonStyle="ButtonStyle.Info"
+                                                Size="ButtonSize.Small"
                                                 Click="@(() => ViewPersonal(personal.PersonalID))" />
                                     <RadzenButton Text="Editeaza" 
                                                 Icon="edit" 
                                                 ButtonStyle="ButtonStyle.Secondary"
+                                                Size="ButtonSize.Small"
                                                 Click="@(() => EditPersonal(personal.PersonalID))" />
                                     <RadzenButton Text="Sterge" 
                                                 Icon="delete" 
                                                 ButtonStyle="ButtonStyle.Danger"
+                                                Size="ButtonSize.Small"
                                                 Click="@(async () => await DeletePersonal(personal.PersonalID, personal.NumeComplet))" />
                                 </RadzenStack>
                             </RadzenColumn>

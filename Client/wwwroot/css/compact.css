@@ -1,0 +1,230 @@
+/* ValyanMed Compact UI Overrides - Scoped */
+/* Use by adding class="compact" to a container. */
+
+:root {
+  --vm-gap-xs: 0.25rem;
+  --vm-gap-sm: 0.375rem;
+  --vm-gap-md: 0.5rem;
+}
+
+/* Scoped layout tightening */
+.compact .rz-card { padding: 10px !important; margin: 6px 0 !important; }
+.compact .rz-fieldset { padding: 6px 10px !important; margin: 6px 0 !important; }
+.compact .rz-fieldset legend { margin-bottom: 4px !important; }
+.compact .rz-fieldset .rz-fieldset-content { padding: 6px 8px !important; }
+
+/* Reduce stack gaps within compact containers */
+.compact .rz-stack { gap: var(--vm-gap-sm) !important; }
+
+/* Rows/Columns gutters smaller */
+.compact .rz-row { margin-left: -4px !important; margin-right: -4px !important; }
+.compact .rz-col { padding-left: 4px !important; padding-right: 4px !important; }
+/* But keep form container rows within card boundaries to avoid clipping */
+.compact .form-container .rz-row { margin-left: 0 !important; margin-right: 0 !important; }
+
+/* Form controls more compact */
+.compact .rz-label, .compact label { margin-bottom: 2px !important; }
+.compact .rz-inputtext, 
+.compact .rz-textbox, 
+.compact .rz-dropdown .rz-inputtext, 
+.compact .rz-datepicker .rz-inputtext, 
+.compact .rz-numeric .rz-inputtext,
+.compact .rz-multiselect .rz-inputtext, 
+.compact .rz-autocomplete .rz-inputtext, 
+.compact .rz-password .rz-inputtext, 
+.compact .rz-textarea {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 4px 8px !important;
+  line-height: 1.2 !important;
+}
+
+/* Buttons compact within compact containers */
+.compact .rz-button { padding: 6px 10px !important; min-height: 30px !important; }
+.compact .rz-button-sm { padding: 4px 8px !important; min-height: 28px !important; }
+.compact .rz-button-md { padding: 6px 10px !important; min-height: 30px !important; }
+.compact .rz-button-lg { padding: 8px 12px !important; min-height: 34px !important; }
+.compact .rz-button .rz-button-text { line-height: 1.2 !important; }
+
+/* Badges smaller */
+.compact .rz-badge { padding: 2px 6px !important; font-size: 12px !important; }
+
+/* Grid density paddings */
+.compact .rz-datatable .rz-datatable-thead > tr > th,
+.compact .rz-datatable .rz-datatable-data > tr > td,
+.compact .rz-datatable .rz-datatable-tfoot > tr > td {
+  padding: 4px 6px !important;
+  line-height: 1.2 !important;
+}
+
+.compact .rz-datatable .rz-datatable-filter-row > td { padding: 3px 4px !important; }
+.compact .rz-datatable-header, .compact .rz-paginator, .compact .rz-grid-pager { padding: 4px 6px !important; }
+
+/* Make group header rows tighter */
+.compact .rz-group-row, .compact .rz-group-header-custom { padding: 4px 6px !important; }
+
+/* Reduce heavy fieldset styling when containing action buttons */
+.compact .rz-fieldset:has(.cancel-button, .save-button) {
+  padding: 6px !important;
+  border-width: 1px !important;
+  border-radius: 6px !important;
+  margin-top: 6px !important;
+}
+.compact .rz-fieldset:has(.cancel-button, .save-button) legend {
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  margin-bottom: 6px !important;
+}
+
+/* Target only the action buttons (theme may apply large shadows) */
+.compact .save-button, .compact .cancel-button, .compact .back-button {
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+/* Status container tightening */
+.compact .status-container {
+  height: auto !important;
+  min-height: 30px !important;
+  padding: 0 8px !important;
+}
+
+/* Status/date specific tweaks: remove border from status row, ensure border on datepicker */
+.compact .status-container,
+.compact .status-container.rz-stack {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.compact .rz-datepicker {
+  border: 1px solid var(--rz-border-color, #dee2e6) !important;
+  background: var(--rz-input-bg, #fff) !important;
+  border-radius: 4px !important;
+}
+
+/* Fix double border on dropdown-like components (remove inner input border/shadow/outline) */
+.compact .rz-dropdown .rz-inputtext,
+.compact .rz-dropdown .rz-dropdown-label,
+.compact .rz-datepicker .rz-inputtext,
+.compact .rz-autocomplete .rz-inputtext,
+.compact .rz-multiselect .rz-inputtext,
+.compact .rz-multiselect .rz-multiselect-label,
+.compact .rz-numeric .rz-inputtext {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+/* Ensure label/input inside dropdown has room for trigger button */
+.compact .rz-dropdown .rz-inputtext,
+.compact .rz-dropdown .rz-dropdown-label { padding-right: 32px !important; }
+
+/* Unify trigger/toggle button size to avoid clipping */
+.compact .rz-dropdown .rz-dropdown-trigger,
+.compact .rz-datepicker .rz-button {
+  height: 30px !important;
+  min-height: 30px !important;
+  width: 30px !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Make wrappers same height as textboxes and center children like Radzen spec */
+.compact .rz-dropdown,
+.compact .rz-datepicker,
+.compact .rz-autocomplete,
+.compact .rz-multiselect,
+.compact .rz-numeric {
+  height: 30px !important;
+  min-height: 30px !important;
+  display: inline-flex !important;  /* Radzen uses inline-flex */
+  align-items: center !important;   /* vertical centering per Radzen */
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+/* Label inside dropdown: left aligned, vertically centered by flex parent */
+.compact .rz-dropdown .rz-dropdown-label,
+.compact .rz-multiselect .rz-multiselect-label {
+  height: auto !important;
+  width: 100% !important;
+  display: block !important;
+  padding: 0 32px 0 8px !important; /* same left padding as textbox; right for trigger */
+  line-height: normal !important;   /* allow flex parent to center */
+  margin: 0 !important;
+  text-align: left !important;
+}
+.compact .rz-dropdown .rz-inputtext,
+.compact .rz-datepicker .rz-inputtext,
+.compact .rz-autocomplete .rz-inputtext,
+.compact .rz-multiselect .rz-inputtext,
+.compact .rz-numeric .rz-inputtext {
+  height: 100% !important;
+}
+
+/* Remove focus ring/box-shadow from wrappers to avoid second contour */
+.compact .rz-dropdown:focus-within,
+.compact .rz-datepicker:focus-within,
+.compact .rz-autocomplete:focus-within,
+.compact .rz-multiselect:focus-within,
+.compact .rz-numeric:focus-within,
+.compact .rz-dropdown.rz-state-focus,
+.compact .rz-dropdown.rz-state-focused,
+.compact .rz-datepicker.rz-state-focus,
+.compact .rz-datepicker.rz-state-focused,
+.compact .rz-autocomplete.rz-state-focus,
+.compact .rz-autocomplete.rz-state-focused,
+.compact .rz-multiselect.rz-state-focus,
+.compact .rz-multiselect.rz-state-focused,
+.compact .rz-numeric.rz-state-focus,
+.compact .rz-numeric.rz-state-focused,
+	compact .rz-dropdown:focus,
+.compact .rz-datepicker:focus,
+.compact .rz-autocomplete:focus,
+.compact .rz-multiselect:focus,
+.compact .rz-numeric:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Handle invalid/error states that re-introduce rings */
+.compact .rz-state-invalid,
+.compact .rz-invalid,
+.compact .rz-state-error,
+.compact .rz-dropdown.rz-state-invalid,
+.compact .rz-datepicker.rz-state-invalid,
+.compact .rz-autocomplete.rz-state-invalid,
+.compact .rz-multiselect.rz-state-invalid,
+.compact .rz-numeric.rz-state-invalid {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Ensure only one border is visible on the wrapper */
+.compact .rz-dropdown,
+.compact .rz-datepicker,
+.compact .rz-autocomplete,
+.compact .rz-multiselect,
+.compact .rz-numeric {
+  border-width: 1px !important;
+}
+
+/* Also prevent blue outline from buttons inside dropdown (toggle) */
+.compact .rz-dropdown .rz-button,
+.compact .rz-dropdown .rz-button:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Simple actions band used in AdaugEditezPersoana */
+.compact .actions-bar {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-top: 1px solid var(--rz-border-color, #dee2e6);
+  background: transparent;
+}
+.compact .actions-bar .rz-stack { gap: 0.25rem !important; }
+.compact .actions-bar .rz-button { min-height: 28px !important; }
