@@ -17,6 +17,9 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
     private PersoanaListDto? _persoana;
     private bool _isLoading = true;
     private bool _isDisposed = false;
+    
+    // Verification mode properties
+    private bool _isVerificationMode => Navigation.Uri.Contains("/persoane-verify/");
 
     protected override async Task OnInitializedAsync()
     {
@@ -74,12 +77,41 @@ public partial class PersoanaDetails : ComponentBase, IDisposable
 
     private void GoBack()
     {
-        Navigation.NavigateTo("/administrare/persoane");
+        Navigation.NavigateTo("/administrare/gestionare-persoane");
     }
 
     private void EditPersoana(int persoanaId)
     {
         Navigation.NavigateTo($"/administrare/persoane/editare/{persoanaId}");
+    }
+
+    // Verification mode methods
+    private void GoBackToEdit()
+    {
+        // Return to edit page with the current person ID
+        Navigation.NavigateTo($"/administrare/persoane/editare/{PersoanaId}");
+        
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Info,
+            Summary = "Revenire la editare",
+            Detail = "Pute?i modifica datele ?i salva din nou pentru verificare.",
+            Duration = 4000
+        });
+    }
+
+    private void AcceptData()
+    {
+        // Data is accepted, go to the main persons list
+        Navigation.NavigateTo("/administrare/gestionare-persoane");
+        
+        NotificationService.Notify(new NotificationMessage
+        {
+            Severity = NotificationSeverity.Success,
+            Summary = "Date confirmate",
+            Detail = $"Datele pentru '{_persoana?.NumeComplet}' au fost confirmate cu succes.",
+            Duration = 4000
+        });
     }
 
     public void Dispose()

@@ -1,5 +1,6 @@
 ﻿/* ValyanMed Application Styles - SIMPLIFICAT RADZEN */
 @import url('components/headers.css');
+@import url('compact.css');
 @import url('radzen-theme.css');
 
 html, body {
@@ -19,7 +20,45 @@ html, body {
     overflow-x: hidden;
 }
 
-/* Loading styles - SIMPLIFICAT */
+/* Page Container Scroll System - CLEAN VERSION */
+.page-container {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Scrollable Content Area */
+.page-container > div:last-child {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+}
+
+/* Custom Scrollbar for WebKit browsers */
+.page-container > div:last-child::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.page-container > div:last-child::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 10px !important;
+}
+
+.page-container > div:last-child::-webkit-scrollbar-thumb {
+    background: #c1c1c1 !important;
+    border-radius: 10px !important;
+}
+
+.page-container > div:last-child::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8 !important;
+}
+
+/* Loading styles */
 .loading-progress {
     position: fixed;
     top: 50%;
@@ -56,7 +95,7 @@ html, body {
     100% { transform: rotate(360deg); }
 }
 
-/* Error UI - ASCUNS COMPLET */
+/* Error UI - Hidden */
 #blazor-error-ui {
     display: none !important;
     visibility: hidden !important;
@@ -67,7 +106,7 @@ html, body {
     visibility: hidden !important;
 }
 
-/* Layout styles - SIMPLIFICAT */
+/* Layout styles */
 .content {
     flex: 1;
 }
@@ -78,7 +117,7 @@ html, body {
     padding: 0 16px;
 }
 
-/* Login layout - TEMA SIMPLIFICATA */
+/* Login layout */
 .login-layout {
     min-height: 100vh;
     background: linear-gradient(135deg, var(--valyan-primary) 0%, var(--valyan-primary-dark) 100%);
@@ -182,7 +221,7 @@ html, body {
     text-decoration: underline;
 }
 
-/* App layout styles - SIMPLIFICAT */
+/* App layout styles */
 .app-logo {
     display: flex;
     align-items: center;

@@ -622,3 +622,138 @@ body, .rz-body {
     transform: translateY(-2px) !important;
     box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3) !important;
 }
+
+/* =====================================================
+   PROCESSING OVERLAY STYLES
+   ===================================================== */
+
+.processing-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    z-index: 9999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.processing-content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.processing-dialog {
+    background: var(--valyan-background) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+    border: 2px solid var(--valyan-primary) !important;
+    min-width: 400px !important;
+    max-width: 500px !important;
+    padding: 2rem !important;
+    animation: fadeInScale 0.3s ease-out !important;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.emergency-cancel-button {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 6px !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.emergency-cancel-button:hover {
+    opacity: 1 !important;
+}
+
+/* =====================================================
+   VERIFICATION PAGE STYLES
+   ===================================================== */
+
+.person-summary-card {
+    background: linear-gradient(135deg, var(--valyan-primary-light) 0%, #bfdbfe 100%) !important;
+    border: 2px solid var(--valyan-primary) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px var(--valyan-shadow) !important;
+}
+
+.verification-actions {
+    background: linear-gradient(135deg, var(--valyan-surface) 0%, #f1f5f9 100%) !important;
+    border: 2px solid var(--valyan-accent) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15) !important;
+    text-align: center !important;
+}
+
+.verification-actions .rz-button {
+    font-weight: 600 !important;
+    padding: 12px 20px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+}
+
+.verification-actions .rz-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* =====================================================
+   BUSINESS ERROR DIALOG STYLES
+   ===================================================== */
+
+.business-error-dialog .rz-dialog-content {
+    padding: 2rem !important;
+    min-width: 400px !important;
+    max-width: 600px !important;
+}
+
+.business-error-dialog .rz-dialog-title {
+    color: #dc3545 !important;
+    font-weight: 600 !important;
+    font-size: 1.25rem !important;
+    margin-bottom: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.business-error-dialog .rz-dialog-title::before {
+    content: "??" !important;
+    font-size: 1.5rem !important;
+    margin-right: 0.5rem !important;
+}
+
+.business-error-dialog .rz-dialog-content p {
+    margin-bottom: 1rem !important;
+    line-height: 1.6 !important;
+    color: var(--valyan-text) !important;
+}
+
+.business-error-dialog .rz-button {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 2rem !important;
+    border-radius: 8px !important;
+}
+
+.business-error-dialog .rz-button:hover {
+    background: #c82333 !important;
+    border-color: #c82333 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+}

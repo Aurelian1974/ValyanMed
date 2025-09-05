@@ -1,0 +1,175 @@
+@page "/administrare/persoane/verificare/{PersoanaId:int}"
+@using global::Shared.DTOs.Authentication
+@using global::Shared.Common
+@using global::Shared.Enums
+@using Radzen
+@using Radzen.Blazor
+@using System.Net.Http.Json
+
+<PageTitle>Verificare Persoana - ValyanMed</PageTitle>
+
+<div class="page-container compact">
+    <!-- Header Card -->
+    <div style="padding: 1rem 1rem 0 1rem; flex-shrink: 0;">
+        <RadzenCard Class="page-header-card view-mode rz-mb-2">
+            <RadzenRow JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+                <RadzenColumn Size="12" SizeMD="8">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0.25rem">
+                        <RadzenIcon Icon="visibility" Class="page-header-icon view-mode" />
+                        <RadzenText TextStyle="TextStyle.H5" Class="page-header-title view-mode rz-m-0">
+                            Verificare Date Persoana
+                        </RadzenText>
+                    </RadzenStack>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.End" Gap="0.25rem">
+                        <RadzenButton Text="Lista Persoane" 
+                                     Icon="list" 
+                                     ButtonStyle="ButtonStyle.Info" 
+                                     Variant="Radzen.Variant.Filled"
+                                     Size="ButtonSize.Small"
+                                     Click="@BackToList" />
+                    </RadzenStack>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenCard>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 0 1rem 1rem 1rem;">
+        @if (_isLoading)
+        {
+            <RadzenCard>
+                <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" AlignItems="Radzen.AlignItems.Center" Gap="1rem">
+                    <RadzenProgressBarCircular ShowValue="false" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                    <RadzenText TextStyle="TextStyle.Body2">Se incarca datele persoanei...</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        }
+        else if (_persoana == null)
+        {
+            <RadzenCard>
+                <RadzenAlert AlertStyle="AlertStyle.Warning" Variant="Radzen.Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenIcon Icon="warning" Class="me-2" />
+                    Persoana cu ID-ul specificat nu a fost gasita.
+                </RadzenAlert>
+            </RadzenCard>
+        }
+        else
+        {
+            <!-- Success Message -->
+            <RadzenCard Class="rz-mb-2">
+                <RadzenAlert AlertStyle="AlertStyle.Success" Variant="Radzen.Variant.Flat" Shade="Shade.Lighter">
+                    <RadzenIcon Icon="check_circle" Class="me-2" />
+                    <strong>Persoana a fost salvata cu succes!</strong> Verificati datele de mai jos si confirmati daca sunt corecte.
+                </RadzenAlert>
+            </RadzenCard>
+
+            <!-- Person Details -->
+            <RadzenCard Class="form-container">
+                <RadzenStack Gap="var(--vm-gap-md)">
+                    
+                    <!-- Informatii Personale -->
+                    <RadzenFieldset Text="Informatii Personale">
+                        <RadzenRow Gap="var(--vm-gap-sm)" RowGap="var(--vm-gap-md)">
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Nume:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_persoana.Nume</RadzenText>
+                            </RadzenColumn>
+                            
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Prenume:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_persoana.Prenume</RadzenText>
+                            </RadzenColumn>
+                            
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>CNP:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@(_persoana.CNP ?? "Nu este specificat")</RadzenText>
+                            </RadzenColumn>
+
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Data nasterii:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@(_persoana.DataNasterii?.ToString("dd.MM.yyyy") ?? "Nu este specificata")</RadzenText>
+                            </RadzenColumn>
+
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Gen:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@_persoana.Gen</RadzenText>
+                            </RadzenColumn>
+
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Status:</strong></RadzenText>
+                                <RadzenBadge BadgeStyle="@(_persoana.EsteActiva ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                           Text="@(_persoana.EsteActiva ? "Activa" : "Inactiva")" />
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenFieldset>
+
+                    <!-- Informatii Contact -->
+                    <RadzenFieldset Text="Informatii de Contact">
+                        <RadzenRow Gap="var(--vm-gap-sm)" RowGap="var(--vm-gap-md)">
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Telefon:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@(_persoana.Telefon ?? "Nu este specificat")</RadzenText>
+                            </RadzenColumn>
+
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Email:</strong></RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1">@(_persoana.Email ?? "Nu este specificat")</RadzenText>
+                            </RadzenColumn>
+                        </RadzenRow>
+                    </RadzenFieldset>
+
+                    <!-- Informatii Locatie -->
+                    @if (!string.IsNullOrEmpty(_persoana.Judet) || !string.IsNullOrEmpty(_persoana.Localitate) || !string.IsNullOrEmpty(_persoana.Adresa))
+                    {
+                        <RadzenFieldset Text="Informatii de Locatie">
+                            <RadzenRow Gap="var(--vm-gap-sm)" RowGap="var(--vm-gap-md)">
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Judet:</strong></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body1">@(_persoana.Judet ?? "Nu este specificat")</RadzenText>
+                                </RadzenColumn>
+
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Localitate:</strong></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body1">@(_persoana.Localitate ?? "Nu este specificata")</RadzenText>
+                                </RadzenColumn>
+
+                                @if (!string.IsNullOrEmpty(_persoana.Adresa))
+                                {
+                                    <RadzenColumn Size="12">
+                                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-1"><strong>Adresa:</strong></RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body1">@_persoana.Adresa</RadzenText>
+                                    </RadzenColumn>
+                                }
+                            </RadzenRow>
+                        </RadzenFieldset>
+                    }
+
+                    <!-- Action Buttons -->
+                    <RadzenFieldset Class="actions-bar">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Center" Gap="1rem" 
+                                   Wrap="Radzen.FlexWrap.Wrap" AlignItems="Radzen.AlignItems.Center">
+                            
+                            <RadzenButton Text="Accepta" 
+                                         Icon="check" 
+                                         ButtonStyle="ButtonStyle.Success" 
+                                         Variant="Radzen.Variant.Filled"
+                                         Size="ButtonSize.Large"
+                                         Class="save-button"
+                                         Click="@AcceptData" />
+                                         
+                            <RadzenButton Text="Inapoi" 
+                                         Icon="arrow_back" 
+                                         ButtonStyle="ButtonStyle.Warning" 
+                                         Variant="Radzen.Variant.Filled"
+                                         Size="ButtonSize.Large"
+                                         Class="cancel-button"
+                                         Click="@GoBack" />
+                        </RadzenStack>
+                    </RadzenFieldset>
+                </RadzenStack>
+            </RadzenCard>
+        }
+    </div>
+</div>
