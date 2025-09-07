@@ -3,7 +3,11 @@
 
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>ValyanMed - Clinic Management System</title>
     <base href="/" />
     
@@ -18,7 +22,7 @@
     <link rel="stylesheet" href="css/patient-list-override.css" />
     <link rel="stylesheet" href="css/pages/patient-registration.css" />
     <link rel="stylesheet" href="css/pages/gestionare-personal.css" />
-    <link rel="stylesheet" href="css/compact.css?v=3" />
+    <link rel="stylesheet" href="css/compact.css?v=5" />
     
     <!-- Fonts required by Material Design components -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -254,6 +258,37 @@
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         };
+        
+        // Clean any cached emoji or problematic characters in notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            // Override Radzen notification creation to clean text
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            // Clean notification titles and content
+                            const notificationTitles = node.querySelectorAll?.('.rz-notification-summary, .rz-dialog-title') || [];
+                            notificationTitles.forEach(function(title) {
+                                if (title.textContent) {
+                                    title.textContent = title.textContent
+                                        .replace(/\?\?/g, '')
+                                        .replace(/🚨/g, '')
+                                        .replace(/⚠️/g, '')
+                                        .replace(/ℹ️/g, '')
+                                        .replace(/✅/g, '')
+                                        .trim();
+                                }
+                            });
+                        }
+                    });
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
     </script>
 
 </body>

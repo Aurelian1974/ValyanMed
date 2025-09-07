@@ -1,3 +1,5 @@
+// ValyanMed Persoana Management - Updated: December 2024
+// Fixed emoji display issues and cache busting
 using Microsoft.AspNetCore.Components;
 using global::Shared.DTOs.Authentication;
 using global::Shared.Common;
@@ -205,6 +207,239 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         _ = OnJudetChangedAsync(judet);
     }
 
+    private async Task OnCnpBlur()
+    {
+        if (string.IsNullOrWhiteSpace(_model.CNP))
+        {
+            Console.WriteLine("OnCnpBlur: CNP is empty, skipping validation");
+            return;
+        }
+
+        var clean = new string(_model.CNP.Where(char.IsDigit).ToArray());
+        Console.WriteLine($"OnCnpBlur: Validating CNP: '{clean}'");
+
+        // Update model with clean CNP
+        if (!string.Equals(clean, _model.CNP))
+        {
+            _model.CNP = clean;
+            StateHasChanged();
+        }
+
+        // Validate CNP format and algorithm
+        if (!IsValidCnp(clean))
+        {
+            Console.WriteLine("OnCnpBlur: CNP validation failed - showing error");
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "CNP INVALID",
+                Detail = $"CNP-ul '{clean}' nu este valid. Verificati corectitudinea cifrelor introduse.",
+                Duration = 8000,
+                CloseOnClick = true
+            });
+            return;
+        }
+
+        Console.WriteLine("OnCnpBlur: CNP is valid, checking if exists in system");
+
+        // Check if CNP exists in system (only if not in edit mode for same person)
+        await CheckCnpExistsInSystem(clean);
+    }
+
+    private async Task CheckCnpExistsInSystem(string cnp)
+    {
+        try
+        {
+            Console.WriteLine($"CheckCnpExistsInSystem: Checking CNP '{cnp}' in system");
+
+            // Result variables
+            bool foundDuplicate = false;
+            string existingNume = "";
+            string existingPrenume = "";
+            int existingId = 0;
+
+            // Method 1: Try with search parameter in GetPaged endpoint
+            try
+            {
+                var searchResponse = await Http.GetAsync($"api/Persoane?Search={cnp}&pageSize=50");
+                Console.WriteLine($"Search with parameter response: {searchResponse.StatusCode}");
+                
+                if (searchResponse.IsSuccessStatusCode)
+                {
+                    var searchResult = await searchResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Search result content: {searchResult}");
+                    
+                    using var doc = System.Text.Json.JsonDocument.Parse(searchResult);
+                    
+                    if (doc.RootElement.TryGetProperty("items", out var itemsElement) && 
+                        itemsElement.GetArrayLength() > 0)
+                    {
+                        foreach (var person in itemsElement.EnumerateArray())
+                        {
+                            if (person.TryGetProperty("cnp", out var cnpElement) && 
+                                cnpElement.GetString() == cnp)
+                            {
+                                existingId = person.GetProperty("id").GetInt32();
+                                existingNume = person.GetProperty("nume").GetString() ?? "";
+                                existingPrenume = person.GetProperty("prenume").GetString() ?? "";
+                                foundDuplicate = true;
+                                Console.WriteLine($"Found duplicate via search: ID={existingId}, Name='{existingNume} {existingPrenume}'");
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception searchEx)
+            {
+                Console.WriteLine($"Search with parameter failed: {searchEx.Message}");
+            }
+
+            // Method 2: Try general list with larger page size if search failed
+            if (!foundDuplicate)
+            {
+                try
+                {
+                    var listResponse = await Http.GetAsync("api/Persoane?pageSize=100");
+                    Console.WriteLine($"List endpoint response: {listResponse.StatusCode}");
+                    
+                    if (listResponse.IsSuccessStatusCode)
+                    {
+                        var listResult = await listResponse.Content.ReadAsStringAsync();
+                        using var doc = System.Text.Json.JsonDocument.Parse(listResult);
+                        
+                        if (doc.RootElement.TryGetProperty("items", out var itemsElement))
+                        {
+                            foreach (var person in itemsElement.EnumerateArray())
+                            {
+                                if (person.TryGetProperty("cnp", out var cnpElement) && 
+                                    cnpElement.GetString() == cnp)
+                                {
+                                    existingId = person.GetProperty("id").GetInt32();
+                                    existingNume = person.GetProperty("nume").GetString() ?? "";
+                                    existingPrenume = person.GetProperty("prenume").GetString() ?? "";
+                                    foundDuplicate = true;
+                                    Console.WriteLine($"Found duplicate via list: ID={existingId}, Name='{existingNume} {existingPrenume}'");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception listEx)
+                {
+                    Console.WriteLine($"List endpoint failed: {listEx.Message}");
+                }
+            }
+
+            // Method 3: Try /all endpoint if everything else fails
+            if (!foundDuplicate)
+            {
+                try
+                {
+                    var allResponse = await Http.GetAsync("api/Persoane/all");
+                    Console.WriteLine($"All endpoint response: {allResponse.StatusCode}");
+                    
+                    if (allResponse.IsSuccessStatusCode)
+                    {
+                        var allResult = await allResponse.Content.ReadAsStringAsync();
+                        using var doc = System.Text.Json.JsonDocument.Parse(allResult);
+                        
+                        // Check if it's an array directly or wrapped
+                        if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        {
+                            foreach (var person in doc.RootElement.EnumerateArray())
+                            {
+                                if (person.TryGetProperty("cnp", out var cnpElement) && 
+                                    cnpElement.GetString() == cnp)
+                                {
+                                    existingId = person.GetProperty("id").GetInt32();
+                                    existingNume = person.GetProperty("nume").GetString() ?? "";
+                                    existingPrenume = person.GetProperty("prenume").GetString() ?? "";
+                                    foundDuplicate = true;
+                                    Console.WriteLine($"Found duplicate via all: ID={existingId}, Name='{existingNume} {existingPrenume}'");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception allEx)
+                {
+                    Console.WriteLine($"All endpoint failed: {allEx.Message}");
+                }
+            }
+
+            // Process results
+            if (foundDuplicate)
+            {
+                // If we're editing and it's the same person, it's OK
+                if (_isEditMode && PersoanaId.HasValue && PersoanaId.Value == existingId)
+                {
+                    Console.WriteLine("CNP belongs to current person being edited - OK");
+                    
+                    NotificationService.Notify(new NotificationMessage
+                    {
+                        Severity = NotificationSeverity.Info,
+                        Summary = "CNP VERIFICAT",
+                        Detail = "CNP-ul este valid si apartine persoanei curente.",
+                        Duration = 3000,
+                        CloseOnClick = true
+                    });
+                    return;
+                }
+
+                // CNP exists for different person - show error
+                Console.WriteLine("CNP exists for different person - showing duplicate error");
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "CNP DUPLICAT",
+                    Detail = $"CNP-ul '{cnp}' apartine deja persoanei '{existingNume} {existingPrenume}' (ID: {existingId}).",
+                    Duration = 10000,
+                    CloseOnClick = true
+                });
+
+                // Show detailed dialog
+                await ShowBusinessErrorDialog(
+                    "CNP Duplicat",
+                    $"CNP-ul '{cnp}' este deja inregistrat in sistem pentru:\n\n" +
+                    $"• Nume: {existingNume} {existingPrenume}\n" +
+                    $"• ID: {existingId}\n\n" +
+                    $"Va rugam sa verificati CNP-ul introdus sau sa cautati persoana existenta in lista de persoane."
+                );
+            }
+            else
+            {
+                Console.WriteLine("CNP not found in system - OK");
+                
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Success,
+                    Summary = "CNP VERIFICAT",
+                    Detail = "CNP-ul este valid si disponibil pentru inregistrare.",
+                    Duration = 3000,
+                    CloseOnClick = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking CNP in system: {ex.Message}");
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "EROARE VERIFICARE",
+                Detail = "A aparut o eroare la verificarea CNP-ului in sistem.",
+                Duration = 5000,
+                CloseOnClick = true
+            });
+        }
+    }
+
     private async Task SubmitForm()
     {
         if (string.IsNullOrEmpty(_model.Nume))
@@ -253,7 +488,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     private void OnInvalidSubmit()
     {
         Console.WriteLine("OnInvalidSubmit called - Form validation failed!");
-        ShowErrorNotification("Te rog completeaz? toate câmpurile obligatorii!");
+        ShowErrorNotification("Te rog completeaza toate campurile obligatorii!");
     }
 
     private async Task SavePersoana()
@@ -291,8 +526,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
-                        Summary = "Persoana a fost salvat? cu succes",
-                        Detail = $"Persoana '{_model.Nume} {_model.Prenume}' a fost ad?ugat? cu succes în sistem.",
+                        Summary = "Persoana a fost salvata cu succes",
+                        Detail = $"Persoana '{_model.Nume} {_model.Prenume}' a fost adaugata cu succes in sistem.",
                         Duration = 3000
                     });
                     
@@ -314,8 +549,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Success,
-                        Summary = "Persoana a fost salvat? cu succes",
-                        Detail = $"Persoana '{_model.Nume} {_model.Prenume}' a fost ad?ugat? cu succes în sistem.",
+                        Summary = "Persoana a fost salvata cu succes",
+                        Detail = $"Persoana '{_model.Nume} {_model.Prenume}' a fost adaugata cu succes in sistem.",
                         Duration = 5000
                     });
                     
@@ -337,7 +572,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"Exception: {ex.Message}");
-            await ShowBusinessErrorDialog("Eroare nea?teptat?", $"A ap?rut o eroare nea?teptat?: {ex.Message}");
+            await ShowBusinessErrorDialog("Eroare neasteptata", $"A aparut o eroare neasteptata: {ex.Message}");
         }
         finally
         {
@@ -415,9 +650,9 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     var recentPersonsJson = await response.Content.ReadAsStringAsync();
                     using var doc = System.Text.Json.JsonDocument.Parse(recentPersonsJson);
                     
-                    if (doc.RootElement.TryGetProperty("data", out var dataElement))
+                    if (doc.RootElement.TryGetProperty("items", out var itemsElement))
                     {
-                        foreach (var person in dataElement.EnumerateArray())
+                        foreach (var person in itemsElement.EnumerateArray())
                         {
                             if (person.TryGetProperty("cnp", out var cnpElement) &&
                                 person.TryGetProperty("id", out var idElement) &&
@@ -440,9 +675,9 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 var personsJson = await nameSearchResponse.Content.ReadAsStringAsync();
                 using var doc = System.Text.Json.JsonDocument.Parse(personsJson);
                 
-                if (doc.RootElement.TryGetProperty("data", out var dataElement))
+                if (doc.RootElement.TryGetProperty("items", out var itemsElement))
                 {
-                    foreach (var person in dataElement.EnumerateArray())
+                    foreach (var person in itemsElement.EnumerateArray())
                     {
                         if (person.TryGetProperty("nume", out var numeElement) &&
                             person.TryGetProperty("prenume", out var prenumeElement) &&
@@ -508,7 +743,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Success,
-                    Summary = "Persoana a fost actualizat? cu succes",
+                    Summary = "Persoana a fost actualizata cu succes",
                     Detail = $"Datele pentru '{_model.Nume} {_model.Prenume}' au fost actualizate cu succes.",
                     Duration = 3000
                 });
@@ -533,7 +768,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"Update exception: {ex.Message}");
-            await ShowBusinessErrorDialog("Eroare nea?teptat?", $"A ap?rut o eroare nea?teptat?: {ex.Message}");
+            await ShowBusinessErrorDialog("Eroare neasteptata", $"A aparut o eroare neasteptata: {ex.Message}");
         }
         finally
         {
@@ -565,7 +800,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 Console.WriteLine($"Primary error: {primaryError}");
                 
                 // Check for CNP duplicate error with various possible text variations
-                if (primaryError.Contains("CNP") && (primaryError.Contains("exista") || primaryError.Contains("exist?") || primaryError.Contains("duplicat")))
+                if (primaryError.Contains("CNP") && (primaryError.Contains("exista") || primaryError.Contains("exist") || primaryError.Contains("duplicat")))
                 {
                     Console.WriteLine("Detected CNP duplicate error - STOPPING overlay then showing notification");
                     
@@ -578,8 +813,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
-                        Summary = "?? ATEN?IE: CNP DUPLICAT",
-                        Detail = $"CNP-ul '{_model.CNP}' EXIST? DEJA în sistem! Verifica?i datele introduse.",
+                        Summary = "ATENTIE: CNP DUPLICAT",
+                        Detail = $"CNP-ul '{_model.CNP}' EXISTA DEJA in sistem! Verificati datele introduse.",
                         Duration = 15000, // 15 seconds for maximum visibility
                         CloseOnClick = true
                     });
@@ -588,10 +823,10 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     // Then try dialog
                     await ShowBusinessErrorDialog(
                         "CNP Duplicat", 
-                        $"CNP-ul '{_model.CNP}' exist? deja în sistem.\n\nV? rug?m s? verifica?i CNP-ul introdus sau s? c?uta?i persoana existent? în lista de persoane."
+                        $"CNP-ul '{_model.CNP}' exista deja in sistem.\n\nVa rugam sa verificati CNP-ul introdus sau sa cautati persoana existenta in lista de persoane."
                     );
                 }
-                else if (primaryError.Contains("email") && (primaryError.Contains("exista") || primaryError.Contains("exist?") || primaryError.Contains("duplicat")))
+                else if (primaryError.Contains("email") && (primaryError.Contains("exista") || primaryError.Contains("exist") || primaryError.Contains("duplicat")))
                 {
                     Console.WriteLine("Detected email duplicate error - STOPPING overlay then showing notification");
                     
@@ -603,8 +838,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
-                        Summary = "?? EMAIL DUPLICAT",
-                        Detail = $"Email-ul '{_model.Email}' EXIST? DEJA în sistem! Folosi?i alt email.",
+                        Summary = "EMAIL DUPLICAT",
+                        Detail = $"Email-ul '{_model.Email}' EXISTA DEJA in sistem! Folositi alt email.",
                         Duration = 12000,
                         CloseOnClick = true
                     });
@@ -612,7 +847,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     
                     await ShowBusinessErrorDialog(
                         "Email Duplicat", 
-                        $"Adresa de email '{_model.Email}' este deja utilizat?.\n\nV? rug?m s? utiliza?i o alt? adres? de email."
+                        $"Adresa de email '{_model.Email}' este deja utilizata.\n\nVa rugam sa utilizati o alta adresa de email."
                     );
                 }
                 else
@@ -627,7 +862,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                     NotificationService.Notify(new NotificationMessage
                     {
                         Severity = NotificationSeverity.Error,
-                        Summary = "?? EROARE DE VALIDARE",
+                        Summary = "EROARE DE VALIDARE",
                         Detail = string.Join(", ", errorResponse.Errors),
                         Duration = 10000,
                         CloseOnClick = true
@@ -649,14 +884,14 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Error,
-                    Summary = "?? EROARE",
-                    Detail = "A ap?rut o eroare la salvare. Verifica?i datele introduse.",
+                    Summary = "EROARE",
+                    Detail = "A aparut o eroare la salvare. Verificati datele introduse.",
                     Duration = 8000,
                     CloseOnClick = true
                 });
                 Console.WriteLine("Generic error notification shown with overlay stopped");
                 
-                await ShowBusinessErrorDialog("Eroare", $"A ap?rut o eroare la salvare: {errorContent}");
+                await ShowBusinessErrorDialog("Eroare", $"A aparut o eroare la salvare: {errorContent}");
             }
         }
         catch (System.Text.Json.JsonException jsonEx)
@@ -677,8 +912,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Error,
-                    Summary = "?? ATEN?IE: CNP DUPLICAT",
-                    Detail = $"CNP-ul '{_model.CNP}' EXIST? DEJA în sistem! Verifica?i datele introduse.",
+                    Summary = "ATENTIE: CNP DUPLICAT",
+                    Detail = $"CNP-ul '{_model.CNP}' EXISTA DEJA in sistem! Verificati datele introduse.",
                     Duration = 15000,
                     CloseOnClick = true
                 });
@@ -687,7 +922,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 // Then try dialog
                 await ShowBusinessErrorDialog(
                     "CNP Duplicat", 
-                    $"CNP-ul '{_model.CNP}' exist? deja în sistem.\n\nV? rug?m s? verifica?i CNP-ul introdus sau s? c?uta?i persoana existent? în lista de persoane."
+                    $"CNP-ul '{_model.CNP}' exista deja in sistem.\n\nVa rugam sa verificati CNP-ul introdus sau sa cautati persoana existenta in lista de persoane."
                 );
             }
             else if (errorContent.Contains("\"errors\"") && errorContent.Contains("email"))
@@ -702,8 +937,8 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Error,
-                    Summary = "?? EMAIL DUPLICAT",
-                    Detail = $"Email-ul '{_model.Email}' EXIST? DEJA în sistem!",
+                    Summary = "EMAIL DUPLICAT",
+                    Detail = $"Email-ul '{_model.Email}' EXISTA DEJA in sistem!",
                     Duration = 12000,
                     CloseOnClick = true
                 });
@@ -711,7 +946,7 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 
                 await ShowBusinessErrorDialog(
                     "Email Duplicat", 
-                    $"Adresa de email '{_model.Email}' este deja utilizat?.\n\nV? rug?m s? utiliza?i o alt? adres? de email."
+                    $"Adresa de email '{_model.Email}' este deja utilizata.\n\nVa rugam sa utilizati o alta adresa de email."
                 );
             }
             else
@@ -726,14 +961,14 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
                 NotificationService.Notify(new NotificationMessage
                 {
                     Severity = NotificationSeverity.Error,
-                    Summary = "?? EROARE LA SALVARE",
-                    Detail = "A ap?rut o eroare. Verifica?i datele ?i încerca?i din nou.",
+                    Summary = "EROARE LA SALVARE",
+                    Detail = "A aparut o eroare. Verificati datele si incercati din nou.",
                     Duration = 8000,
                     CloseOnClick = true
                 });
                 Console.WriteLine("Fallback error notification shown with overlay stopped");
                 
-                await ShowBusinessErrorDialog("Eroare", $"A ap?rut o eroare la salvare: {errorContent}");
+                await ShowBusinessErrorDialog("Eroare", $"A aparut o eroare la salvare: {errorContent}");
             }
         }
         catch (Exception ex)
@@ -748,14 +983,14 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
             NotificationService.Notify(new NotificationMessage
             {
                 Severity = NotificationSeverity.Error,
-                Summary = "?? EROARE NEA?TEPTAT?",
-                Detail = "A ap?rut o eroare nea?teptat? la salvare.",
+                Summary = "EROARE NEASTEPTATA",
+                Detail = "A aparut o eroare neasteptata la salvare.",
                 Duration = 8000,
                 CloseOnClick = true
             });
             Console.WriteLine("Unexpected error notification shown with overlay stopped");
             
-            await ShowBusinessErrorDialog("Eroare", $"A ap?rut o eroare la salvare: {errorContent}");
+            await ShowBusinessErrorDialog("Eroare", $"A aparut o eroare la salvare: {errorContent}");
         }
     }
 
@@ -763,55 +998,33 @@ public partial class AdaugEditezPersoana : ComponentBase, IDisposable
     {
         Console.WriteLine($"ShowBusinessErrorDialog called with title: '{title}' and message: '{message}'");
         
-        // Note: Primary notification is now shown BEFORE this method call, no need for duplicate
-        
         try
         {
-            // Try Confirm dialog first
-            var result = await DialogService.Confirm(
+            // Use Alert instead of Confirm to show only one button
+            await DialogService.Alert(
                 message,
                 title,
-                new ConfirmOptions()
+                new AlertOptions()
                 {
-                    OkButtonText = "Am în?eles",
-                    CancelButtonText = null,
-                    CssClass = "business-error-dialog"
+                    OkButtonText = "Am inteles",
+                    CssClass = "business-error-dialog compact"
                 }
             );
-            Console.WriteLine("Confirm dialog shown successfully");
+            Console.WriteLine("Alert dialog shown successfully");
         }
-        catch (Exception confirmEx)
+        catch (Exception alertEx)
         {
-            Console.WriteLine($"Confirm dialog failed: {confirmEx.Message}, trying Alert...");
+            Console.WriteLine($"Alert dialog failed: {alertEx.Message}, trying JavaScript...");
             
             try
             {
-                // Fallback to Alert
-                await DialogService.Alert(
-                    message,
-                    title,
-                    new AlertOptions()
-                    {
-                        OkButtonText = "Am în?eles",
-                        CssClass = "business-error-dialog"
-                    }
-                );
-                Console.WriteLine("Alert dialog shown successfully");
+                // JavaScript fallback
+                await JSRuntime.InvokeVoidAsync("alert", $"{title}\n\n{message}");
+                Console.WriteLine("JavaScript alert shown successfully");
             }
-            catch (Exception alertEx)
+            catch (Exception jsEx)
             {
-                Console.WriteLine($"Alert dialog also failed: {alertEx.Message}, trying JavaScript...");
-                
-                try
-                {
-                    // JavaScript fallback
-                    await JSRuntime.InvokeVoidAsync("alert", $"{title}\n\n{message}");
-                    Console.WriteLine("JavaScript alert shown successfully");
-                }
-                catch (Exception jsEx)
-                {
-                    Console.WriteLine($"All dialog methods failed. Primary notification was already shown. JS Error: {jsEx.Message}");
-                }
+                Console.WriteLine($"All dialog methods failed. Primary notification was already shown. JS Error: {jsEx.Message}");
             }
         }
     }
