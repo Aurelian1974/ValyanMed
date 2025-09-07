@@ -177,29 +177,29 @@ public class PersoanaRepository : IPersoanaRepository
             var whereClause = "WHERE 1=1";
             var parameters = new DynamicParameters();
 
-            // Build WHERE conditions
+            // Build WHERE conditions - CASE INSENSITIVE SEARCH
             if (!string.IsNullOrWhiteSpace(query.Search))
             {
-                whereClause += " AND (Nume LIKE @Search OR Prenume LIKE @Search OR CONCAT(Nume, ' ', Prenume) LIKE @Search OR Email LIKE @Search OR Telefon LIKE @Search)";
+                whereClause += " AND (LOWER(Nume) LIKE LOWER(@Search) OR LOWER(Prenume) LIKE LOWER(@Search) OR LOWER(CONCAT(Nume, ' ', Prenume)) LIKE LOWER(@Search) OR LOWER(ISNULL(Email, '')) LIKE LOWER(@Search) OR LOWER(ISNULL(Telefon, '')) LIKE LOWER(@Search))";
                 parameters.Add("@Search", $"%{query.Search}%");
             }
 
             if (!string.IsNullOrWhiteSpace(query.Judet))
             {
-                whereClause += " AND Judet = @Judet";
+                whereClause += " AND LOWER(ISNULL(Judet, '')) = LOWER(@Judet)";
                 parameters.Add("@Judet", query.Judet);
             }
 
             if (!string.IsNullOrWhiteSpace(query.Localitate))
             {
-                whereClause += " AND Localitate = @Localitate";
+                whereClause += " AND LOWER(ISNULL(Localitate, '')) = LOWER(@Localitate)";
                 parameters.Add("@Localitate", query.Localitate);
             }
 
             if (query.EsteActiv.HasValue)
             {
-                whereClause += " AND EsteActiva = @EsteActiva";
-                parameters.Add("@EsteActiva", query.EsteActiv.Value);
+                whereClause += " AND EsteActiva = @EsteActiv";
+                parameters.Add("@EsteActiv", query.EsteActiv.Value);
             }
 
             // Build ORDER BY with column mapping

@@ -7,7 +7,7 @@
 
 <PageTitle>Persoane - ValyanMed</PageTitle>
 
-<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4">
+<RadzenStack Orientation="Radzen.Orientation.Vertical" Gap="1rem" Class="p-4 compact">
     
     <!-- Header -->
     <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Persoane</RadzenText>
@@ -19,26 +19,33 @@
                 <RadzenColumn Size="12" SizeMD="4">
                     <RadzenLabel Text="Cautare globala" />
                     <RadzenTextBox @bind-Value="_searchQuery.Search"
-                                   Placeholder="Nume, prenume, email, telefon..."
+                                   Placeholder="Cautare dupa nume, prenume, email, telefon, CNP..."
                                    @oninput="OnSearchInput"
                                    Style="width: 100%;" />
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeMD="3">
                     <RadzenLabel Text="Judet" />
                     <RadzenDropDown @bind-Value="_searchQuery.Judet"
-                                    Data="@_judete"
+                                    Data="@_judeteOptions"
+                                    ValueProperty="Nume"
+                                    TextProperty="Nume"
                                     AllowClear="true"
+                                    AllowFiltering="true"
                                     Placeholder="Selecteaza judet"
-                                    Change="@OnFilterChanged"
+                                    Change="@(async (object value) => await OnJudetChanged(value?.ToString()))"
                                     Style="width: 100%;" />
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeMD="3">
                     <RadzenLabel Text="Localitate" />
                     <RadzenDropDown @bind-Value="_searchQuery.Localitate"
-                                    Data="@_localitati"
+                                    Data="@_localitatiOptions"
+                                    ValueProperty="Nume"
+                                    TextProperty="Nume"
                                     AllowClear="true"
+                                    AllowFiltering="true"
                                     Placeholder="Selecteaza localitate"
-                                    Change="@OnFilterChanged"
+                                    Change="@OnLocalitateChanged"
+                                    Disabled="@(string.IsNullOrEmpty(_searchQuery.Judet))"
                                     Style="width: 100%;" />
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeMD="2">
@@ -49,27 +56,38 @@
                                     ValueProperty="Value"
                                     AllowClear="true"
                                     Placeholder="Status"
-                                    Change="@OnFilterChanged"
+                                    Change="@OnStatusChanged"
                                     Style="width: 100%;" />
                 </RadzenColumn>
             </RadzenRow>
 
             <RadzenRow>
                 <RadzenColumn Size="12">
-                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
-                        <RadzenButton Text="Reseteaza filtre" 
-                                     Icon="clear_all" 
-                                     ButtonStyle="ButtonStyle.Warning" 
-                                     Variant="Radzen.Variant.Filled"
-                                     Size="ButtonSize.Medium"
-                                     Click="@OnFilterChanged" />
-                        <RadzenButton Text="Reset Grid" 
-                                     Icon="settings_backup_restore" 
-                                     ButtonStyle="ButtonStyle.Secondary" 
-                                     Variant="Radzen.Variant.Outlined"
-                                     Size="ButtonSize.Medium"
-                                     Title="Reseteaza setarile grid-ului"
-                                     Click="@ResetGridSettings" />
+                    <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" JustifyContent="Radzen.JustifyContent.SpaceBetween" AlignItems="Radzen.AlignItems.Center">
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Text="Reseteaza filtre" 
+                                         Icon="clear_all" 
+                                         ButtonStyle="ButtonStyle.Warning" 
+                                         Variant="Radzen.Variant.Filled"
+                                         Size="ButtonSize.Medium"
+                                         Click="@ResetFilters" />
+                            <RadzenButton Text="Reset Grid" 
+                                         Icon="settings_backup_restore" 
+                                         ButtonStyle="ButtonStyle.Secondary" 
+                                         Variant="Radzen.Variant.Outlined"
+                                         Size="ButtonSize.Medium"
+                                         Title="Reseteaza setarile grid-ului"
+                                         Click="@ResetGridSettings" />
+                        </RadzenStack>
+                        
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem" AlignItems="Radzen.AlignItems.Center">
+                            <RadzenLabel Text="Inregistrari per pagina:" Style="white-space: nowrap;" />
+                            <RadzenDropDown @bind-Value="_searchQuery.PageSize"
+                                           Data="@_pageSizeOptions"
+                                           Change="@OnPageSizeChanged"
+                                           Style="width: 100px;"
+                                           Variant="Radzen.Variant.Outlined" />
+                        </RadzenStack>
                     </RadzenStack>
                 </RadzenColumn>
             </RadzenRow>
@@ -94,7 +112,7 @@
                         AllowSorting="true"
                         AllowColumnResize="true"
                         AllowColumnReorder="true"
-                        PageSize="10"
+                        PageSize="@_searchQuery.PageSize"
                         PagerHorizontalAlign="Radzen.HorizontalAlign.Left"
                         ShowPagingSummary="true"
                         PagingSummaryFormat="Pagina {0} din {1} ({2} inregistrari)"
@@ -102,6 +120,7 @@
                         ExpandMode="Radzen.DataGridExpandMode.Single"
                         Settings="@_gridSettings"
                         SettingsChanged="@OnSettingsChanged"
+                        Density="Radzen.Density.Compact"
                         Style="height: 600px">
             
             <!-- Columns -->
@@ -118,12 +137,12 @@
                 <RadzenDataGridColumn Property="StatusText" Title="Status" Width="80px">
                     <Template Context="persoana">
                         <RadzenBadge Text="@persoana.StatusText" 
-                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Danger)" 
                                      Variant="Radzen.Variant.Filled" />
                     </Template>
                 </RadzenDataGridColumn>
                 <RadzenDataGridColumn Property="DataCreare" Title="Data creare" Width="120px" FormatString="{0:dd.MM.yyyy}" />
-                <RadzenDataGridColumn Title="Actiuni" Width="120px" Sortable="false">
+                <RadzenDataGridColumn Title="Actiuni" Width="120px" Sortable="false" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
                     <Template Context="persoana">
                         <RadzenStack Orientation="Radzen.Orientation.Horizontal" Gap="0.5rem">
                             <RadzenButton Icon="visibility" 
@@ -145,7 +164,7 @@
 
             <!-- Detail Row Template -->
             <Template Context="persoana">
-                <RadzenCard Class="m-3">
+                <RadzenCard Class="m-3 compact">
                     <RadzenRow Gap="2rem">
                         <RadzenColumn Size="12" SizeMD="6">
                             <RadzenText TextStyle="TextStyle.H6" Class="mb-3">
@@ -205,7 +224,7 @@
                                     <RadzenColumn Size="4"><strong>Status:</strong></RadzenColumn>
                                     <RadzenColumn Size="8">
                                         <RadzenBadge Text="@persoana.StatusText" 
-                                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Secondary)" 
+                                                     BadgeStyle="@(persoana.EsteActiva ? Radzen.BadgeStyle.Success : Radzen.BadgeStyle.Danger)" 
                                                      Variant="Radzen.Variant.Filled" />
                                     </RadzenColumn>
                                 </RadzenRow>
